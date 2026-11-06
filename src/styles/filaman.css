@@ -18,5 +18,4 @@ html[data-theme] body { background:var(--background);font-family:var(--font-sans
 html[data-theme] h1 { font-family:var(--font-serif); }
 html[data-theme] :is(.board-wrapper,.board-card,.card-container,.control-card,.palette-panel) { background:var(--card); }
 html[data-theme] :is(.board-card,.card-container) { border-radius:var(--radius-md);box-shadow:var(--shadow-sm); }
-html[data-theme] :is(.board-header,.detail-header) { background:var(--muted); }
-html[data-theme] [aria-label="Discovery mode"] button[aria-pressed="true"] { background:var(--primary);color:var(--primary-foreground);border-color:var(--primary); }
+html[data-theme] .detail-header { background:var(--muted); }

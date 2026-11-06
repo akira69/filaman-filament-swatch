@@ -39,6 +39,7 @@
     "view3d": "Afficher la vue 3D"
   },
   "actions": {
+    "close": "Fermer",
     "refresh": "Actualiser",
     "copy": "Copier le code hex",
     "copied": "Copié",
@@ -109,6 +110,9 @@
     "sourceExternal": "FilaMan"
   },
   "detail": {
+    "wheelDisplay": "Affichage de la roue",
+    "colorView": "Couleur",
+    "transparencyView": "Transparence",
     "color": "Couleur",
     "details": "Détails",
     "spoolId": "Numéro de bobine",

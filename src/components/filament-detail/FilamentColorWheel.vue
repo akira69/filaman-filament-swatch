@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n';
 import {useId} from 'vue';
-import { toRef } from 'vue';
+import { toRef, ref } from 'vue';
+import { normalizeColor } from '@/lib/colorUtils';
+import { Button } from '@/components/ui/button';
 import { useColorWheel, type HarmonyFilter } from '@/composables/useColorWheel';
 import type { FilamentCard } from '@/composables/useFilaments';
 
 const {t}=useI18n();
+const showTransparency=ref(false);
+const displayColor=(value:string)=>{const color=normalizeColor(value);return (showTransparency.value?color?.hex:color?.rgbHex) ?? '#888888';};
+const isTransparent=(value:string)=>(normalizeColor(value)?.alpha ?? 1)<1;
 const checkerId=`wheel-checker-${useId().replace(/:/g,'')}`;
 const props = defineProps<{
   filament: FilamentCard;
@@ -48,14 +53,18 @@ const {
   <div class="detail-section">
     <h3 class="section-title">{{ labels.colorHarmonies }}</h3>
     <div class="color-wheel">
+      <div class="wheel-display" role="group" :aria-label="t('detail.wheelDisplay')">
+        <Button size="sm" :variant="!showTransparency ? 'default' : 'ghost'" :aria-pressed="!showTransparency" @click="showTransparency=false">{{ t('detail.colorView') }}</Button>
+        <Button size="sm" :variant="showTransparency ? 'default' : 'ghost'" :aria-pressed="showTransparency" @click="showTransparency=true">{{ t('detail.transparencyView') }}</Button>
+      </div>
       <svg viewBox="-10 -10 220 220" class="wheel-svg">
-        <defs><pattern :id="checkerId" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#eee"/><path d="M0 0h4v4H0zM4 4h4v4H4z" fill="#aaa"/></pattern></defs>
-        <circle cx="100" cy="100" r="100" :fill="`url(#${checkerId})`" />
+        <defs v-if="showTransparency"><pattern :id="checkerId" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#eee"/><path d="M0 0h4v4H0zM4 4h4v4H4z" fill="#aaa"/></pattern></defs>
         <!-- Outer wheel segments -->
         <g v-for="(item, index) in colorWheelItems" :key="item.id">
+          <path v-if="showTransparency && isTransparent(item.colorHex)" :d="getArcPath(index, colorWheelItems.length)" :fill="`url(#${checkerId})`" pointer-events="none" />
           <path
             :d="getArcPath(index, colorWheelItems.length)"
-            :fill="item.colorHex"
+            :fill="displayColor(item.colorHex)"
             :class="['wheel-segment', {
               'active': item.id === filament.id,
               'complementary': isComplementary(item),
@@ -137,7 +146,8 @@ const {
         </g>
 
         <!-- Center circle with current color -->
-        <circle cx="100" cy="100" r="35" :fill="filament.colorHex" class="wheel-center" />
+        <circle v-if="showTransparency && isTransparent(filament.colorHex)" cx="100" cy="100" r="35" :fill="`url(#${checkerId})`" />
+        <circle cx="100" cy="100" r="35" :fill="displayColor(filament.colorHex)" class="wheel-center" />
         <circle cx="100" cy="100" r="35" fill="none" stroke="var(--border)" stroke-width="2" />
       </svg>
 
@@ -215,10 +225,8 @@ const {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
-  background: rgba(var(--surface-alt), 0.2);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  padding:0;
+  background:transparent;
 }
 
 .wheel-svg {
@@ -310,4 +318,9 @@ const {
 .legend-dot.similar {
   background: #64c8ff;
 }
+</style>
+
+<style scoped>
+.wheel-display {display:flex;align-self:center;align-items:center;padding:3px;gap:3px;border:1px solid var(--border);border-radius:999px;background:var(--muted);}
+.wheel-display button {border-radius:999px;font-family:var(--font-sans);font-size:12px;font-weight:600;}
 </style>

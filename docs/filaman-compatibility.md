@@ -19,6 +19,8 @@ PR24 (`ae8b8fa2fcacddcc9a7930ad2e10451840db9dbe`). It must not be downgraded
 through an older core. Release support is capability-tested, not inferred from
 its version string. `/spool-reel.js` and `/reel-flange.webp` are optional shared
 visual capabilities; discovery and textual links survive their absence.
+The shared `/plugin-fonts.css` supplies the same local Space Grotesk UI faces
+inside the iframe. Development also proxies it and its `/_astro/` font assets.
 
 No FilaMan database migrations, native editing, SpoolmanAPI plugin, external
 catalog service or analytics is required by this edition.

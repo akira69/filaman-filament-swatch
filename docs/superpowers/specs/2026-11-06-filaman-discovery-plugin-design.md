@@ -19,7 +19,7 @@ The user chose:
 - The FilaMan edition's What's New and release links belong to the user's repository, with upstream contributions included and credited when shipped.
 - Maintenance boundaries that keep FilaMan integration separate from reusable Swatch behavior.
 
-The half-spool presentation, currency edge cases, and release boundaries below are design decisions proposed for approval, not additional user requests.
+The corner-spool presentation, currency edge cases, and release boundaries below are design decisions proposed for approval, not additional user requests.
 
 ## Approaches considered
 
@@ -113,7 +113,7 @@ Re-read the setting on initial load and when focus/storage/host context changes 
 
 Preserve native RGB/RGBA hex input, normalize accepted short/long forms, and default a missing alpha channel to opaque. Invalid data receives the existing safe placeholder treatment and never becomes executable CSS/markup. Explicit alpha zero must remain zero, not fall through to an opaque default.
 
-Use alpha-aware colors in cards, detail swatches, multicolor samples, palette items and wheel SVG fills. Place a neutral checkerboard behind transparent color areas so transparency is distinguishable in every theme. Labels retain exact native hex and can show localized opacity in the existing information layout. Stored color is not a prediction of printed optical appearance.
+Use alpha-aware colors in cards, detail swatches, multicolor samples, palette items and wheel SVG fills. Place a neutral checkerboard behind transparent color areas so transparency is distinguishable in every theme. Labels retain exact native hex and can show localized opacity in the existing information layout. Stored color is not a prediction of printed optical appearance. Subsequent UI refinement adds two wheel display modes: Color (default) renders underlying RGB; Transparency previews native alpha with checkerboard only beneath transparent segments and center. Stored values and harmony/ranking algorithms remain unchanged.
 
 RGB color metrics and existing harmony algorithms continue to compare the underlying, uncomposited RGB channels; alpha is preserved separately, never baked into RGB against the current theme. Keep the existing ranking logic rather than inventing a new opacity-distance model. Fully transparent records remain inspectable and identifiable as transparent. Do not classify opacity zero as missing, collapse it with opaque RGB, or change its identity when themes change.
 
@@ -131,11 +131,11 @@ FilaMan is the single logo source and management system. Remove Swatch's logo up
 
 Use the existing FilaMan visual module exposed by `/spool-reel.js`, which exports `renderSpoolReel`, and its `/reel-flange.webp` asset. Reuse that implementation rather than copying its winding/color algorithms into this fork. The native implementation already supports striped/gradient colors and alpha. Keep these native style meanings; do not equate them with upstream coaxial/longitudinal labels without an explicit renderer mapping.
 
-Each spool row shows its linked number on the left, with a compact half-reel graphic on the right and the localized remaining amount below/alongside as space permits. The proposed interpretation of "50% of the spool" is a half-reel view, not a fixed 50% fill level or a requirement to use half the row width.
+Each compact spool row shows its smaller linked number on the left and a larger corner reel flush to the bottom/right edges, clipped by the rounded card boundary. Remaining amount/location stay readable beside it. This follows the subsequent explicit UI refinement; the earlier half-reel presentation is superseded.
 
-The existing renderer supports quarter and full views, not half. Prefer rendering its full view inside a half-width clipped presentation wrapper with an explicitly sized viewport; no new winding algorithm is required. A true half-view API is a separate core improvement only if clipping proves insufficient. The crop must not imply a different fill fraction.
+Use the existing renderer's quarter view directly; no new winding algorithm or core rendering API is required. The corner crop must not imply a different fill fraction.
 
-Fill comes from native `metrics.remaining_percent`, clamped for presentation to 0–100%, and native effective remaining weight is authoritative for the numeric amount. Do not assume a 1 kg spool or recompute the percentage from arbitrary capacity/used-weight fields. For null/invalid metrics, show an unknown state and an em dash for unknown weight. Since the current renderer treats null fill as visually full, do not pass null through and present that as real remaining stock: hide/dim the graphic with an explicit unknown indication. Zero must show empty, while 100% shows full winding in the chosen half view.
+Fill comes from native `metrics.remaining_percent`, clamped for presentation to 0–100%, and native effective remaining weight is authoritative for the numeric amount. Do not assume a 1 kg spool or recompute the percentage from arbitrary capacity/used-weight fields. For null/invalid metrics, show an unknown state and an em dash for unknown weight. Since the current renderer treats null fill as visually full, do not pass null through and present that as real remaining stock: hide/dim the graphic with an explicit unknown indication. Zero must show empty, while 100% shows full winding in the chosen corner view.
 
 Use the actual ordered colors, transparency and native multicolor style for the reel. Give the numeric/link text an accessible description of the fill; decorative SVG is hidden from assistive technology. Rendering/asset failure must leave the spool link and numeric details usable. On compact screens preserve the link and amount without horizontal overflow.
 
@@ -208,7 +208,7 @@ Any necessary core changes are separate PRs against `Fire-Devils/devel`. No nati
 - Money tests cover zero, null, explicit foreign currency, setting changes, French formatting and currencies with different minor units; no raw amount is converted or silently re-denominated.
 - RGB, short RGBA, eight-digit RGBA, explicit opaque alpha, partial alpha, zero alpha, invalid values and mixed-alpha multicolor data work in both modes and the reused reel. Theme changes never change stored identity or base RGB metrics.
 - Manufacturer logos come only from native FilaMan URLs and render in both layouts and details, with missing/broken logos falling back to text under the nested plugin base. No logo-submission/upload controls or GitHub logo-contribution requests remain in the edition.
-- Spool links navigate the parent to the correct native record; keyboard and modified-click behavior remain normal. Half-reel crops show 0/25/50/100% fill correctly; unknown metrics never look like measured full stock. The row remains usable if the module fails.
+- Spool links navigate the parent to the correct native record; keyboard and modified-click behavior remain normal. Corner reels show 0/25/50/100% fill correctly; unknown metrics never look like measured full stock. The row remains usable if the module fails.
 - Existing wheel/selector interactions and ranking remain regression-tested. Native striped/gradient reel rendering uses the existing shared renderer rather than a new copied implementation.
 - Upstream commit/release checks open batched review PRs in the renamed fork, preserve local integration boundaries and leave the release unchanged on conflicts/test failures. Installed ZIP version matches its release tag.
 - Upstream open-PR triage records a decision for every inventoried candidate and tests any adopted change; PR53 has a separate documented benefit/requirements verdict and final disposition. Neither task blocks independent native-fork development.
@@ -217,6 +217,6 @@ Any necessary core changes are separate PRs against `Fire-Devils/devel`. No nati
 
 ## Builder discretion and approval
 
-The builder may choose exact module filenames, minimal shared item typing, pagination concurrency, context observation mechanics, half-reel crop dimensions and tests using the repositories' existing tools. Do not introduce a provider registry, duplicate reel engine, new state framework or dependency for these adapters.
+The builder may choose exact module filenames, minimal shared item typing, pagination concurrency, context observation mechanics, corner-reel dimensions and tests using the repositories' existing tools. Do not introduce a provider registry, duplicate reel engine, new state framework or dependency for these adapters.
 
 The user approved moving these product boundaries into a plan. This document records design intent and acceptance criteria; it does not claim that repository migration, PR decisions, the native adapter, translations, currency support, logos or reel changes are already implemented or tested. Execution follows the separate implementation plan.

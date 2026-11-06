@@ -1,4 +1,6 @@
 import path from "node:path";
+import notes from "./src/filaman/release-notes.json";
+import upstream from "./upstream-source.json";
 import { defineConfig, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
@@ -7,6 +9,7 @@ const hostedMode = process.env.VITE_HOSTED_MODE === "1";
 
 const hostedIndexPlugin: PluginOption = {
   name: "hosted-index-shell",
+  generateBundle() { this.emitFile({type:"asset",fileName:"filaman-release.json",source:JSON.stringify({version:notes.version,upstream:upstream.commit})}); },
   transformIndexHtml(html) {
     if (!hostedMode) {
       return html;
@@ -29,13 +32,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: {
-      "/spoolman": {
-        target: "https://spoolman.disane.dev",
-        changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/spoolman/, ""),
-      },
-    },
+    proxy: process.env.FILAMAN_DEV_URL ? Object.fromEntries(
+      ['/api','/auth','/plugins/filament-swatch/hosted-config','/spool-reel.js','/reel-flange.webp'].map(prefix=>[prefix,{target:process.env.FILAMAN_DEV_URL,changeOrigin:true}])
+    ) : {},
   },
 });

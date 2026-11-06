@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {formatMoney, formatProjectMoney} from "@/filaman/format";
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -334,9 +335,9 @@ onMounted(() => {
               <div class="text-muted-foreground text-xs mb-1">{{ t('projects.fields.printTime') }}</div>
               <div class="font-semibold text-base">{{ formatDuration(project.printTime) }}</div>
             </div>
-            <div v-if="getTotalCost(project) > 0" class="bg-accent/50 rounded-lg p-3">
+            <div v-if="project.filamentUsage.length > 0" class="bg-accent/50 rounded-lg p-3">
               <div class="text-muted-foreground text-xs mb-1">{{ t('projects.fields.costs') }}</div>
-              <div class="font-semibold text-base">{{ getTotalCost(project).toFixed(2) }}€</div>
+              <div class="font-semibold text-base">{{ formatProjectMoney(project.filamentUsage) }}</div>
             </div>
             <div v-if="project.slicerName" class="bg-accent/50 rounded-lg p-3">
               <div class="text-muted-foreground text-xs mb-1">{{ t('projects.fields.slicer') }}</div>

@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue';
 
-export interface SpoolData {
-  id: number;
-  location?: string | null;
-  remainingWeight?: number | null;
-  usedWeight?: number | null;
-  archived?: boolean | null;
-}
-
+import type {NativeSpoolSummary} from '@/types/discovery';
+import FilamanSpoolReel from './FilamanSpoolReel.vue';
+import {formatNumber} from '@/filaman/format';
+import {useI18n} from 'vue-i18n';
+const {t}=useI18n();
 defineProps<{
-  spools: SpoolData[];
+  spools: NativeSpoolSummary[];
+  colors: string[];
+  colorStyle: 'striped'|'gradient';
   labels: {
     spools: string;
     archived: string;
@@ -26,7 +25,8 @@ defineProps<{
     <div class="spools-list">
       <div v-for="spool in spools" :key="spool.id" class="spool-item">
         <div class="spool-header">
-          <span class="spool-id">#{{ spool.id }}</span>
+          <a class="spool-id underline" :href="spool.href" target="_top">#{{ spool.id }}</a>
+          <FilamanSpoolReel :spool="spool" :colors="colors" :color-style="colorStyle" />
           <span v-if="spool.archived" class="spool-badge spool-archived">
             <Icon icon="lucide:archive" class="w-3 h-3" />
             {{ labels.archived }}
@@ -37,14 +37,11 @@ defineProps<{
             <Icon icon="lucide:map-pin" class="w-3.5 h-3.5" />
             <span>{{ spool.location }}</span>
           </div>
-          <div v-if="spool.remainingWeight !== null" class="spool-detail">
+          <div v-if="spool.remainingWeightG !== null" class="spool-detail">
             <Icon icon="lucide:package" class="w-3.5 h-3.5" />
-            <span>{{ spool.remainingWeight?.toFixed(2) }}g {{ labels.remaining }}</span>
+            <span>{{ formatNumber(spool.remainingWeightG!) }} g {{ labels.remaining }}</span>
           </div>
-          <div v-if="spool.usedWeight !== null && spool.usedWeight > 0" class="spool-detail">
-            <Icon icon="lucide:trending-down" class="w-3.5 h-3.5" />
-            <span>{{ spool.usedWeight?.toFixed(2) }}g {{ labels.used }}</span>
-          </div>
+          <span v-if="spool.remainingWeightG === null">{{ t('discovery.unknown') }}</span>
         </div>
       </div>
     </div>
@@ -75,7 +72,7 @@ defineProps<{
 
 .spool-item {
   background: rgba(var(--surface-alt), 0.3);
-  border: 1px solid rgba(var(--border), 0.3);
+  border: 1px solid rgba(var(--border-rgb), 0.3);
   border-radius: 12px;
   padding: 12px;
   display: flex;

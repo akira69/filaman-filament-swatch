@@ -2,9 +2,9 @@
   "app": {
     "hostedConfigError": "Could not load Filament Swatch. Check the host configuration and retry.",
     "retry": "Retry",
-    "title": "Spool Swatch",
-    "hostedTitle": "Filament Swatch",
-    "subtitle": "Local color picker for filaments and spools",
+    "title": "FilaMan Swatch",
+    "hostedTitle": "FilaMan Swatch",
+    "subtitle": "Explore your filaments and color catalog",
     "tagline": "Swipe through colors, find materials, and remember perfect matches.",
     "filaments": "Filaments",
     "projects": "Projects",
@@ -73,7 +73,7 @@
   },
   "info": {
     "sourcing": "Data source",
-    "spoolman": "Spoolman",
+    "spoolman": "FilaMan",
     "external": "External filaments",
     "count": "{count} results",
     "item": "color",
@@ -105,7 +105,7 @@
     "material": "Material",
     "spool": "Spool",
     "weight": "Remaining weight",
-    "sourceSpoolman": "Spoolman",
+    "sourceSpoolman": "FilaMan",
     "sourceExternal": "External"
   },
   "detail": {
@@ -134,7 +134,10 @@
     "colorHarmonies": "Color Harmonies",
     "currentColor": "Current Color",
     "complementary": "Complementary",
-    "similar": "Similar"
+    "similar": "Similar",
+    "analogous": "Analogous",
+    "triadic": "Triadic",
+    "split": "Split complementary"
   },
   "theme": {
     "light": "Light",
@@ -144,8 +147,7 @@
   },
   "settings": {
     "showRgb": "Show RGB",
-    "hideRgb": "Hide RGB",
-    "language": "Language"
+    "hideRgb": "Hide RGB"
   },
   "seo": {
     "title": "Spoolman Filament Swatch",
@@ -477,7 +479,10 @@
       "descriptionPlaceholder": "Additional notes about the project...",
       "nameRequired": "Project Name *",
       "descriptionOptional": "Description (optional)",
-      "preview": "Preview"
+      "preview": "Preview",
+      "selectFilament": "Assign FilaMan filament",
+      "searchFilament": "Search filaments…",
+      "noMatch": "No filaments found"
     },
     "detail": {
       "backToProjects": "Back to Projects",
@@ -498,12 +503,37 @@
     "prReady": "Ready to contribute!",
     "createPr": "Create Pull Request on GitHub"
   },
-  "settings": {
-    "showRgb": "Show RGB",
-    "hideRgb": "Hide RGB"
-  },
-  "filamente": "Filamente",
-  "projekte": "Projekte",
+  "filamente": "Filaments",
+  "projekte": "Projects",
   "import": "Import",
-  "what-s-new": "What\\'s New"
+  "what-s-new": "What's New",
+  "discovery": {
+    "mode": "Discovery mode",
+    "inventory": "Inventory",
+    "catalog": "Color catalog",
+    "unknown": "Unknown remaining amount",
+    "opacity": "Opacity",
+    "edit": "Open in FilaMan",
+    "usage": "{count} color assignments",
+    "capacityWarning": "Available amount is insufficient or unknown",
+    "costBreakdown": "Cost breakdown",
+    "perFilament": "Per filament",
+    "perPlate": "Per plate",
+    "created": "Created",
+    "updated": "Updated",
+    "printTime": "Print time",
+    "height": "Height",
+    "slicer": "Slicer",
+    "status": "Status",
+    "delete": "Delete",
+    "cost": "Cost",
+    "length": "Length",
+    "temperature": "Temperature",
+    "bed": "Bed",
+    "plate": "Plate",
+    "notes": "Notes",
+    "required": "Required",
+    "available": "Available",
+    "view3d": "Click for 3D view"
+  }
 }

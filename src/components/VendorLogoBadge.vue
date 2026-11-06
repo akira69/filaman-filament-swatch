@@ -1,40 +1,6 @@
-<template>
-  <div class="vendor-badge flex items-center gap-2">
-    <img
-      v-if="logoUrl && !logoFailed"
-      :src="logoUrl"
-      :alt="getLogoAlt(vendorName)"
-      class="h-5 w-5 sm:h-6 sm:w-6 object-contain flex-shrink-0"
-      @error="logoFailed = true"
-    />
-    <span class="text-xs sm:text-sm font-medium">{{ vendorName }}</span>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { getLogoUrl, getLogoAlt } from '@/lib/logoUtils';
-
-const props = defineProps<{
-  vendorName: string;
-}>();
-
-const logoFailed = ref(false);
-
-const logoUrl = computed(() => {
-  if (logoFailed.value) return null;
-  return getLogoUrl(props.vendorName);
-});
+import {ref,watch} from 'vue';
+const props=defineProps<{vendorName:string;logoUrl?:string|null}>();
+const failed=ref(false);watch(()=>props.logoUrl,()=>failed.value=false);
 </script>
-
-<style scoped>
-.vendor-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-img {
-  flex-shrink: 0;
-}
-</style>
+<template><span class="inline-flex items-center gap-2"><img v-if="logoUrl && !failed" :src="logoUrl" alt="" class="h-6 w-6 object-contain" @error="failed=true"/><span>{{ vendorName }}</span></span></template>

@@ -44,7 +44,7 @@ class StaticBundleTests(unittest.TestCase):
                 self.assertEqual(response.text, "<main>Swatch</main>")
         response = self.get("hosted-config")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["spoolman_base_url"], "/spoolman")
+        self.assertEqual(response.json()["api_base_path"], "/api/v1")
 
     def test_rejects_encoded_traversal_and_absolute_paths(self):
         for path in (

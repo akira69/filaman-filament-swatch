@@ -8,6 +8,7 @@ test('filter changes preserve host configuration and remove cleared filters', as
   const url = new URL('http://swatch.test/app/swatch?filaman_hosted=1&filaman_hosted_config=%2Fconfig&filaman_theme=dark&spoolman_locale=en&q=old');
   globalThis.window = {
     location: url,
+    addEventListener() {},
     localStorage: { getItem: () => null, setItem() {} },
     history: { replaceState: (_state, _title, next) => { url.href = new URL(next, url).href; } },
   };

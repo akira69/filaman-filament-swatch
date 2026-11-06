@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { Button } from '@/components/ui/button';
-import LocaleSwitch from '@/components/LocaleSwitch.vue';
+
 import ThemeSwitch from '@/components/ThemeSwitch.vue';
 
 const props = defineProps<{
@@ -53,21 +53,21 @@ const isFilamentsView = () => route.path.includes('/swatch');
 </script>
 
 <template>
-  <nav class="sticky top-0 z-40 border-b border-[rgb(var(--border))] bg-[rgb(var(--surface))] shadow-sm">
+  <nav class="sticky top-0 z-40 border-b border-[rgb(var(--border-rgb))] bg-[rgb(var(--surface))] shadow-sm">
     <div class="px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
       <!-- Left: Logo & Navigation -->
       <div class="flex items-center gap-2 sm:gap-4 min-w-fit flex-shrink-0">
         <div class="flex items-center gap-2">
-          <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent))]" />
+          <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" />
           <span class="hidden sm:inline font-semibold text-[rgb(var(--text))] text-base">{{ appTitle }}</span>
         </div>
 
         <!-- View/Page Toggle -->
-        <div class="flex gap-0.5 sm:gap-1 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--bg))] overflow-hidden">
+        <div class="flex gap-0.5 sm:gap-1 border border-[rgb(var(--border-rgb))] rounded-lg bg-[rgb(var(--bg))] overflow-hidden">
           <Button
             :variant="route.path.includes('/swatch') ? 'default' : 'ghost'"
             size="sm"
-            @click="router.push('/app/swatch')"
+            @click="router.push({path:'/app/swatch',query:route.query})"
             class="h-8 sm:h-9 px-2 sm:px-3 rounded-none"
           >
             <Icon icon="lucide:palette" class="w-4 h-4 sm:mr-1" />
@@ -76,7 +76,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
           <Button
             :variant="route.path.includes('/projects') ? 'default' : 'ghost'"
             size="sm"
-            @click="router.push('/app/projects')"
+            @click="router.push({path:'/app/projects',query:route.query})"
             class="h-8 sm:h-9 px-2 sm:px-3 relative rounded-none"
           >
             <Icon icon="lucide:folder" class="w-4 h-4 sm:mr-1" />
@@ -96,7 +96,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
             type="text"
             :value="searchQuery"
             :placeholder="t('search.placeholder')"
-            class="w-full bg-[rgb(var(--bg))] border border-[rgb(var(--border))] rounded-lg pl-9 pr-4 py-1.5 sm:py-2 text-sm text-[rgb(var(--text))] placeholder-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))]"
+            class="w-full bg-[rgb(var(--bg))] border border-[rgb(var(--border-rgb))] rounded-lg pl-9 pr-4 py-1.5 sm:py-2 text-sm text-[rgb(var(--text))] placeholder-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb))]"
             @input="handleSearch"
           />
         </div>
@@ -108,7 +108,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
         <button
           v-if="isFilamentsView()"
           @click="$emit('openFilterModal')"
-          class="p-2 rounded-lg hover:bg-[rgb(var(--border))] transition text-[rgb(var(--text))] flex items-center gap-1.5"
+          class="p-2 rounded-lg hover:bg-[rgb(var(--border-rgb))] transition text-[rgb(var(--text))] flex items-center gap-1.5"
           :title="t('filters.filter')"
         >
           <Icon icon="lucide:sliders-horizontal" class="w-5 h-5" />
@@ -121,11 +121,11 @@ const isFilamentsView = () => route.path.includes('/swatch');
             :class="[
               'p-1.5 rounded transition',
               viewMode === 'board'
-                ? 'bg-[rgb(var(--accent))] text-white'
+                ? 'bg-[rgb(var(--accent-rgb))] text-white'
                 : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]'
             ]"
             @click="$emit('changeView', 'board')"
-            title="Board View"
+            :title="t('actions.viewBoard')"
           >
             <Icon icon="lucide:layout-grid" class="w-4 h-4" />
           </button>
@@ -133,11 +133,11 @@ const isFilamentsView = () => route.path.includes('/swatch');
             :class="[
               'p-1.5 rounded transition',
               viewMode === 'carousel'
-                ? 'bg-[rgb(var(--accent))] text-white'
+                ? 'bg-[rgb(var(--accent-rgb))] text-white'
                 : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]'
             ]"
             @click="$emit('changeView', 'carousel')"
-            title="Carousel View"
+            :title="t('actions.viewCarousel')"
           >
             <Icon icon="lucide:gallery-horizontal" class="w-4 h-4" />
           </button>
@@ -174,7 +174,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
           <Icon icon="lucide:bookmark" class="w-4 h-4" />
           <span
             v-if="pinnedCount > 0"
-            class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent))] text-white text-[10px] font-bold shadow-lg border-2 border-[rgb(var(--surface))]"
+            class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent-rgb))] text-white text-[10px] font-bold shadow-lg border-2 border-[rgb(var(--surface))]"
           >
             {{ pinnedCount }}
           </span>
@@ -182,7 +182,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
 
         <!-- Desktop: Theme & Locale -->
         <div class="hidden sm:flex items-center gap-1">
-          <LocaleSwitch />
+
           <ThemeSwitch v-if="!props.isHosted" />
         </div>
 
@@ -216,7 +216,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
                 <div class="p-2 flex flex-col gap-1">
                   <button
                     v-if="!props.isHosted"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border))] rounded-md transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors"
                     @click="handleOpenUrlDialog"
                   >
                     <div class="relative">
@@ -230,18 +230,18 @@ const isFilamentsView = () => route.path.includes('/swatch');
                     </div>
                     {{ t('info.spoolmanUrl') || 'Spoolman Server' }}
                   </button>
-                  <hr v-if="!props.isHosted" class="border-[rgb(var(--border))]/50 my-1" />
+                  <hr v-if="!props.isHosted" class="border-[rgb(var(--border-rgb))]/50 my-1" />
                   <div v-if="!props.isHosted" class="flex items-center justify-between px-3 py-2">
                     <span class="text-xs text-[rgb(var(--text-muted))]">{{ t('theme.theme') || 'Theme' }}</span>
                     <ThemeSwitch />
                   </div>
                   <div class="flex items-center justify-between px-3 py-2">
-                    <span class="text-xs text-[rgb(var(--text-muted))]">{{ t('settings.language') || 'Language' }}</span>
-                    <LocaleSwitch />
+
+
                   </div>
-                  <hr class="border-[rgb(var(--border))]/50 my-1" />
+                  <hr class="border-[rgb(var(--border-rgb))]/50 my-1" />
                   <button
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border))] rounded-md transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors"
                     @click="handleOpenChangelog"
                   >
                     <Icon icon="lucide:sparkles" class="w-4 h-4" />
@@ -251,16 +251,16 @@ const isFilamentsView = () => route.path.includes('/swatch');
                     href="https://github.com/sponsors/Disane87"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex items-center gap-2 px-3 py-2 text-sm text-pink-500 hover:bg-[rgb(var(--border))] rounded-md transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 text-sm text-pink-500 hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors"
                     @click="mobileMenuOpen = false"
                   >
                     <Icon icon="lucide:heart" class="w-4 h-4" />
                     {{ t('actions.sponsor') }}
                   </a>
-                  <hr class="border-[rgb(var(--border))]/50 my-1" />
+                  <hr class="border-[rgb(var(--border-rgb))]/50 my-1" />
                   <button
                     v-if="isFilamentsView()"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border))] rounded-md transition-colors w-full"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors w-full"
                     @click="$emit('openFilterModal'); mobileMenuOpen = false"
                   >
                     <Icon icon="lucide:sliders-horizontal" class="w-4 h-4" />
@@ -268,14 +268,14 @@ const isFilamentsView = () => route.path.includes('/swatch');
                   </button>
                   <button
                     v-if="isFilamentsView()"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border))] rounded-md transition-colors w-full relative"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors w-full relative"
                     @click="$emit('openPalette'); mobileMenuOpen = false"
                   >
                     <Icon icon="lucide:bookmark" class="w-4 h-4" />
                     {{ t('info.palette') || 'Palette' }}
                     <span
                       v-if="pinnedCount > 0"
-                      class="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent))] text-white text-[10px] font-bold"
+                      class="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent-rgb))] text-white text-[10px] font-bold"
                     >
                       {{ pinnedCount }}
                     </span>

@@ -4,13 +4,7 @@ import { Icon } from '@iconify/vue';
 import { SourceBadge } from '@/components/ui/source-badge';
 import { hexToRgba } from '@/lib/colorUtils';
 
-export interface ColorChipItem {
-  id: string;
-  colorHex: string;
-  name: string;
-  vendor: string;
-  source: string;
-}
+import type {ColorChipItem} from './index';
 
 defineProps<{
   colors: ColorChipItem[];
@@ -68,7 +62,7 @@ const getCardBackgroundStyle = (colorHex: string) => {
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 2px solid rgba(var(--border), 0.6);
+  border: 2px solid rgba(var(--border-rgb), 0.6);
   border-radius: 14px;
   cursor: pointer;
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -91,7 +85,7 @@ const getCardBackgroundStyle = (colorHex: string) => {
 
 .color-card:hover {
   background: linear-gradient(135deg, rgba(var(--surface-alt), 1) 0%, rgba(var(--surface-alt), 0.8) 100%);
-  border-color: rgba(var(--accent), 0.8);
+  border-color: rgba(var(--accent-rgb), 0.8);
   transform: translateY(-3px);
   box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.4);
 }

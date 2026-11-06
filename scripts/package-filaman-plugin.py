@@ -19,10 +19,19 @@ if not (bundle / "index.html").is_file():
 
 plugin = root / "filaman-plugin"
 manifest = json.loads((plugin / "plugin.json").read_text())
+notes = json.loads((root / "src/filaman/release-notes.json").read_text())
+if notes["version"] != version:
+    raise SystemExit("Release notes version must match the package tag; rebuild before packaging")
+built = json.loads((bundle / "filaman-release.json").read_text())
+provenance = json.loads((root / "upstream-source.json").read_text())
+if built.get("version") != version or built.get("upstream") != provenance.get("commit"):
+    raise SystemExit("Stale bundle metadata; rebuild before packaging")
 manifest["version"] = version
 archive_path = root / f"filament-swatch-{version}.zip"
 with ZipFile(archive_path, "w", ZIP_DEFLATED) as archive:
     archive.writestr("plugin.json", json.dumps(manifest, indent=2) + "\n")
+    archive.write(root / "LICENSE", "LICENSE")
+    archive.write(root / "upstream-source.json", "upstream-source.json")
     for name in ("__init__.py", "router.py"):
         archive.write(plugin / name, name)
     for path in sorted(bundle.rglob("*")):

@@ -31,6 +31,7 @@ export interface ProjectFilament {
     temperature?: number;
     bedTemperature?: number;
     vendor?: string;
+    costCurrency?: string;
     cost?: number; // Cost per kg (price / weight in kg)
     spoolWeight?: number; // Total weight of the spool in grams
 }

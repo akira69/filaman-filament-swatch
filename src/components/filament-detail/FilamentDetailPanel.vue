@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import {useI18n} from 'vue-i18n';
+import {formatNumber} from '@/filaman/format';
+import {normalizeColor} from '@/lib/colorUtils';
 import { computed } from 'vue';
 import type { FilamentCard } from '@/composables/useFilaments';
 import { hexToRgba } from '@/lib/colorUtils';
@@ -10,6 +13,7 @@ import FilamentSpoolsList from './FilamentSpoolsList.vue';
 import FilamentColorWheel from './FilamentColorWheel.vue';
 import FilamentColorHarmonies from './FilamentColorHarmonies.vue';
 
+const {t}=useI18n();
 const props = defineProps<{
   filament: FilamentCard | null;
   allFilaments: FilamentCard[];
@@ -58,7 +62,7 @@ const swatchStyle = computed(() => {
 });
 
 const showSpools = computed(() => {
-  return props.filament?.source === 'spoolman' &&
+  return props.filament?.kind === 'inventory' &&
     props.filament?.spools &&
     props.filament.spools.length > 0;
 });
@@ -72,6 +76,7 @@ const showSpools = computed(() => {
         :vendor="filament.vendor"
         :material="filament.material"
         :source="filament.source"
+        :logo-url="filament.logoUrl"
         @close="emit('close')"
       />
 
@@ -87,7 +92,10 @@ const showSpools = computed(() => {
         </div>
 
         <!-- Filament Details -->
-        <FilamentDetailInfo
+        <p v-if="filament.kind === 'catalog'">{{ t('discovery.usage', {count:filament.usageCount}) }}</p>
+        <a :href="filament.kind === 'inventory' ? `/filaments/${filament.nativeId}` : '/filaments/colors'" target="_top" class="underline">{{ t('discovery.edit') }}</a>
+        <p>{{ t('discovery.opacity') }}: {{ formatNumber((normalizeColor(filament.colorHex)?.alpha ?? 1)*100) }}%</p>
+        <FilamentDetailInfo v-if="filament.kind === 'inventory'"
           :filament="filament"
           :labels="{ details: labels.details }"
         />
@@ -96,6 +104,8 @@ const showSpools = computed(() => {
         <FilamentSpoolsList
           v-if="showSpools"
           :spools="filament.spools!"
+          :colors="filament.colors.map(c => c.hex)"
+          :color-style="filament.nativeColorStyle ?? 'gradient'"
           :labels="{
             spools: labels.spools,
             archived: labels.archived,
@@ -181,7 +191,7 @@ const showSpools = computed(() => {
   display: flex;
   align-items: flex-end;
   padding: 16px;
-  border: 1px solid rgba(var(--border), 0.5);
+  border: 1px solid rgba(var(--border-rgb), 0.5);
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.3);
 }
 

@@ -10,8 +10,8 @@
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">{{ sortLabels.name }}</SelectItem>
-            <SelectItem value="vendor">{{ sortLabels.vendor }}</SelectItem>
-            <SelectItem value="material">{{ sortLabels.material }}</SelectItem>
+            <SelectItem v-if="filaments[0]?.kind !== 'catalog'" value="vendor">{{ sortLabels.vendor }}</SelectItem>
+            <SelectItem v-if="filaments[0]?.kind !== 'catalog'" value="material">{{ sortLabels.material }}</SelectItem>
             <SelectItem value="source">{{ sortLabels.source }}</SelectItem>
             <SelectItem value="hue">{{ sortLabels.hue }}</SelectItem>
             <SelectItem value="luminance">{{ sortLabels.luminance }}</SelectItem>
@@ -76,7 +76,7 @@
             <div class="card-top">
               <div>
                 <div class="card-name">{{ filament.name }}</div>
-                <div class="card-sub">{{ filament.vendor }} · {{ filament.material }}</div>
+                <div v-if="filament.kind === 'inventory'" class="card-sub"><VendorLogoBadge :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" /> {{ filament.material }}</div>
               </div>
               <button
                 type="button"
@@ -99,7 +99,7 @@
                 :class="getSourceBadgeClass(filament.source)"
               >
                 <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
-                {{ filament.source === 'spoolman' ? labels.sourceSpoolman : labels.sourceExternal }}
+                {{ getSourceLabel(filament.source) }}
               </Badge>
             </div>
           </div>
@@ -110,12 +110,14 @@
 </template>
 
 <script setup lang="ts">
+import VendorLogoBadge from "./VendorLogoBadge.vue";
 import { ref, onMounted, onUnmounted } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { hexToRgbString } from '@/lib/colorUtils';
+import { getSwatchStyle } from '@/lib/swatchUtils';
 import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import {
   Select,
@@ -225,33 +227,7 @@ const isPinned = (id: string) => {
   return props.pinnedIds.has(id);
 };
 
-const swatchStyle = (filament: FilamentCardType) => {
-  // Multi-color support
-  if (filament.multiColorHexes && filament.multiColorHexes.length > 1) {
-    const colors = filament.multiColorHexes.map(ensureHex);
-    if (filament.multiColorDirection === 'coaxial') {
-      // Radial gradient with soft transitions
-      const stops = colors.map((c, i) => {
-        const center = (i / (colors.length - 1)) * 100;
-        const spread = 15;
-        if (i === 0) return `${c} 0%, ${c} ${center + spread}%`;
-        if (i === colors.length - 1) return `${c} ${center - spread}%, ${c} 100%`;
-        return `${c} ${center - spread}%, ${c} ${center + spread}%`;
-      }).join(', ');
-      return { background: `radial-gradient(circle, ${stops})` };
-    } else {
-      // Linear gradient (longitudinal)
-      return { background: `linear-gradient(90deg, ${colors.join(', ')})` };
-    }
-  }
-  // Single color with gradient effect
-  return { background: gradient(filament.colorHex) };
-};
-
-const gradient = (hex: string) => {
-  const safe = ensureHex(hex);
-  return `linear-gradient(145deg, ${safe} 0%, ${safe}80 50%, ${safe}00 100%)`;
-};
+const swatchStyle = (filament: FilamentCardType) => getSwatchStyle(filament.colorHex,filament.material ?? '',filament.multiColorHexes,filament.multiColorDirection);
 
 const cardId = (id: string) => `board-card-${id}`;
 
@@ -260,35 +236,12 @@ const scrollToCard = (id: string) => {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
 };
-const minimapStyle = (filament: FilamentCardType) => {
-  // Multi-color support in minimap
-  if (filament.multiColorHexes && filament.multiColorHexes.length > 1) {
-    const colors = filament.multiColorHexes.map(ensureHex);
-    if (filament.multiColorDirection === 'coaxial') {
-      return { background: `radial-gradient(circle, ${colors.join(', ')})` };
-    } else {
-      return { background: `linear-gradient(90deg, ${colors.join(', ')})` };
-    }
-  }
-  return { background: filament.colorHex };
-};
-const ensureHex = (value: string | null | undefined): string => {
-  if (!value) return "#888888";
-  const trimmed = value.trim().replace(/^#/, "");
-  const short = /^[0-9a-fA-F]{3}$/;
-  const full = /^[0-9a-fA-F]{6}$/;
-  if (full.test(trimmed)) return `#${trimmed.toLowerCase()}`;
-  if (short.test(trimmed)) {
-    const [a, b, c] = trimmed;
-    return `#${a}${a}${b}${b}${c}${c}`.toLowerCase();
-  }
-  return "#888888";
-};
+const minimapStyle = swatchStyle;
 </script>
 
 <style scoped>
 .board-wrapper {
-  border: 1px solid rgba(var(--border), 0.6);
+  border: 1px solid rgba(var(--border-rgb), 0.6);
   background: rgba(var(--surface), 0.8);
   display: flex;
   flex-direction: column;
@@ -344,7 +297,7 @@ const ensureHex = (value: string | null | undefined): string => {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(var(--accent), 0.5), rgba(var(--accent-2), 0.7));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.5), rgba(var(--accent-2), 0.7));
 }
 
 .board-body {
@@ -367,7 +320,7 @@ const ensureHex = (value: string | null | undefined): string => {
   flex-direction: row;
   flex-wrap: wrap;
   gap: 4px;
-  border: 1px solid rgba(var(--border), 0.6);
+  border: 1px solid rgba(var(--border-rgb), 0.6);
   background: rgba(var(--surface-alt), 0.7);
   flex-shrink: 0;
 }
@@ -392,7 +345,7 @@ const ensureHex = (value: string | null | undefined): string => {
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--accent), 0.5) rgba(var(--surface-alt), 0.4);
+  scrollbar-color: rgba(var(--accent-rgb), 0.5) rgba(var(--surface-alt), 0.4);
 }
 
 @media (min-width: 640px) {
@@ -415,14 +368,14 @@ const ensureHex = (value: string | null | undefined): string => {
 }
 
 .board-grid::-webkit-scrollbar-thumb {
-  background: rgba(var(--accent), 0.5);
+  background: rgba(var(--accent-rgb), 0.5);
   border-radius: 10px;
   border: 2px solid rgba(var(--surface), 0.8);
   transition: background 200ms ease;
 }
 
 .board-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--accent), 0.7);
+  background: rgba(var(--accent-rgb), 0.7);
 }
 
 .board-card {
@@ -459,7 +412,7 @@ const ensureHex = (value: string | null | undefined): string => {
 
 .board-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(var(--accent), 0.6);
+  border-color: rgba(var(--accent-rgb), 0.6);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -563,7 +516,7 @@ const ensureHex = (value: string | null | undefined): string => {
   letter-spacing: 0.02em;
   padding: 6px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(var(--border), 0.7);
+  border: 1px solid rgba(var(--border-rgb), 0.7);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 120ms ease;
@@ -588,8 +541,8 @@ const ensureHex = (value: string | null | undefined): string => {
 }
 
 .pin-btn[aria-pressed="true"] {
-  border-color: rgba(var(--accent), 0.7);
-  background: rgba(var(--accent), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.18);
   color: rgb(var(--text));
 }
 
@@ -598,7 +551,7 @@ const ensureHex = (value: string | null | undefined): string => {
   height: 16px;
   flex-shrink: 0;
   border-radius: 5px;
-  border: 1px solid rgba(var(--border), 0.6);
+  border: 1px solid rgba(var(--border-rgb), 0.6);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease;
@@ -614,7 +567,7 @@ const ensureHex = (value: string | null | undefined): string => {
 
 .minimap-dot:hover {
   transform: translateY(-2px) scale(1.03);
-  border-color: rgba(var(--accent), 0.7);
+  border-color: rgba(var(--accent-rgb), 0.7);
 }
 
 .minimap-dot.active {

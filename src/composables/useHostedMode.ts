@@ -2,7 +2,8 @@ export type HostedConfig = {
   contract_version: number;
   mode: "hosted";
   app_key: string;
-  spoolman_base_url: string;
+  api_base_path: string;
+  spoolman_base_url?: string;
   app_base_path: string;
 };
 

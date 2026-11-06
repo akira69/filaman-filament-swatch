@@ -12,8 +12,8 @@
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">{{ sortLabels.name }}</SelectItem>
-            <SelectItem value="vendor">{{ sortLabels.vendor }}</SelectItem>
-            <SelectItem value="material">{{ sortLabels.material }}</SelectItem>
+            <SelectItem v-if="items[0]?.kind !== 'catalog'" value="vendor">{{ sortLabels.vendor }}</SelectItem>
+            <SelectItem v-if="items[0]?.kind !== 'catalog'" value="material">{{ sortLabels.material }}</SelectItem>
             <SelectItem value="source">{{ sortLabels.source }}</SelectItem>
             <SelectItem value="hue">{{ sortLabels.hue }}</SelectItem>
             <SelectItem value="luminance">{{ sortLabels.luminance }}</SelectItem>
@@ -63,7 +63,7 @@
       <button
         v-for="(swatch, idx) in swatches"
         :key="swatch.id"
-        class="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-[rgba(var(--border),0.6)] shadow-sm transition hover:scale-[1.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--accent-2),0.7)]"
+        class="h-8 w-8 sm:h-9 sm:w-9 rounded-full border border-[rgba(var(--border-rgb),0.6)] shadow-sm transition hover:scale-[1.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--accent-2),0.7)]"
         :style="{ background: swatch.hex }"
         :aria-label="swatch.name"
         @click="scrollTo(idx)"

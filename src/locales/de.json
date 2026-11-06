@@ -2,9 +2,9 @@
   "app": {
     "hostedConfigError": "Filament Swatch konnte nicht geladen werden. Bitte die Host-Konfiguration prüfen und erneut versuchen.",
     "retry": "Erneut versuchen",
-    "title": "Spool Swatch",
-    "hostedTitle": "Filament Swatch",
-    "subtitle": "Lokaler Farbpicker fuer Filamente und Spulen",
+    "title": "FilaMan Swatch",
+    "hostedTitle": "FilaMan Swatch",
+    "subtitle": "Filamente und Farbkatalog entdecken",
     "tagline": "Wische durch Farben, finde Materialien und merke dir perfekte Matches.",
     "filaments": "Filamente",
     "projects": "Projekte",
@@ -73,7 +73,7 @@
   },
   "info": {
     "sourcing": "Datenquelle",
-    "spoolman": "Spoolman",
+    "spoolman": "FilaMan",
     "external": "Externe Filamente",
     "count": "{count} Treffer",
     "item": "Farbe",
@@ -105,7 +105,7 @@
     "material": "Material",
     "spool": "Spule",
     "weight": "Restgewicht",
-    "sourceSpoolman": "Spoolman",
+    "sourceSpoolman": "FilaMan",
     "sourceExternal": "Extern"
   },
   "detail": {
@@ -134,7 +134,10 @@
     "colorHarmonies": "Farbharmonien",
     "currentColor": "Aktuelle Farbe",
     "complementary": "Komplementär",
-    "similar": "Ähnlich"
+    "similar": "Ähnlich",
+    "analogous": "Analog",
+    "triadic": "Triade",
+    "split": "Split-Komplementär"
   },
   "theme": {
     "light": "Hell",
@@ -144,8 +147,7 @@
   },
   "settings": {
     "showRgb": "RGB anzeigen",
-    "hideRgb": "RGB ausblenden",
-    "language": "Sprache"
+    "hideRgb": "RGB ausblenden"
   },
   "seo": {
     "title": "Spoolman Filament Swatch",
@@ -477,7 +479,10 @@
       "descriptionPlaceholder": "Zusätzliche Notizen zum Projekt...",
       "nameRequired": "Projektname *",
       "descriptionOptional": "Beschreibung (optional)",
-      "preview": "Vorschau"
+      "preview": "Vorschau",
+      "selectFilament": "FilaMan-Filament zuordnen",
+      "searchFilament": "Filamente suchen…",
+      "noMatch": "Keine Filamente gefunden"
     },
     "detail": {
       "backToProjects": "Zurück zu Projekten",
@@ -498,8 +503,36 @@
     "prReady": "Bereit beizutragen!",
     "createPr": "Pull Request auf GitHub erstellen"
   },
-  "settings": {
-    "showRgb": "RGB anzeigen",
-    "hideRgb": "RGB ausblenden"
-  }
+  "discovery": {
+    "mode": "Entdeckungsmodus",
+    "inventory": "Bestand",
+    "catalog": "Farbkatalog",
+    "unknown": "Restmenge unbekannt",
+    "opacity": "Deckkraft",
+    "edit": "In FilaMan öffnen",
+    "usage": "{count} Farbzuordnungen",
+    "capacityWarning": "Verfügbare Menge reicht nicht oder ist unbekannt",
+    "costBreakdown": "Kostenübersicht",
+    "perFilament": "Pro Filament",
+    "perPlate": "Pro Druckplatte",
+    "created": "Erstellt",
+    "updated": "Aktualisiert",
+    "printTime": "Druckzeit",
+    "height": "Höhe",
+    "slicer": "Slicer",
+    "status": "Status",
+    "delete": "Löschen",
+    "cost": "Kosten",
+    "length": "Länge",
+    "temperature": "Temperatur",
+    "bed": "Bett",
+    "plate": "Druckplatte",
+    "notes": "Notizen",
+    "required": "Benötigt",
+    "available": "Verfügbar",
+    "view3d": "Klick für 3D-Ansicht"
+  },
+  "filamente": "Filamente",
+  "projekte": "Projekte",
+  "what-s-new": "Neuigkeiten"
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {formatMoney, formatProjectMoney} from "@/filaman/format";
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -304,7 +305,7 @@ onMounted(() => {
           >
             <div class="text-center">
               <Icon icon="lucide:box" class="w-24 h-24 text-muted-foreground/30 mx-auto mb-2" />
-              <p class="text-sm text-muted-foreground">{{ show3DViewer ? '' : 'Klick für 3D Ansicht' }}</p>
+              <p class="text-sm text-muted-foreground">{{ show3DViewer ? '' : t('discovery.view3d') }}</p>
             </div>
           </div>
         </CardContent>
@@ -330,9 +331,9 @@ onMounted(() => {
           <div class="text-xs text-muted-foreground mt-0.5">{{ t('projects.fields.estimated') }}</div>
         </Card>
 
-        <Card v-if="totalCost > 0">
-          <div class="text-xs text-muted-foreground">{{ t('projects.fields.costs') }} Gesamt</div>
-          <div class="text-2xl font-bold text-green-600">{{ totalCost.toFixed(2) }}€</div>
+        <Card v-if="project.filamentUsage.length > 0">
+          <div class="text-xs text-muted-foreground">{{ t('projects.fields.costs') }}</div>
+          <div class="text-2xl font-bold text-green-600">{{ formatProjectMoney(project?.filamentUsage ?? []) }}</div>
           <div class="text-xs text-muted-foreground mt-0.5">
             <div>{{ project.filamentUsage.length }} {{ t('projects.fields.material') }}</div>
           </div>
@@ -343,17 +344,17 @@ onMounted(() => {
     <!-- Cost Breakdown & Filament Usage -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-1.5">
       <!-- Cost Breakdown -->
-      <Card v-if="totalCost > 0" class="lg:col-span-3">
+      <Card v-if="project.filamentUsage.length > 0" class="lg:col-span-3">
         <CardHeader>
           <CardTitle class="flex items-center gap-2">
             <Icon icon="lucide:dfc" class="w-5 h-5" />
-            Kostenübersicht
+            {{ t('discovery.costBreakdown') }}
           </CardTitle>
         </CardHeader>
         <CardContent class="space-y-2">
         <!-- Costs by Filament -->
         <div class="space-y-2">
-          <div class="font-semibold text-xs text-muted-foreground">Pro Filament</div>
+          <div class="font-semibold text-xs text-muted-foreground">{{ t('discovery.perFilament') }}</div>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
             <div 
               v-for="filament in project.filamentUsage"
@@ -368,14 +369,14 @@ onMounted(() => {
                 />
                 <span class="truncate">{{ filament.material || 'Unbekannt' }}</span>
               </div>
-              <span v-if="filament.cost" class="font-semibold whitespace-nowrap ml-2">{{ filament.cost.toFixed(2) }}€</span>
+              <span v-if="filament.cost != null" class="font-semibold whitespace-nowrap ml-2">{{ formatProjectMoney([filament]) }}</span>
             </div>
           </div>
         </div>
 
         <!-- Costs by Plate (if multiple plates) -->
         <div v-if="plateCount > 1" class="space-y-2">
-          <div class="font-semibold text-xs text-muted-foreground">Pro Plate</div>
+          <div class="font-semibold text-xs text-muted-foreground">{{ t('discovery.perPlate') }}</div>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
             <div 
               v-for="plateIdx in Array.from({length: plateCount}, (_, i) => i)"
@@ -383,7 +384,7 @@ onMounted(() => {
               class="bg-accent/50 rounded p-3"
             >
               <div class="text-xs text-muted-foreground mb-1">Plate {{ plateIdx + 1 }}</div>
-              <div class="text-lg font-semibold">{{ (costByPlate.get(plateIdx) ?? 0).toFixed(2) }}€</div>
+              <div class="text-lg font-semibold">{{ formatProjectMoney(project?.filamentUsage.filter(f => (f.plateIndex ?? 0) === plateIdx) ?? []) }}</div>
               <div class="text-xs text-muted-foreground mt-1">
                 {{ project.filamentUsage.filter(f => (f.plateIndex ?? 0) === plateIdx).length }} Filamente
               </div>
@@ -394,8 +395,8 @@ onMounted(() => {
         <!-- Total Summary -->
         <div class="border-t pt-2">
           <div class="flex justify-between items-center">
-            <div class="font-semibold text-sm">Gesamt</div>
-            <div class="text-xl font-bold text-green-600">{{ totalCost.toFixed(2) }}€</div>
+            <div class="font-semibold text-sm">{{ t('projects.fields.total') }}</div>
+            <div class="text-xl font-bold text-green-600">{{ formatProjectMoney(project?.filamentUsage ?? []) }}</div>
           </div>
         </div>
       </CardContent>
@@ -407,11 +408,11 @@ onMounted(() => {
         <Card>
           <div class="font-semibold text-sm mb-2">{{ t('projects.detail.projectInfo') }}</div>
           <div class="space-y-1.5 text-xs">
-            <div><span class="text-muted-foreground text-[11px]">Erstellt:</span> {{ formatDate(new Date(project.createdAt)) }}</div>
-            <div><span class="text-muted-foreground text-[11px]">Aktualisiert:</span> {{ formatDate(new Date(project.updatedAt)) }}</div>
-            <div v-if="project.printTime"><span class="text-muted-foreground text-[11px]">Druckzeit:</span> {{ formatDuration(project.printTime) }}</div>
-            <div v-if="project.layerHeight"><span class="text-muted-foreground text-[11px]">Höhe:</span> {{ project.layerHeight }}mm</div>
-            <div v-if="project.slicerName"><span class="text-muted-foreground text-[11px]">Slicer:</span> {{ project.slicerName }}</div>
+            <div><span class="text-muted-foreground text-[11px]">{{ t('discovery.created') }}:</span> {{ formatDate(new Date(project.createdAt)) }}</div>
+            <div><span class="text-muted-foreground text-[11px]">{{ t('discovery.updated') }}:</span> {{ formatDate(new Date(project.updatedAt)) }}</div>
+            <div v-if="project.printTime"><span class="text-muted-foreground text-[11px]">{{ t('discovery.printTime') }}:</span> {{ formatDuration(project.printTime) }}</div>
+            <div v-if="project.layerHeight"><span class="text-muted-foreground text-[11px]">{{ t('discovery.height') }}:</span> {{ project.layerHeight }}mm</div>
+            <div v-if="project.slicerName"><span class="text-muted-foreground text-[11px]">{{ t('discovery.slicer') }}:</span> {{ project.slicerName }}</div>
           </div>
         </Card>
 
@@ -448,8 +449,8 @@ onMounted(() => {
           <CardContent class="space-y-1 pt-2">
             <div class="font-medium text-xs">Plate {{ idx + 1 }}</div>
             <div v-if="costByPlate.get(idx)" class="text-xs bg-accent/50 rounded p-1.5">
-              <div class="text-muted-foreground text-[10px]">Kosten</div>
-              <div class="font-semibold text-xs">{{ (costByPlate.get(idx) ?? 0).toFixed(2) }}€</div>
+              <div class="text-muted-foreground text-[10px]">{{ t('discovery.cost') }}</div>
+              <div class="font-semibold text-xs">{{ formatProjectMoney(project?.filamentUsage.filter(f => (f.plateIndex ?? 0) === idx) ?? []) }}</div>
             </div>
           </CardContent>
         </Card>
@@ -471,7 +472,7 @@ onMounted(() => {
           <div class="font-medium">{{ project.layerHeight }}mm</div>
         </div>
         <div>
-          <div class="text-muted-foreground">Erstellt</div>
+          <div class="text-muted-foreground">{{ t('discovery.created') }}</div>
           <div class="font-medium">{{ formatDate(project.createdAt) }}</div>
         </div>
         <div>
@@ -519,30 +520,30 @@ onMounted(() => {
                   <div class="font-medium">{{ filament.estimatedWeight.toFixed(1) }}g</div>
                 </div>
                 <div v-if="filament.estimatedLength">
-                  <div class="text-muted-foreground text-xs">Länge</div>
+                  <div class="text-muted-foreground text-xs">{{ t('discovery.length') }}</div>
                   <div class="font-medium">{{ (filament.estimatedLength / 1000).toFixed(1) }}m</div>
                 </div>
                 <div v-if="filament.temperature">
-                  <div class="text-muted-foreground text-xs">Temperatur</div>
+                  <div class="text-muted-foreground text-xs">{{ t('discovery.temperature') }}</div>
                   <div class="font-medium">{{ filament.temperature }}°C</div>
                 </div>
                 <div v-if="filament.bedTemperature">
-                  <div class="text-muted-foreground text-xs">Bett</div>
+                  <div class="text-muted-foreground text-xs">{{ t('discovery.bed') }}</div>
                   <div class="font-medium">{{ filament.bedTemperature }}°C</div>
                 </div>
                 <div v-if="filament.cost && filament.spoolWeight">
                   <div class="text-muted-foreground text-xs">{{ t('projects.fields.cost') }}</div>
                   <div class="text-sm text-muted-foreground">
-                    {{ (filament.cost / 1000).toFixed(2) }}€/kg · 
-                    <span class="font-semibold text-green-600">{{ (costByFilament.get(filament.id) || 0).toFixed(2) }}€</span>
+                    {{ formatMoney(filament.spoolWeight ? filament.cost * 1000 / filament.spoolWeight : null, filament.costCurrency) }}/kg ·
+                    <span class="font-semibold text-green-600">{{ formatProjectMoney([filament]) }}</span>
                   </div>
                 </div>
-                <div v-else-if="filament.cost">
+                <div v-else-if="filament.cost != null">
                   <div class="text-muted-foreground text-xs">{{ t('projects.fields.cost') }}</div>
-                  <div class="font-semibold text-green-600">{{ filament.cost.toFixed(2) }}€</div>
+                  <div class="font-semibold text-green-600">{{ formatMoney(filament.cost, filament.costCurrency) }}</div>
                 </div>
                 <div v-if="filament.plateIndex !== undefined">
-                  <div class="text-muted-foreground text-xs">Plate</div>
+                  <div class="text-muted-foreground text-xs">{{ t('discovery.plate') }}</div>
                   <div class="font-medium">{{ filament.plateIndex + 1 }}</div>
                 </div>
               </div>
@@ -576,7 +577,7 @@ onMounted(() => {
     <!-- Notes -->
     <Card v-if="project.notes">
       <CardHeader>
-        <CardTitle>Notizen</CardTitle>
+        <CardTitle>{{ t('discovery.notes') }}</CardTitle>
       </CardHeader>
       <CardContent>
         <p class="whitespace-pre-wrap">{{ project.notes }}</p>

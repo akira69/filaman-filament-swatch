@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import {useI18n} from 'vue-i18n';
+import {useId} from 'vue';
 import { toRef } from 'vue';
 import { useColorWheel, type HarmonyFilter } from '@/composables/useColorWheel';
 import type { FilamentCard } from '@/composables/useFilaments';
 
+const {t}=useI18n();
+const checkerId=`wheel-checker-${useId().replace(/:/g,'')}`;
 const props = defineProps<{
   filament: FilamentCard;
   allFilaments: FilamentCard[];
@@ -45,6 +49,8 @@ const {
     <h3 class="section-title">{{ labels.colorHarmonies }}</h3>
     <div class="color-wheel">
       <svg viewBox="-10 -10 220 220" class="wheel-svg">
+        <defs><pattern :id="checkerId" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#eee"/><path d="M0 0h4v4H0zM4 4h4v4H4z" fill="#aaa"/></pattern></defs>
+        <circle cx="100" cy="100" r="100" :fill="`url(#${checkerId})`" />
         <!-- Outer wheel segments -->
         <g v-for="(item, index) in colorWheelItems" :key="item.id">
           <path
@@ -111,7 +117,7 @@ const {
           <polygon
             :points="getTrianglePoints()"
             fill="none"
-            stroke="rgba(var(--accent), 0.4)"
+            stroke="rgba(var(--accent-rgb), 0.4)"
             stroke-width="2"
             stroke-dasharray="4,4"
           />
@@ -132,7 +138,7 @@ const {
 
         <!-- Center circle with current color -->
         <circle cx="100" cy="100" r="35" :fill="filament.colorHex" class="wheel-center" />
-        <circle cx="100" cy="100" r="35" fill="none" stroke="rgba(var(--border), 0.5)" stroke-width="2" />
+        <circle cx="100" cy="100" r="35" fill="none" stroke="rgba(var(--border-rgb), 0.5)" stroke-width="2" />
       </svg>
 
       <div class="wheel-legend">
@@ -158,7 +164,7 @@ const {
           @click="toggleFilter('analogous')"
         >
           <div class="legend-dot analogous"></div>
-          <span>Analog</span>
+          <span>{{ t('detail.analogous') }}</span>
         </button>
         <button
           class="legend-item"
@@ -166,7 +172,7 @@ const {
           @click="toggleFilter('triadic')"
         >
           <div class="legend-dot triadic"></div>
-          <span>Triade</span>
+          <span>{{ t('detail.triadic') }}</span>
         </button>
         <button
           class="legend-item"
@@ -174,7 +180,7 @@ const {
           @click="toggleFilter('split')"
         >
           <div class="legend-dot split"></div>
-          <span>Split-Komplementär</span>
+          <span>{{ t('detail.split') }}</span>
         </button>
         <button
           class="legend-item"
@@ -211,7 +217,7 @@ const {
   gap: 16px;
   padding: 16px;
   background: rgba(var(--surface-alt), 0.2);
-  border: 1px solid rgba(var(--border), 0.3);
+  border: 1px solid rgba(var(--border-rgb), 0.3);
   border-radius: 16px;
 }
 
@@ -260,7 +266,7 @@ const {
   gap: 6px;
   padding: 6px 10px;
   background: rgba(var(--surface-alt), 0.4);
-  border: 1px solid rgba(var(--border), 0.3);
+  border: 1px solid rgba(var(--border-rgb), 0.3);
   border-radius: 20px;
   font-size: 11px;
   color: rgb(var(--text-muted));
@@ -271,7 +277,7 @@ const {
 .legend-item:hover,
 .legend-item.active {
   background: rgba(var(--surface-alt), 0.7);
-  border-color: rgba(var(--accent), 0.5);
+  border-color: rgba(var(--accent-rgb), 0.5);
   color: rgb(var(--text));
 }
 

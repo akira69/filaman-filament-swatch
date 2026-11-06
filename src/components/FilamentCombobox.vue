@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import {useI18n} from 'vue-i18n';
 import { ref, computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { FilamentCard } from '@/composables/useFilaments';
 
+const {t}=useI18n();
 const props = defineProps<{
   filaments: FilamentCard[];
   modelValue?: string;
@@ -58,7 +60,7 @@ const handleClear = () => {
         :value="searchQuery"
         @input="(e: Event) => searchQuery = (e.target as HTMLInputElement).value"
         @focus="isOpen = true"
-        :placeholder="selectedFilament ? `${selectedFilament.vendor} · ${selectedFilament.material}` : 'Suchen nach Filament...'"
+        :placeholder="selectedFilament ? `${selectedFilament.vendor} · ${selectedFilament.material}` : t('projects.importDialog.searchFilament')"
         :class="selectedFilament ? 'pl-8' : ''"
       />
       <Button
@@ -88,7 +90,7 @@ const handleClear = () => {
           :style="{ backgroundColor: filament.colorHex }"
         />
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium">{{ filament.vendor }} · {{ filament.material }}</div>
+          <div class="text-sm font-medium">{{ filament.name }} #{{ filament.nativeId }}</div><div class="text-xs">{{ filament.vendor }} · {{ filament.material }}</div>
           <div class="text-xs text-muted-foreground">{{ filament.colorName }}</div>
         </div>
       </div>
@@ -99,7 +101,7 @@ const handleClear = () => {
       v-if="isOpen && filteredFilaments.length === 0 && searchQuery"
       class="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-md shadow-md p-3 text-center text-sm text-muted-foreground"
     >
-      Keine Filamente gefunden
+      {{ t('projects.importDialog.noMatch') }}
     </div>
 
     <!-- Close dropdown when clicking outside -->

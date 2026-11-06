@@ -1,0 +1,13 @@
+html[data-theme="brand"] { --background-rgb:12,22,18; --surface:19,38,29; --surface-alt:24,50,37; --text:233,243,236; --text-muted:181,199,189; --border-rgb:66,82,104; --accent-rgb:78,227,162; --accent-2:73,164,227; }
+html[data-theme="light"] { --background-rgb:248,246,241; --surface:255,255,255; --surface-alt:241,236,227; --text:28,38,51; --text-muted:86,103,123; --border-rgb:208,218,229; --accent-rgb:16,137,119; }
+html[data-theme="dark"] { --background-rgb:18,22,29; --surface:26,32,41; --surface-alt:34,42,53; --text:233,243,236; --text-muted:181,199,189; --border-rgb:61,74,91; --accent-rgb:78,227,162; }
+.chip-color { background-image:repeating-conic-gradient(#aaa 0% 25%,#eee 0% 50%);background-size:12px 12px; }
+
+html[data-theme] {
+ --bg:var(--background-rgb); --bg-alt:var(--surface-alt);
+ --background:rgb(var(--background-rgb)); --foreground:rgb(var(--text));
+ --accent:rgb(var(--accent-rgb)); --accent-foreground:rgb(var(--text)); --border:rgb(var(--border-rgb));
+ --card:rgb(var(--surface)); --card-foreground:rgb(var(--text)); --popover:rgb(var(--surface)); --popover-foreground:rgb(var(--text));
+ --muted:rgb(var(--surface-alt)); --muted-foreground:rgb(var(--text-muted)); --secondary:rgb(var(--surface-alt)); --secondary-foreground:rgb(var(--text));
+ --input:rgb(var(--border-rgb)); --ring:rgb(var(--accent-rgb)); --primary:rgb(var(--accent-rgb)); --primary-foreground:rgb(var(--background-rgb));
+}

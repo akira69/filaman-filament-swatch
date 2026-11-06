@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import {hostContext} from "@/filaman/context";
+import {formatMoney, formatProjectMoney, formatNumber, importCost, availableWeight} from "@/filaman/format";
+import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { parseSlicerFile, formatDuration, type PrintJobInfo } from '@/lib/fileParser';
 import { createProject, matchFilamentToSpoolman } from '@/api/projects';
@@ -38,7 +40,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { allFilaments } = useFilaments();
+const { inventoryItems, ensureInventory, inventoryLoading, inventoryError } = useFilaments();
+watch(()=>props.open,open=>{if(open)void ensureInventory();});
+const allFilaments = inventoryItems;
 
 const isDragging = ref(false);
 const isProcessing = ref(false);
@@ -67,97 +71,6 @@ const totalCost = computed(() => {
   return parsedInfo.value.filaments.reduce((sum, f) => sum + (f.cost || 0), 0);
 });
 
-// Convert hex color to RGB
-function hexToRgb(hex: string): [number, number, number] | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : null;
-}
-
-// Calculate color similarity using Euclidean distance in RGB space
-// Returns 0-100 where 100 is identical color
-function calculateColorSimilarity(hex1: string, hex2: string): number {
-  const rgb1 = hexToRgb(hex1);
-  const rgb2 = hexToRgb(hex2);
-  
-  if (!rgb1 || !rgb2) return 0;
-  
-  const distance = Math.sqrt(
-    Math.pow(rgb1[0] - rgb2[0], 2) + 
-    Math.pow(rgb1[1] - rgb2[1], 2) + 
-    Math.pow(rgb1[2] - rgb2[2], 2)
-  );
-  
-  // Normalize to 0-100 (max distance is sqrt(255^2 + 255^2 + 255^2) ≈ 441)
-  return Math.max(0, 100 - (distance / 441) * 100);
-}
-
-// Get matching Spoolman filaments for a parsed filament
-function getMatchingFilaments(filament: PrintJobInfo['filaments'][0]) {
-  if (!allFilaments.value.length) return [];
-  
-  const matches: Array<{ filament: any; score: number }> = [];
-  
-  for (const spoolman of allFilaments.value) {
-    let score = 0;
-    
-    // Material + Color match (highest priority)
-    if (filament.material && spoolman.material.toLowerCase() === filament.material.toLowerCase()) {
-      // If color also matches or is similar, bonus
-      if (filament.colorHex && spoolman.colorHex) {
-        const colorSimilarity = calculateColorSimilarity(filament.colorHex, spoolman.colorHex);
-        if (colorSimilarity > 95) {
-          score += 20; // Perfect match
-        } else if (colorSimilarity > 75) {
-          score += 18; // Very similar color
-        } else if (colorSimilarity > 50) {
-          score += 14; // Similar color
-        } else {
-          score += 10; // Material match only
-        }
-      } else {
-        score += 10; // Material match without color comparison
-      }
-    }
-    
-    // Color similarity match alone (medium priority - without material match)
-    if (score === 0 && filament.colorHex && spoolman.colorHex) {
-      const colorSimilarity = calculateColorSimilarity(filament.colorHex, spoolman.colorHex);
-      if (colorSimilarity > 95) {
-        score += 12;
-      } else if (colorSimilarity > 75) {
-        score += 11;
-      } else if (colorSimilarity > 50) {
-        score += 8;
-      }
-    }
-    
-    // Vendor match (lower priority)
-    if (filament.vendor && spoolman.vendor.toLowerCase().includes(filament.vendor.toLowerCase())) {
-      score += 5;
-    }
-    
-    // Color name similarity (lowest priority)
-    if (filament.color && spoolman.colorName.toLowerCase().includes(filament.color.toLowerCase())) {
-      score += 2;
-    }
-    
-    if (score > 0) {
-      matches.push({ filament: spoolman, score });
-    }
-  }
-  
-  // Sort by score descending
-  return matches.sort((a, b) => b.score - a.score).map(m => m.filament);
-}
-
-// Auto-select best match for a parsed filament
-function autoSelectBestMatch(index: number, filament: PrintJobInfo['filaments'][0]) {
-  const matches = getMatchingFilaments(filament);
-  if (matches.length > 0 && !selectedSpoolmanIds.value.has(index)) {
-    selectedSpoolmanIds.value.set(index, matches[0].id);
-  }
-}
-
 // Get the selected or auto-matched filament for a parsed filament
 function getSelectedFilament(index: number, parsedFilament: PrintJobInfo['filaments'][0]) {
   const selectedId = selectedSpoolmanIds.value.get(index);
@@ -176,8 +89,8 @@ function hasCapacityWarning(index: number, parsedFilament: PrintJobInfo['filamen
   
   // Check if remaining weight is less than required weight
   // Use totalRemainingWeight from all spools
-  const remainingWeight = selectedFilament.totalRemainingWeight || selectedFilament.weight || 0;
-  return remainingWeight < parsedFilament.weight;
+  const remainingWeight = availableWeight(selectedFilament.spools ?? []);
+  return remainingWeight === null || remainingWeight < parsedFilament.weight;
 }
 
 function handleDragOver(e: DragEvent) {
@@ -226,10 +139,7 @@ async function processFile(file: File) {
     parsedInfo.value = info;
     selectedSpoolmanIds.value.clear();
     
-    // Auto-select best matches for all filaments
-    info.filaments.forEach((f, idx) => {
-      autoSelectBestMatch(idx, f);
-    });
+    // Native identities are bound only by explicit selection.
     
     // Auto-fill project name from filename
     if (!projectName.value) {
@@ -278,8 +188,7 @@ async function handleCreate() {
         temperature: f.temperature,
         bedTemperature: f.bedTemperature,
         vendor: selectedFilament?.vendor || f.vendor,
-        cost: selectedFilament?.price || f.cost, // Cost per kg
-        spoolWeight: selectedFilament?.weight, // Total weight of spool in grams
+        ...importCost(selectedFilament, f.cost),
         spoolmanFilamentId: selectedFilament?.id,
       };
     });
@@ -407,7 +316,7 @@ async function handleCreate() {
               </div>
               <div v-if="totalWeight > 0">
                 <span class="text-muted-foreground">{{ t('projects.fields.total') }}:</span>
-                {{ totalWeight.toFixed(1) }}g
+                {{ formatNumber(totalWeight,1) }} g
               </div>
             </div>
           </div>
@@ -434,10 +343,10 @@ async function handleCreate() {
                       <span v-if="filament.vendor" class="text-muted-foreground">· {{ filament.vendor }}</span>
                     </div>
                     <div class="text-sm text-muted-foreground flex gap-3 flex-wrap">
-                      <span v-if="filament.weight">{{ filament.weight.toFixed(1) }}g</span>
+                      <span v-if="filament.weight">{{ formatNumber(filament.weight,1) }} g</span>
                       <span v-if="filament.length">{{ (filament.length / 1000).toFixed(1) }}m</span>
                       <span v-if="filament.temperature">{{ filament.temperature }}°C</span>
-                      <span v-if="filament.cost">{{ filament.cost.toFixed(2) }}€</span>
+                      <span v-if="filament.cost != null">{{ formatMoney(filament.cost, filament.costCurrency) }}</span>
                     </div>
                   </div>
                   <Badge v-if="filament.color" variant="secondary">
@@ -445,9 +354,10 @@ async function handleCreate() {
                   </Badge>
                 </div>
 
-                <!-- Spoolman Filament Selection -->
+                <p v-if="inventoryLoading">{{ t('status.loading') }}</p><p v-else-if="inventoryError" role="alert">{{ inventoryError }} <button @click="ensureInventory(true)">{{ t('app.retry') }}</button></p>
+                <!-- Native Filament Selection -->
                 <div v-if="allFilaments.length > 0" class="space-y-2">
-                  <label class="text-xs font-medium text-muted-foreground">Spoolman Filament zuordnen:</label>
+                  <label class="text-xs font-medium text-muted-foreground">{{ t('projects.importDialog.selectFilament') }}</label>
                   <FilamentCombobox
                     :filaments="allFilaments"
                     :model-value="selectedSpoolmanIds.get(idx) || ''"
@@ -479,10 +389,10 @@ async function handleCreate() {
                     >
                       <Icon icon="lucide:alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5" />
                       <div>
-                        <div class="font-medium">Warnung: Nicht genügend Filament</div>
+                        <div class="font-medium">{{ t('discovery.capacityWarning') }}</div>
                         <div class="text-muted-foreground">
-                          Benötigt: {{ filament.weight?.toFixed(1) }}g · 
-                          Verfügbar: {{ (getSelectedFilament(idx, filament)?.totalRemainingWeight || 0).toFixed(1) }}g
+                          {{ t('discovery.required') }}: {{ formatNumber(filament.weight ?? 0,1) }} g ·
+                          {{ t('discovery.available') }}: {{ getSelectedFilament(idx, filament)?.totalRemainingWeight == null ? '—' : formatNumber(getSelectedFilament(idx, filament)!.totalRemainingWeight!,1) + ' g' }}
                         </div>
                       </div>
                     </div>

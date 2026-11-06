@@ -10,14 +10,18 @@
       </p>
     </header>
 
+    <div class="flex gap-2" role="group" :aria-label="t('discovery.mode')">
+      <button v-for="choice in ['inventory','catalog'] as const" :key="choice" class="rounded-lg border px-4 py-2" :aria-pressed="mode === choice" @click="setDiscoveryMode(choice)">{{ t(`discovery.${choice}`) }}</button>
+    </div>
     <!-- Filter Modal (opened via navbar) -->
     <FilterModal
-      :is-open="filterModalOpen?.value ?? false"
+      :is-open="filterModalOpen ?? false"
       :initial-filters="filters"
+      :mode="mode"
       :vendor-options="vendorOptions"
       :material-options="materialOptions"
       :location-options="locationOptions"
-      @close="filterModalOpen && (filterModalOpen.value = false)"
+      @close="closeFilterModal"
       @apply="applyFilters"
     />
 
@@ -26,7 +30,7 @@
         {{ t("status.loading") }}
       </div>
       <div v-else-if="error" class="text-sm text-red-400">
-        {{ t("status.error") }} ({{ error }})
+        {{ t("status.error") }} ({{ error }}) <button @click="refresh()">{{ t("app.retry") }}</button>
       </div>
       <div v-else-if="filtered.length === 0" class="text-sm text-[rgb(var(--text-muted))]">
         {{ t("status.empty") }}
@@ -76,6 +80,7 @@ import type { Ref } from "vue";
 
 const { t } = useI18n();
 const {
+  mode, setDiscoveryMode, refresh,
   filtered,
   filters,
   vendorOptions,
@@ -96,24 +101,17 @@ const filterModalOpen = inject<Ref<boolean>>("filterModalOpen");
 const togglePin = inject<(filament: { id: string }) => void>("togglePin");
 const selectFilament = inject<(filament: FilamentCard) => void>("selectFilament");
 
+const closeFilterModal = () => { if (filterModalOpen) filterModalOpen.value = false; };
+
 // Handle filter apply
 const applyFilters = (newFilters: typeof filters) => {
+  filters.inventoryScope = newFilters.inventoryScope;
   filters.vendor = newFilters.vendor;
   filters.material = newFilters.material;
   filters.location = newFilters.location;
   filters.source = newFilters.source;
   filters.colorType = newFilters.colorType;
 };
-
-// Debug logging
-console.log('FilamentsView mounted', {
-  viewMode: viewMode?.value,
-  pinnedIds: pinnedIds?.value,
-  selectedFilament: selectedFilament?.value,
-  filtered: filtered.value.length,
-  loading: loading.value,
-  error: error.value
-});
 
 const countLabel = computed(() =>
   t("info.count", { count: filtered.value.length }),

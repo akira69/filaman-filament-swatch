@@ -74,7 +74,7 @@ const resetSpoolmanUrl = () => {
 
 export const rehydrateFromHostedConfig = (hostedConfig: HostedConfig | null) => {
     if (!hostedConfig) return;
-    spoolmanUrl.value = hostedConfig.spoolman_base_url;
+    spoolmanUrl.value = hostedConfig.spoolman_base_url ?? "";
 };
 
 const resolvedBaseUrl = computed(() => {

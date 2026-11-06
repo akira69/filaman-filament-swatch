@@ -9,7 +9,7 @@ const props = defineProps<AccordionItemProps & { class?: HTMLAttributes['class']
 <template>
   <AccordionItem
     v-bind="props"
-    :class="cn('border-b border-[rgb(var(--border))]', props.class)"
+    :class="cn('border-b border-[rgb(var(--border-rgb))]', props.class)"
   >
     <slot />
   </AccordionItem>

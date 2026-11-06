@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import {formatMoney} from '@/filaman/format';
+import {hostContext} from '@/filaman/context';
 import { Icon } from '@iconify/vue';
 import { InfoBadge } from '@/components/ui/info-badge';
 import type { FilamentCard } from '@/composables/useFilaments';
@@ -35,7 +37,7 @@ defineProps<{
         icon="lucide:gauge"
         :value="`${filament.remainingWeight}g`"
       />
-      <InfoBadge v-if="filament.price" icon="lucide:euro" :value="`${filament.price.toFixed(2)}€`" />
+      <InfoBadge v-if="filament.price != null" icon="lucide:banknote" :value="formatMoney(filament.price, filament.priceCurrency ?? hostContext.currency)" />
       <InfoBadge v-if="filament.density" icon="lucide:box" :value="`${filament.density} g/cm³`" />
       <InfoBadge v-if="filament.diameter" icon="lucide:ruler" :value="`${filament.diameter}mm`" />
       <InfoBadge v-if="filament.extruderTemp" icon="lucide:flame" :value="`${filament.extruderTemp}°C`" />
@@ -77,7 +79,7 @@ defineProps<{
   gap: 8px;
   padding: 10px 12px;
   background: rgba(var(--surface-alt), 0.3);
-  border: 1px solid rgba(var(--border), 0.3);
+  border: 1px solid rgba(var(--border-rgb), 0.3);
   border-radius: 12px;
   font-size: 13px;
   color: rgb(var(--text-muted));
@@ -91,8 +93,8 @@ defineProps<{
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
-  background: rgba(var(--accent), 0.08);
-  border: 1px solid rgba(var(--accent), 0.2);
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: 12px;
   font-size: 13px;
   line-height: 1.5;

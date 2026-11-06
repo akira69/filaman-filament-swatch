@@ -20,10 +20,10 @@ router = APIRouter()
 STATIC_DIR = Path(__file__).parent / "static"
 
 HOSTED_CONFIG = {
-    "contract_version": 1,
+    "contract_version": 2,
     "mode": "hosted",
     "app_key": "filaman",
-    "spoolman_base_url": "/spoolman",
+    "api_base_path": "/api/v1",
     "app_base_path": "/plugins/filament-swatch",
 }
 

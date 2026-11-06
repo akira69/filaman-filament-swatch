@@ -1,3 +1,4 @@
+import { normalizeColor } from './colorUtils';
 export interface SwatchStyle {
   background: string;
 }
@@ -22,7 +23,7 @@ export const HIGHLIGHT_GRADIENT = 'radial-gradient(circle at 36% 26%, rgba(255,2
  * Gets the appropriate material layer based on material type
  */
 export function getMaterialLayer(material: string): string {
-  const mat = material.toLowerCase();
+  const mat = (material ?? '').toLowerCase();
   if (mat.includes('petg')) return MATERIAL_OVERLAYS.petg;
   if (mat.includes('abs')) return MATERIAL_OVERLAYS.abs;
   return MATERIAL_OVERLAYS.pla;
@@ -69,6 +70,9 @@ export function getSwatchStyle(
 ): SwatchStyle {
   const materialLayer = getMaterialLayer(material);
 
+  const checker = 'repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%) 0 0 / 12px 12px';
+  const transparent = (multiColorHexes ?? [colorHex]).some(c=>(normalizeColor(c)?.alpha ?? 1)<1);
+  if (transparent) return {background: `${multiColorHexes && multiColorHexes.length>1 ? getMultiColorGradient(multiColorHexes,multiColorDirection) : `linear-gradient(${colorHex},${colorHex})`}, ${checker}`};
   // Multi-color gradient logic
   if (multiColorHexes && multiColorHexes.length > 1) {
     const colorGradient = getMultiColorGradient(multiColorHexes, multiColorDirection);
@@ -92,10 +96,8 @@ export function getFlatSwatchStyle(
   multiColorHexes?: string[],
   multiColorDirection?: MultiColorDirection
 ): SwatchStyle {
-  if (multiColorHexes && multiColorHexes.length > 1) {
-    return {
-      background: getMultiColorGradient(multiColorHexes, multiColorDirection),
-    };
-  }
-  return { background: colorHex };
+  const checker = 'repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%) 0 0 / 12px 12px';
+  const fill = multiColorHexes && multiColorHexes.length>1 ? getMultiColorGradient(multiColorHexes,multiColorDirection) : `linear-gradient(${colorHex},${colorHex})`;
+  return {background:`${fill}, ${checker}`};
+
 }

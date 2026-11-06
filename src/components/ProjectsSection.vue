@@ -151,9 +151,9 @@
               <div class="text-muted-foreground text-xs">Druckzeit</div>
               <div class="font-medium">{{ formatDuration(project.printTime) }}</div>
             </div>
-            <div v-if="getTotalCost(project) > 0">
+            <div v-if="project.filamentUsage.length > 0">
               <div class="text-muted-foreground text-xs">Kosten</div>
-              <div class="font-medium">{{ getTotalCost(project).toFixed(2) }}€</div>
+              <div class="font-medium">{{ formatProjectMoney(project.filamentUsage) }}</div>
             </div>
             <div v-if="project.slicerName">
               <div class="text-muted-foreground text-xs">Slicer</div>
@@ -197,6 +197,7 @@
 </template>
 
 <script setup lang="ts">
+import {formatMoney, formatProjectMoney} from "@/filaman/format";
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';

@@ -18,6 +18,10 @@ class PackageTests(unittest.TestCase):
             Path(__file__).parents[1] / "scripts/package-filaman-plugin.py",
             self.root / "scripts",
         )
+        (self.root / "src/filaman").mkdir(parents=True)
+        (self.root / "src/filaman/release-notes.json").write_text('{"version":"1.0.1"}')
+        (self.root / "LICENSE").write_text("MIT")
+        (self.root / "upstream-source.json").write_text('{}')
         plugin = self.root / "filaman-plugin"
         plugin.mkdir()
         (plugin / "plugin.json").write_text(
@@ -29,6 +33,7 @@ class PackageTests(unittest.TestCase):
         (self.root / "dist/index.html").write_text("<main>Swatch</main>")
         (self.root / "dist/assets/app.js").write_text('console.log("Swatch")')
         (self.root / "dist/.gitkeep").touch()
+        (self.root / "dist/filaman-release.json").write_text('{"version":"1.0.1"}')
 
     def package(self, tag):
         return subprocess.run(
@@ -53,9 +58,12 @@ class PackageTests(unittest.TestCase):
                 set(archive.namelist()),
                 {
                     "plugin.json",
+                    "LICENSE",
+                    "upstream-source.json",
                     "router.py",
                     "__init__.py",
                     "static/index.html",
+                    "static/filaman-release.json",
                     "static/assets/app.js",
                 },
             )
@@ -65,6 +73,10 @@ class PackageTests(unittest.TestCase):
             ],
             "1.0.0",
         )
+
+    def test_stale_bundle_is_rejected(self):
+        (self.root / "dist/filaman-release.json").write_text('{"version":"0.9.0"}')
+        self.assertNotEqual(self.package("filaman-v1.0.1").returncode, 0)
 
     def test_invalid_release_tags_do_not_create_packages(self):
         for tag in (

@@ -12,7 +12,7 @@
       <!-- Header -->
       <div class="palette-header">
         <div class="palette-title">
-          <Icon icon="lucide:palette" class="w-4 h-4 text-[rgb(var(--accent))]" />
+          <Icon icon="lucide:palette" class="w-4 h-4 text-[rgb(var(--accent-rgb))]" />
           <span class="font-semibold">{{ t('info.palette') }}</span>
           <span class="ml-auto text-xs text-[rgb(var(--text-muted))]">
             {{ pinnedItems.length }}
@@ -20,7 +20,7 @@
         </div>
         <button
           @click="$emit('close')"
-          class="p-1.5 hover:bg-[rgb(var(--border))] rounded transition text-[rgb(var(--text-muted))]"
+          class="p-1.5 hover:bg-[rgb(var(--border-rgb))] rounded transition text-[rgb(var(--text-muted))]"
         >
           <Icon icon="lucide:x" class="w-5 h-5" />
         </button>
@@ -37,7 +37,7 @@
             :style="{ '--color': item.colorHex } as any"
             @click="$emit('scrollTo', item.id)"
           >
-            <div class="chip-color" :style="{ backgroundColor: item.colorHex }" />
+            <div class="chip-color" :style="getFlatSwatchStyle(item.colorHex, item.multiColorHexes)" />
             <div class="chip-info">
               <div class="chip-name">{{ item.name }}</div>
               <div class="chip-hex">{{ item.colorHex.toUpperCase() }}</div>
@@ -76,6 +76,7 @@
 </template>
 
 <script setup lang="ts">
+import {getFlatSwatchStyle} from "@/lib/swatchUtils";
 import { useI18n } from 'vue-i18n';
 import { Icon } from '@iconify/vue';
 import type { FilamentCard } from '@/composables/useFilaments';
@@ -132,7 +133,7 @@ const { t } = useI18n();
   width: min(360px, 100vw);
   height: 100vh;
   background: rgb(var(--surface));
-  border-left: 1px solid rgb(var(--border));
+  border-left: 1px solid rgb(var(--border-rgb));
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -169,7 +170,7 @@ const { t } = useI18n();
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(var(--border), 0.5);
+  border-bottom: 1px solid rgba(var(--border-rgb), 0.5);
   flex-shrink: 0;
 }
 
@@ -198,12 +199,12 @@ const { t } = useI18n();
 }
 
 .palette-content::-webkit-scrollbar-thumb {
-  background: rgba(var(--accent), 0.3);
+  background: rgba(var(--accent-rgb), 0.3);
   border-radius: 3px;
 }
 
 .palette-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--accent), 0.5);
+  background: rgba(var(--accent-rgb), 0.5);
 }
 
 .palette-chips {
@@ -227,7 +228,7 @@ const { t } = useI18n();
 
 .palette-chip:hover {
   background: rgba(var(--bg), 1);
-  border-color: rgba(var(--accent), 0.3);
+  border-color: rgba(var(--accent-rgb), 0.3);
   transform: translateX(-4px);
 }
 
@@ -279,8 +280,8 @@ const { t } = useI18n();
 
 .palette-chip:hover .chip-remove {
   opacity: 1;
-  background: rgba(var(--accent), 0.1);
-  color: rgb(var(--accent));
+  background: rgba(var(--accent-rgb), 0.1);
+  color: rgb(var(--accent-rgb));
 }
 
 .palette-empty {
@@ -303,7 +304,7 @@ const { t } = useI18n();
 
 .palette-footer {
   padding-top: 12px;
-  border-top: 1px solid rgba(var(--border), 0.5);
+  border-top: 1px solid rgba(var(--border-rgb), 0.5);
   flex-shrink: 0;
 }
 </style>

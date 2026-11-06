@@ -1,13 +1,13 @@
 <template>
   <div
-    class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[rgb(var(--border))] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent),0.6)]"
+    class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[rgb(var(--border-rgb))] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent-rgb),0.6)]"
     @click="$emit('selectFilament', filament)"
   >
     <div class="flex items-start justify-between gap-2 sm:gap-3">
       <div>
         <p class="text-base sm:text-lg font-semibold">{{ filament.name }}</p>
         <div class="flex items-center gap-2 text-xs sm:text-sm">
-          <VendorLogoBadge :vendor-name="filament.vendor" />
+          <VendorLogoBadge v-if="filament.kind === 'inventory'" :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" />
           <span class="text-[rgb(var(--text-muted))]">·</span>
           <span class="text-[rgb(var(--text-muted))]">{{ filament.material }}</span>
         </div>
@@ -42,7 +42,7 @@
       />
     </div>
 
-    <div class="flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm text-[rgb(var(--text-muted))]">
+    <div v-if="filament.kind === 'inventory'" class="flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm text-[rgb(var(--text-muted))]">
       <div class="flex items-center justify-between">
         <span class="uppercase tracking-wide">{{ labels.vendor }}</span>
         <span class="text-[rgb(var(--text))]">{{ filament.vendor }}</span>
@@ -118,7 +118,7 @@ const swatchStyle = computed(() => {
   const filament = props.filament;
   return getSwatchStyle(
     filament.colorHex,
-    filament.material,
+    filament.material ?? '',
     filament.multiColorHexes,
     filament.multiColorDirection
   );
@@ -152,7 +152,7 @@ const copyHex = async () => {
   letter-spacing: 0.02em;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(var(--border), 0.7);
+  border: 1px solid rgba(var(--border-rgb), 0.7);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -164,8 +164,8 @@ const copyHex = async () => {
   transform: scale(1.05) translateZ(0);
 }
 .pin-btn[aria-pressed="true"] {
-  border-color: rgba(var(--accent), 0.7);
-  background: rgba(var(--accent), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 
 .badge-spoolman {

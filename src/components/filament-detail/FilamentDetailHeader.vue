@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import VendorLogoBadge from '../VendorLogoBadge.vue';
 import { Icon } from '@iconify/vue';
 import { Button } from '@/components/ui/button';
 import { SourceBadge } from '@/components/ui/source-badge';
 
 defineProps<{
   name: string;
-  vendor: string;
-  material: string;
+  vendor?: string|null;
+  logoUrl?: string|null;
+  material?: string;
   source: string;
 }>();
 
@@ -21,7 +23,7 @@ defineEmits<{
       <h2 class="detail-title">{{ name }}</h2>
       <div class="detail-subtitle-row">
         <p class="detail-subtitle">
-          {{ vendor }} · {{ material }}
+          <VendorLogoBadge v-if="vendor" :vendor-name="vendor" :logo-url="logoUrl" /> {{ material }}
         </p>
         <SourceBadge :source="source" />
       </div>

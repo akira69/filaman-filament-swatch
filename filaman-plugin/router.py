@@ -12,7 +12,7 @@ so final paths are /plugins/filament-swatch/hosted-config and
 
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
 router = APIRouter()
@@ -42,7 +42,14 @@ async def spa_static(path: str) -> FileResponse:
     Exact file matches are served directly; anything else falls back to
     index.html so that client-side routing works for all deep-link paths.
     """
-    target = STATIC_DIR / path if path else STATIC_DIR / "index.html"
-    if path and target.is_file():
-        return FileResponse(target)
-    return FileResponse(STATIC_DIR / "index.html")
+    try:
+        static_dir = STATIC_DIR.resolve()
+        for name in (path or "index.html", "index.html"):
+            target = (static_dir / name).resolve()
+            if not target.is_relative_to(static_dir):
+                raise HTTPException(status_code=404, detail="Not found")
+            if target.is_file():
+                return FileResponse(target)
+    except (OSError, RuntimeError, ValueError):
+        pass
+    raise HTTPException(status_code=404, detail="Not found")

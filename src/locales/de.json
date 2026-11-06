@@ -17,6 +17,7 @@
     }
   },
   "actions": {
+    "close": "Schließen",
     "refresh": "Neu laden",
     "copy": "Hex kopieren",
     "copied": "Kopiert",
@@ -109,6 +110,7 @@
     "sourceExternal": "Extern"
   },
   "detail": {
+    "includeTransparency": "Transparenz einbeziehen",
     "color": "Farbe",
     "details": "Details",
     "spoolId": "Spulen-ID",

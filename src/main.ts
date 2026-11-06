@@ -12,6 +12,9 @@ import "./styles/filaman.css";
 import { type HostedConfig, type HostedWindow } from "./composables/useHostedMode";
 import { setupTheme } from "./composables/useTheme";
 
+const fonts=document.createElement('link');
+fonts.rel='stylesheet';fonts.href='/plugin-fonts.css';document.head.append(fonts);
+
 const getQueryParam = (name: string) => new URLSearchParams(window.location.search).get(name);
 
 const loadNativeConfig = async () => {

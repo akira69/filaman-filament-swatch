@@ -1,17 +1,10 @@
 <template>
   <div class="flex flex-1 flex-col gap-3 sm:gap-6 min-h-0">
-    <!-- Header Section -->
-    <header class="hidden md:flex flex-col gap-2 flex-shrink-0 pt-4">
-      <p class="text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[rgb(var(--text-muted))]">
-        {{ t("app.subtitle") }}
-      </p>
-      <p class="max-w-2xl text-sm text-[rgb(var(--text-muted))]">
-        {{ t("app.tagline") }}
-      </p>
-    </header>
-
-    <div class="flex gap-2" role="group" :aria-label="t('discovery.mode')">
-      <button v-for="choice in ['inventory','catalog'] as const" :key="choice" class="rounded-lg border px-4 py-2" :aria-pressed="mode === choice" @click="setDiscoveryMode(choice)">{{ t(`discovery.${choice}`) }}</button>
+    <div class="discovery-modes" role="tablist" :aria-label="t('discovery.mode')">
+      <Button v-for="choice in ['inventory','catalog'] as const" :key="choice" class="mode-button" size="sm" variant="ghost" role="tab" :id="`discovery-tab-${choice}`" aria-controls="discovery-panel" :aria-selected="mode === choice" :tabindex="mode === choice ? 0 : -1" @keydown="onModeKeydown" @click="setDiscoveryMode(choice)">
+        <component :is="choice === 'inventory' ? Boxes : Palette" :size="18" class="size-[18px]" aria-hidden="true" />
+        {{ t(`discovery.${choice}`) }}
+      </Button>
     </div>
     <!-- Filter Modal (opened via navbar) -->
     <FilterModal
@@ -25,8 +18,8 @@
       @apply="applyFilters"
     />
 
-    <section class="flex flex-1 flex-col gap-3 sm:gap-6 min-h-0">
-      <div v-if="loading" class="text-sm text-[rgb(var(--text-muted))]">
+    <section id="discovery-panel" role="tabpanel" :aria-labelledby="`discovery-tab-${mode}`" tabindex="0" class="flex flex-1 flex-col gap-3 sm:gap-6 min-h-0">
+      <div v-if="loading && allFilaments.length === 0" class="text-sm text-[rgb(var(--text-muted))]">
         {{ t("status.loading") }}
       </div>
       <div v-else-if="error" class="text-sm text-red-400">
@@ -70,6 +63,8 @@
 
 <script setup lang="ts">
 import { computed, inject, ref, watch } from "vue";
+import { Boxes, Palette } from "lucide-vue-next";
+import { Button } from "@/components/ui/button";
 import { useI18n } from "vue-i18n";
 import { useFilaments } from "../composables/useFilaments";
 import FilterModal from "../components/FilterModal.vue";
@@ -100,6 +95,13 @@ const filterModalOpen = inject<Ref<boolean>>("filterModalOpen");
 
 const togglePin = inject<(filament: { id: string }) => void>("togglePin");
 const selectFilament = inject<(filament: FilamentCard) => void>("selectFilament");
+
+const onModeKeydown=(event:KeyboardEvent)=>{
+  if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();
+  const next=event.key==='Home'?'inventory':event.key==='End'?'catalog':mode.value==='inventory'?'catalog':'inventory';
+  void setDiscoveryMode(next);document.getElementById(`discovery-tab-${next}`)?.focus();
+};
 
 const closeFilterModal = () => { if (filterModalOpen) filterModalOpen.value = false; };
 
@@ -148,3 +150,10 @@ const sortLabels = computed(() => ({
   lightness: t('filters.sortLightnessAsc'),
 }));
 </script>
+
+<style scoped>
+.discovery-modes {display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);}
+.mode-button {min-height:40px;padding:8px 4px;border-radius:0;border-bottom:2px solid transparent;font-family:var(--font-sans);font-size:14px;font-weight:600;gap:8px;color:var(--muted-foreground);}
+.mode-button[aria-selected="true"] {border-bottom-color:var(--primary);color:var(--primary);}
+.mode-button:hover {background:var(--muted);color:var(--foreground);}
+</style>

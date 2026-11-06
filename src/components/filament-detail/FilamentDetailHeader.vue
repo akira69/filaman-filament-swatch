@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import VendorLogoBadge from '../VendorLogoBadge.vue';
-import { Icon } from '@iconify/vue';
+import { X } from 'lucide-vue-next';
+import {useI18n} from 'vue-i18n';
 import { Button } from '@/components/ui/button';
 import { SourceBadge } from '@/components/ui/source-badge';
 
+const {t}=useI18n();
 defineProps<{
   name: string;
   vendor?: string|null;
@@ -19,49 +21,21 @@ defineEmits<{
 
 <template>
   <div class="detail-header">
-    <div>
+    <div class="detail-title-row">
       <h2 class="detail-title">{{ name }}</h2>
-      <div class="detail-subtitle-row">
-        <p class="detail-subtitle">
-          <VendorLogoBadge v-if="vendor" :vendor-name="vendor" :logo-url="logoUrl" /> {{ material }}
-        </p>
-        <SourceBadge :source="source" />
-      </div>
+      <Button variant="ghost" size="icon-sm" :aria-label="t('actions.close')" @click="$emit('close')"><X :size="18" aria-hidden="true" /></Button>
     </div>
-    <Button variant="ghost" size="sm" @click="$emit('close')">
-      <Icon icon="lucide:x" class="w-5 h-5" />
-    </Button>
+    <VendorLogoBadge v-if="vendor" variant="detail" :vendor-name="vendor" :logo-url="logoUrl">
+      <span class="detail-subtitle-row"><span v-if="material" class="material-label">{{ material }}</span><SourceBadge :source="source" variant="minimal" /></span>
+    </VendorLogoBadge>
+    <div v-else class="detail-subtitle-row"><span v-if="material" class="material-label">{{ material }}</span><SourceBadge :source="source" variant="minimal" /></div>
   </div>
 </template>
 
 <style scoped>
-.detail-header {
-  border-bottom: 1px solid color-mix(in oklch, var(--border), transparent 70%);
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.detail-title {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0;
-  color: rgb(var(--text));
-}
-
-.detail-subtitle-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.detail-subtitle {
-  font-size: 14px;
-  color: rgb(var(--text-muted));
-  margin: 0;
-}
+.detail-header {display:flex;flex-direction:column;gap:12px;padding:16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.detail-title-row {display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.detail-title {font-family:var(--font-sans);font-size:20px;font-weight:700;line-height:1.3;margin:0;color:rgb(var(--text));overflow-wrap:anywhere;}
+.detail-subtitle-row {display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:4px;color:rgb(var(--text-muted));}
+.material-label {font-size:12px;line-height:20px;}
 </style>

@@ -26,7 +26,6 @@ defineProps<{
       <div v-for="spool in spools" :key="spool.id" class="spool-item">
         <div class="spool-header">
           <a class="spool-id underline" :href="spool.href" target="_top">#{{ spool.id }}</a>
-          <FilamanSpoolReel :spool="spool" :colors="colors" :color-style="colorStyle" />
           <span v-if="spool.archived" class="spool-badge spool-archived">
             <Icon icon="lucide:archive" class="w-3 h-3" />
             {{ labels.archived }}
@@ -43,6 +42,7 @@ defineProps<{
           </div>
           <span v-if="spool.remainingWeightG === null">{{ t('discovery.unknown') }}</span>
         </div>
+        <FilamanSpoolReel :spool="spool" :colors="colors" :color-style="colorStyle" />
       </div>
     </div>
   </div>
@@ -71,10 +71,13 @@ defineProps<{
 }
 
 .spool-item {
+  position:relative;
+  overflow:hidden;
+  min-height:112px;
   background: rgba(var(--surface-alt), 0.3);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 12px;
+  padding: 12px 124px 12px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -83,13 +86,22 @@ defineProps<{
 .spool-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content:flex-start;
+  flex-wrap:wrap;
   gap: 8px;
 }
 
 .spool-id {
-  font-size: 14px;
-  font-weight: 700;
+  display:inline-flex;
+  align-items:center;
+  align-self:flex-start;
+  padding:3px 8px;
+  min-height:28px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--muted);
+  font-size:12px;
+  font-weight:600;
   font-family: ui-monospace, monospace;
   color: rgb(var(--text));
 }
@@ -122,4 +134,8 @@ defineProps<{
   font-size: 12px;
   color: rgb(var(--text-muted));
 }
+</style>
+
+<style scoped>
+.spool-id:focus-visible {outline:2px solid var(--ring);outline-offset:2px;}
 </style>

@@ -11,11 +11,11 @@ watch(()=>[props.spool,props.colors,props.colorStyle],render,{deep:true});
 onMounted(async()=>{try{renderer=await loadSpoolRenderer();render();}catch{svg.value=null;}});
 </script>
 <template>
- <span v-if="svg" class="half-reel" role="img" :aria-label="`${formatNumber(spool.remainingPercent!)}%`"><span v-html="svg" /></span>
+ <span v-if="svg" class="corner-reel" role="img" :aria-label="`${formatNumber(spool.remainingPercent!)}%`"><span v-html="svg" /></span>
  <span v-else class="text-xs">{{ spool.remainingPercent === null ? t('discovery.unknown') : `${formatNumber(spool.remainingPercent)}%` }}</span>
 </template>
 <style scoped>
-.half-reel {display:inline-block;width:54px;height:96px;overflow:hidden;flex-shrink:0;}
-.half-reel>span {display:block;width:108px;height:96px;}
-.half-reel :deep(svg) {width:108px;height:96px;}
+.corner-reel {position:absolute;right:0;bottom:0;width:112px;height:112px;overflow:hidden;pointer-events:none;}
+.corner-reel>span {display:block;width:100%;height:100%;}
+.corner-reel :deep(svg) {display:block;width:100%;height:100%;}
 </style>

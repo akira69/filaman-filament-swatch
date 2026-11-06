@@ -16,12 +16,17 @@ async function open(options={}){
   if(u.origin!==origin){if(process.env.CAPTURE_SWATCH && /(?:iconify\.design|googleapis\.com|gstatic\.com)$/.test(u.hostname))return request.continue();return respond([]);}
   if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body><iframe src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
   if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
+  if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
   if(u.pathname==='/api/v1/me')return respond({id:1,language:options.language||'en'},options.expireSettings?401:200);
   if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'});
   if(u.pathname.startsWith('/api/v1/')){
    if(options.denyInventory && u.pathname==='/api/v1/filaments')return respond({},403);
    if(u.pathname.includes('/manufacturers/'))return request.respond({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="red"/></svg>'});
+   if(options.largeCatalog && u.pathname==='/api/v1/colors'){
+    const page=Number(u.searchParams.get('page')||1),size=Number(u.searchParams.get('page_size')||200),total=1392;
+    return respond({items:Array.from({length:Math.max(0,Math.min(size,total-(page-1)*size))},(_,i)=>({id:10000+(page-1)*size+i,name:`Catalog ${(page-1)*size+i}`,hex_code:'#00AE42',usage_count:0})),page,page_size:size,total});
+   }
    const value=fixture[u.pathname];if(value)return respond(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);
    return respond({},404);
   }
@@ -69,8 +74,10 @@ test('native logo and linked spool use shared reel without losing alpha zero',as
  await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel',{timeout:3000}).catch(e=>{throw new Error(`${e.message}: ${errors.join('; ')}`)});
  assert.equal(await page.$eval('.detail-panel img',e=>new URL(e.src).pathname),'/api/v1/manufacturers/1/logo');
  assert.equal(await page.$eval('.spool-id',e=>e.getAttribute('href')),'/spools/17');assert.equal(await page.$eval('.spool-id',e=>e.target),'_top');
- await page.waitForFunction(()=>window.__reelCalls?.length>0);const calls=await page.evaluate(()=>window.__reelCalls);assert.deepEqual(calls[0],[0,['#FF000000','#FF000088'],'striped',{view:'full'}]);
+ await page.waitForFunction(()=>window.__reelCalls?.length>0);const calls=await page.evaluate(()=>window.__reelCalls);assert.deepEqual(calls[0],[0,['#FF000000','#FF000088'],'striped',{view:'quarter'}]);
  if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/detail.png',fullPage:true});
+ const layout=await page.evaluate(()=>{const item=document.querySelector('.spool-item').getBoundingClientRect(),reel=document.querySelector('.corner-reel')?.getBoundingClientRect(),logo=document.querySelector('.detail-header img').getBoundingClientRect();return {item:{right:item.right,bottom:item.bottom,height:item.height},reel:reel&&{right:reel.right,bottom:reel.bottom,width:reel.width},logoWidth:logo.width,sourceHeight:document.querySelector('.detail-header .source-badge').getBoundingClientRect().height};});
+ assert.ok(layout.reel,'native corner reel');assert.ok(Math.abs(layout.item.right-layout.reel.right-1)<1);assert.ok(Math.abs(layout.item.bottom-layout.reel.bottom-1)<1);assert.ok(layout.reel.width>=110);assert.ok(layout.item.height<=120);assert.ok(layout.logoWidth>=90);assert.ok(layout.sourceHeight<=24);
  assert.match(await page.$eval('.detail-panel',e=>e.innerText),/0 g/);assert.deepEqual(errors,[]);
  }finally{await close();}
 });
@@ -160,10 +167,43 @@ test('native surfaces follow all three FilaMan themes without tinting filament c
 test('opaque shaded swatches render identically over every theme surface',async()=>{
  const {page,close}=await open();try{
  const swatch=await page.waitForSelector('[id="board-card-filament:19"] .swatch');
- const box=await swatch.boundingBox();const clip={x:box.x+20,y:box.y+20,width:50,height:50};let reference;
+ await page.evaluate(()=>document.fonts.ready);let reference;
  for(const theme of ['brand','light','dark']){
   await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const box=await swatch.boundingBox(),clip={x:box.x+20,y:box.y+20,width:50,height:50};
   const pixels=await page.screenshot({clip});if(reference)assert.deepEqual(pixels,reference,theme+' must not recolor opaque filament');else reference=pixels;
  }
+ }finally{await close();}
+});
+
+test('discovery mode controls use compact native typography and bundled icons',async()=>{
+ const {page,requests,close}=await open();try{
+ assert.equal(await page.$eval('.discovery-modes',e=>e.getAttribute('role')),'tablist');
+ const controls=await page.$$eval('.discovery-modes button',buttons=>buttons.map(e=>{const s=getComputedStyle(e),icon=e.querySelector('svg');return {name:e.textContent.trim(),family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,icon:!!icon,iconWidth:icon?.getBoundingClientRect().width,hidden:icon?.getAttribute('aria-hidden')};}));
+ assert.equal(controls.length,2);for(const c of controls){assert.match(c.family,/Space Grotesk/);assert.equal(c.size,'14px');assert.equal(c.weight,'600');assert.ok(c.icon);assert.ok(c.iconWidth>=18);assert.equal(c.hidden,'true');}
+ assert.ok(requests.includes(origin+'/plugin-fonts.css'));assert.ok(!requests.some(u=>u.includes('fonts.googleapis.com')));
+ await page.focus('.discovery-modes button:first-child');await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));assert.equal(await page.$eval('.discovery-modes button:last-child',e=>e.getAttribute('aria-selected')),'true');await page.keyboard.press('Home');await page.waitForFunction(()=>document.querySelector('[id="board-card-filament:17"]'));assert.equal(await page.$eval('.discovery-modes button:first-child',e=>e.getAttribute('aria-selected')),'true');
+ }finally{await close();}
+});
+
+test('a full 1392-color catalog leaves cards and detail content scrollable',async()=>{
+ const {page,errors,close}=await open({query:'&mode=catalog',largeCatalog:true});try{
+ await page.waitForFunction(()=>document.querySelectorAll('.board-card').length===1392);
+ const size=await page.evaluate(()=>({map:document.querySelector('.minimap').getBoundingClientRect().height,grid:document.querySelector('.board-grid').getBoundingClientRect().height}));assert.ok(size.map<=56,'minimap must remain a compact strip');assert.ok(size.grid>=200,'cards need a usable viewport');
+ await page.$eval('.board-grid',e=>{e.scrollTop=e.scrollHeight;});await page.waitForFunction(()=>document.querySelector('.board-grid').scrollTop>0);
+ const last=await page.$eval('.board-card:last-child',e=>{const card=e.getBoundingClientRect(),grid=e.parentElement.getBoundingClientRect();return {name:e.querySelector('.card-name').textContent.trim(),visible:card.bottom<=grid.bottom+1&&card.top>=grid.top};});assert.ok(last.visible,'last card is reachable by scrolling');await page.click('.board-card:last-child .card-name');await page.waitForSelector('.detail-panel',{timeout:5000});assert.equal(await page.$eval('.detail-title',e=>e.textContent),last.name);
+ await page.$eval('.detail-body',e=>{e.scrollTop=e.scrollHeight;});assert.ok(await page.$eval('.detail-body',e=>e.scrollTop>0));
+ await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.ok(await page.$eval('.detail-body',e=>e.clientHeight>100));
+ }finally{await close();}
+});
+
+test('wheel separates clean RGB display from alpha preview without changing native colors',async()=>{
+ const {page,close}=await open();try{
+ await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
+ assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF0000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
+ await page.waitForFunction(()=>Math.abs(document.querySelector('.detail-panel').getBoundingClientRect().right-innerWidth)<1);
+ await page.click('.wheel-transparency input');assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF000000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),1);assert.equal(await page.$$('.wheel-svg circle[r="100"]').then(x=>x.length),0);
+ assert.equal(await page.$eval('.color-hex',e=>e.textContent),'#FF000000');await page.click('.wheel-transparency input');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
  }finally{await close();}
 });

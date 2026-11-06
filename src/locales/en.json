@@ -17,6 +17,7 @@
     }
   },
   "actions": {
+    "close": "Close",
     "refresh": "Refresh",
     "copy": "Copy hex",
     "copied": "Copied",
@@ -109,6 +110,7 @@
     "sourceExternal": "External"
   },
   "detail": {
+    "includeTransparency": "Include transparency",
     "color": "Color",
     "details": "Details",
     "spoolId": "Spool ID",

@@ -245,19 +245,22 @@ const minimapStyle = swatchStyle;
   background: rgba(var(--surface), 0.8);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  gap:0;
+  border-radius:var(--radius-md);
+  flex:1;
+  min-height:0;
+  overflow:hidden;
 }
 
 @media (min-width: 640px) {
   .board-wrapper {
-    gap: 12px;
+    gap:0;
   }
 }
 
 .board-header {
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -318,10 +321,15 @@ const minimapStyle = swatchStyle;
 .minimap {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
-  gap: 4px;
-  border: 1px solid var(--border);
-  background: rgba(var(--surface-alt), 0.7);
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:6px;
+  min-height:32px;
+  gap:4px;
+  border-bottom:1px solid var(--border);
+  background:var(--muted);
+  scrollbar-width:thin;
   flex-shrink: 0;
 }
 
@@ -335,13 +343,11 @@ const minimapStyle = swatchStyle;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  justify-content: center;
-  gap: 12px;
-  overflow-y: auto;
+  justify-content:flex-start;
+  gap:12px;
+  overflow-y:auto;
   overflow-x: hidden;
-  padding-right: 4px;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding:12px;
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
@@ -351,8 +357,7 @@ const minimapStyle = swatchStyle;
 @media (min-width: 640px) {
   .board-grid {
     gap: 16px;
-    padding-right: 8px;
-    padding-bottom: 12px;
+    padding:16px;
   }
 }
 

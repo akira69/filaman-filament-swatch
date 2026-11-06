@@ -41,10 +41,10 @@ export function useColorWheel(
     }
   };
 
-  const colorWheelItems = computed((): FilamentCard[] => {
+  const colorWheelItems = computed((): (FilamentCard | null)[] => {
     if (!filament.value) return [];
 
-    const wheelColors: FilamentCard[] = [];
+    const wheelColors: (FilamentCard | null)[] = [];
     const hueStep = 15; // 360 / 24 = 15 degrees per segment
 
     for (let targetHue = 0; targetHue < 360; targetHue += hueStep) {
@@ -55,12 +55,11 @@ export function useColorWheel(
         }))
         .sort((a, b) => a.hueDiff - b.hueDiff)[0];
 
-      if (closest && closest.hueDiff < 30) {
-        wheelColors.push(closest.filament);
-      }
+      // Missing hue slots stay empty; a color can cover at most two 15-degree slots.
+      wheelColors.push(closest && closest.hueDiff < 15 ? closest.filament : null);
     }
 
-    return wheelColors.sort((a, b) => getHue(a.colorHex) - getHue(b.colorHex));
+    return wheelColors;
   });
 
   const getColorPosition = (item: FilamentCard | null): { x: number; y: number } => {
@@ -79,8 +78,8 @@ export function useColorWheel(
     const centerY = 100;
     const innerRadius = 40;
     const outerRadius = 90;
-    const angleStart = (index / total) * 360;
-    const angleEnd = ((index + 1) / total) * 360;
+    const angleStart = ((index - 0.5) / total) * 360;
+    const angleEnd = ((index + 0.5) / total) * 360;
 
     const startAngleRad = ((angleStart - 90) * Math.PI) / 180;
     const endAngleRad = ((angleEnd - 90) * Math.PI) / 180;
@@ -103,8 +102,8 @@ export function useColorWheel(
     const centerX = 100;
     const centerY = 100;
     const ringRadius = 94;
-    const angleStart = (index / total) * 360;
-    const angleEnd = ((index + 1) / total) * 360;
+    const angleStart = ((index - 0.5) / total) * 360;
+    const angleEnd = ((index + 0.5) / total) * 360;
 
     const startAngleRad = ((angleStart - 90) * Math.PI) / 180;
     const endAngleRad = ((angleEnd - 90) * Math.PI) / 180;

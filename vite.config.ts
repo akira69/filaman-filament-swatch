@@ -33,7 +33,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: process.env.FILAMAN_DEV_URL ? Object.fromEntries(
-      ['/api','/auth','/plugins/filament-swatch/hosted-config','/spool-reel.js','/reel-flange.webp'].map(prefix=>[prefix,{target:process.env.FILAMAN_DEV_URL,changeOrigin:true}])
+      ['/api','/auth','/plugins/filament-swatch/hosted-config','/spool-reel.js','/reel-flange.webp','/plugin-fonts.css','/_astro/'].map(prefix=>[prefix,{target:process.env.FILAMAN_DEV_URL,changeOrigin:true}])
     ) : {},
   },
 });

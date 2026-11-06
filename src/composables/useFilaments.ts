@@ -64,16 +64,20 @@ function createFilamentsComposable() {
     })();
     requests[target]=request;return request;
   }
-  function sync(push=false) {
-    Object.assign(states[mode.value],filters);saveDiscoveryState({mode:mode.value,filters:states});
+  function discoveryQuery() {
     const query=new URLSearchParams(window.location.search);
     for(const [key,param] of Object.entries(keys)) {
       query.delete(param);const value=(filters as any)[key];
       if(value !== (defaults() as any)[key])query.set(param,value);
     }
     query.delete('s');query.set('mode',mode.value);
-    if(router)return router[push?'push':'replace']({query:Object.fromEntries(query)});
-    window.history[push?'pushState':'replaceState'](window.history.state??{},'',`${window.location.pathname}?${query}`);
+    return Object.fromEntries(query);
+  }
+  function sync(push=false) {
+    Object.assign(states[mode.value],filters);saveDiscoveryState({mode:mode.value,filters:states});
+    const query=discoveryQuery();
+    if(router)return router[push?'push':'replace']({query});
+    window.history[push?'pushState':'replaceState'](window.history.state??{},'',`${window.location.pathname}?${new URLSearchParams(query)}`);
     return Promise.resolve();
   }
   async function setDiscoveryMode(next:DiscoveryMode,history=true) {
@@ -116,7 +120,7 @@ function createFilamentsComposable() {
     return direction*String((a as any)[filters.sortField]??'').localeCompare(String((b as any)[filters.sortField]??''),undefined,{sensitivity:'base'});
   }));
   const options=(key:'vendor'|'material')=>computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.kind==='inventory' && i[key]?[i[key]!]:[]))].sort());
-  return {connectRouter,ensureInventory:(force=false)=>loadMode('inventory',force),inventoryLoading:computed(()=>loadings.inventory),inventoryError:computed(()=>errors.inventory),inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
+  return {discoveryQuery,connectRouter,ensureInventory:(force=false)=>loadMode('inventory',force),inventoryLoading:computed(()=>loadings.inventory),inventoryError:computed(()=>errors.inventory),inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
     colorOptions:computed(()=>[...new Set(allFilaments.value.map(i=>i.colorHex))]),
     locationOptions:computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.locations??[]))].sort()),refresh};
 }

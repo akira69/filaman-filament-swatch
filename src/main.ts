@@ -28,10 +28,10 @@ const loadNativeConfig = async () => {
   return config;
 };
 
-const requestedLocale = getQueryParam("spoolman_locale") || localStorage.getItem("locale") || "de";
+const requestedLocale = getQueryParam("spoolman_locale") || window.parent.document.documentElement.lang || "en";
 const i18n = createI18n({
   legacy: false,
-  locale: requestedLocale === "de" ? "de" : "en",
+  locale: requestedLocale === "de" || requestedLocale === "fr" ? requestedLocale : "en",
   fallbackLocale: "en",
   messages: { de, en, fr },
 });

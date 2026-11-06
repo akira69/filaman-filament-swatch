@@ -110,9 +110,7 @@
     "sourceExternal": "Extern"
   },
   "detail": {
-    "wheelDisplay": "Farbrad-Anzeige",
-    "colorView": "Farbe",
-    "transparencyView": "Transparenz",
+    "includeTransparency": "Transparenz einbeziehen",
     "color": "Farbe",
     "details": "Details",
     "spoolId": "Spulen-ID",

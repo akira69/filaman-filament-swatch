@@ -110,9 +110,7 @@
     "sourceExternal": "FilaMan"
   },
   "detail": {
-    "wheelDisplay": "Affichage de la roue",
-    "colorView": "Couleur",
-    "transparencyView": "Transparence",
+    "includeTransparency": "Inclure la transparence",
     "color": "Couleur",
     "details": "Détails",
     "spoolId": "Numéro de bobine",

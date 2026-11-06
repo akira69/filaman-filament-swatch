@@ -110,9 +110,7 @@
     "sourceExternal": "External"
   },
   "detail": {
-    "wheelDisplay": "Wheel display",
-    "colorView": "Color",
-    "transparencyView": "Transparency",
+    "includeTransparency": "Include transparency",
     "color": "Color",
     "details": "Details",
     "spoolId": "Spool ID",

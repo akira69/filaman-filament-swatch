@@ -3,7 +3,6 @@ import {useI18n} from 'vue-i18n';
 import {useId} from 'vue';
 import { toRef, ref } from 'vue';
 import { normalizeColor } from '@/lib/colorUtils';
-import { Button } from '@/components/ui/button';
 import { useColorWheel, type HarmonyFilter } from '@/composables/useColorWheel';
 import type { FilamentCard } from '@/composables/useFilaments';
 
@@ -51,16 +50,15 @@ const {
 
 <template>
   <div class="detail-section">
-    <h3 class="section-title">{{ labels.colorHarmonies }}</h3>
+    <div class="wheel-heading">
+      <h3 class="section-title">{{ labels.colorHarmonies }}</h3>
+      <label class="wheel-transparency"><input type="checkbox" v-model="showTransparency" />{{ t('detail.includeTransparency') }}</label>
+    </div>
     <div class="color-wheel">
-      <div class="wheel-display" role="group" :aria-label="t('detail.wheelDisplay')">
-        <Button size="sm" :variant="!showTransparency ? 'default' : 'ghost'" :aria-pressed="!showTransparency" @click="showTransparency=false">{{ t('detail.colorView') }}</Button>
-        <Button size="sm" :variant="showTransparency ? 'default' : 'ghost'" :aria-pressed="showTransparency" @click="showTransparency=true">{{ t('detail.transparencyView') }}</Button>
-      </div>
       <svg viewBox="-10 -10 220 220" class="wheel-svg">
         <defs v-if="showTransparency"><pattern :id="checkerId" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#eee"/><path d="M0 0h4v4H0zM4 4h4v4H4z" fill="#aaa"/></pattern></defs>
         <!-- Outer wheel segments -->
-        <g v-for="(item, index) in colorWheelItems" :key="item.id">
+        <g v-for="(item, index) in colorWheelItems" :key="index"><template v-if="item">
           <path v-if="showTransparency && isTransparent(item.colorHex)" :d="getArcPath(index, colorWheelItems.length)" :fill="`url(#${checkerId})`" pointer-events="none" />
           <path
             :d="getArcPath(index, colorWheelItems.length)"
@@ -119,7 +117,7 @@ const {
             stroke-width="4"
             class="harmony-ring triadic-ring"
           />
-        </g>
+        </template></g>
 
         <!-- Harmony lines (Triad) -->
         <g v-if="triadColors.length === 3" class="harmony-lines">
@@ -321,6 +319,7 @@ const {
 </style>
 
 <style scoped>
-.wheel-display {display:flex;align-self:center;align-items:center;padding:3px;gap:3px;border:1px solid var(--border);border-radius:999px;background:var(--muted);}
-.wheel-display button {border-radius:999px;font-family:var(--font-sans);font-size:12px;font-weight:600;}
+.wheel-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.wheel-transparency {display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:400;color:var(--muted-foreground);cursor:pointer;}
+.wheel-transparency input {width:13px;height:13px;margin:0;accent-color:var(--primary);}
 </style>

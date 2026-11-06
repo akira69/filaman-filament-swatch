@@ -99,7 +99,7 @@ Remove the visible plugin language selector and stop writing an independent `loc
 
 Reuse the existing same-origin shell context. A small host-context module observes the effective parent language/theme and host currency changes, and refreshes native settings on focus/visibility return and same-origin storage changes. Do not introduce a general event bus or cross-origin embedding protocol. Language/currency changes update presentation without losing mode, filters or pins; theme changes update mapped FilaMan tokens. The implementation may reuse the shell's existing reload behavior only if discovery state is restored reliably.
 
-Keep a small FilaMan stylesheet/token mapping, including its Default/brand, dark and light themes. The iframe does not inherit parent CSS automatically: explicitly map the effective host tokens. Fix only required integration styles; preserve existing wheel/selector geometry and interactions.
+Keep a small FilaMan stylesheet/token mapping, including its Default/brand, dark and light themes. The iframe does not inherit parent CSS automatically: explicitly map the effective host tokens. Fix only required integration styles; preserve selector interactions and harmony calculations; wheel coverage follows the explicitly requested capped hue ranges below.
 
 ### Currency
 
@@ -113,7 +113,7 @@ Re-read the setting on initial load and when focus/storage/host context changes 
 
 Preserve native RGB/RGBA hex input, normalize accepted short/long forms, and default a missing alpha channel to opaque. Invalid data receives the existing safe placeholder treatment and never becomes executable CSS/markup. Explicit alpha zero must remain zero, not fall through to an opaque default.
 
-Use alpha-aware colors in cards, detail swatches, multicolor samples, palette items and wheel SVG fills. Place a neutral checkerboard behind transparent color areas so transparency is distinguishable in every theme. Labels retain exact native hex and can show localized opacity in the existing information layout. Stored color is not a prediction of printed optical appearance. Subsequent UI refinement adds two wheel display modes: Color (default) renders underlying RGB; Transparency previews native alpha with checkerboard only beneath transparent segments and center. Stored values and harmony/ranking algorithms remain unchanged.
+Use alpha-aware colors in cards, detail swatches, multicolor samples, palette items and wheel SVG fills. Place a neutral checkerboard behind transparent color areas so transparency is distinguishable in every theme. Labels retain exact native hex and can show localized opacity in the existing information layout. Stored color is not a prediction of printed optical appearance. Subsequent UI refinement adds a small Include transparency checkbox: the default renders underlying RGB; enabling it previews native alpha with checkerboard only beneath transparent segments and center. Missing hue slots remain gaps, with each color covering at most 30 degrees near its actual hue. Stored values and harmony/ranking algorithms remain unchanged.
 
 RGB color metrics and existing harmony algorithms continue to compare the underlying, uncomposited RGB channels; alpha is preserved separately, never baked into RGB against the current theme. Keep the existing ranking logic rather than inventing a new opacity-distance model. Fully transparent records remain inspectable and identifiable as transparent. Do not classify opacity zero as missing, collapse it with opaque RGB, or change its identity when themes change.
 

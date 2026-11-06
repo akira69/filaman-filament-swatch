@@ -179,10 +179,11 @@ test('opaque shaded swatches render identically over every theme surface',async(
 
 test('discovery mode controls use compact native typography and bundled icons',async()=>{
  const {page,requests,close}=await open();try{
+ assert.equal(await page.$eval('.discovery-modes',e=>e.getAttribute('role')),'tablist');
  const controls=await page.$$eval('.discovery-modes button',buttons=>buttons.map(e=>{const s=getComputedStyle(e),icon=e.querySelector('svg');return {name:e.textContent.trim(),family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,icon:!!icon,iconWidth:icon?.getBoundingClientRect().width,hidden:icon?.getAttribute('aria-hidden')};}));
  assert.equal(controls.length,2);for(const c of controls){assert.match(c.family,/Space Grotesk/);assert.equal(c.size,'14px');assert.equal(c.weight,'600');assert.ok(c.icon);assert.ok(c.iconWidth>=18);assert.equal(c.hidden,'true');}
  assert.ok(requests.includes(origin+'/plugin-fonts.css'));assert.ok(!requests.some(u=>u.includes('fonts.googleapis.com')));
- await page.focus('.discovery-modes button:last-child');await page.keyboard.press('Enter');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));
+ await page.focus('.discovery-modes button:first-child');await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));assert.equal(await page.$eval('.discovery-modes button:last-child',e=>e.getAttribute('aria-selected')),'true');await page.keyboard.press('Home');await page.waitForFunction(()=>document.querySelector('[id="board-card-filament:17"]'));assert.equal(await page.$eval('.discovery-modes button:first-child',e=>e.getAttribute('aria-selected')),'true');
  }finally{await close();}
 });
 
@@ -202,7 +203,7 @@ test('wheel separates clean RGB display from alpha preview without changing nati
  await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
  assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF0000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
  await page.waitForFunction(()=>Math.abs(document.querySelector('.detail-panel').getBoundingClientRect().right-innerWidth)<1);
- await page.click('.wheel-display button:last-child');assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF000000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),1);assert.equal(await page.$$('.wheel-svg circle[r="100"]').then(x=>x.length),0);
- assert.equal(await page.$eval('.color-hex',e=>e.textContent),'#FF000000');await page.click('.wheel-display button:first-child');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
+ await page.click('.wheel-transparency input');assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF000000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),1);assert.equal(await page.$$('.wheel-svg circle[r="100"]').then(x=>x.length),0);
+ assert.equal(await page.$eval('.color-hex',e=>e.textContent),'#FF000000');await page.click('.wheel-transparency input');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
  }finally{await close();}
 });

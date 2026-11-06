@@ -10,11 +10,11 @@
         @click.stop
       >
         <!-- Header -->
-        <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-[rgb(var(--border-rgb))]">
+        <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border)]">
           <h2 class="text-lg font-semibold text-[rgb(var(--text))]">{{ t('filters.filter') }}</h2>
           <button
             @click="$emit('close')"
-            class="p-1 hover:bg-[rgb(var(--border-rgb))] rounded transition text-[rgb(var(--text-muted))]"
+            class="p-1 hover:bg-[var(--border)] rounded transition text-[rgb(var(--text-muted))]"
           >
             <Icon icon="lucide:x" class="w-5 h-5" />
           </button>
@@ -181,10 +181,10 @@
         </div>
 
         <!-- Footer -->
-        <div class="flex gap-3 px-6 py-4 border-t border-[rgb(var(--border-rgb))]">
+        <div class="flex gap-3 px-6 py-4 border-t border-[var(--border)]">
           <button
             @click="resetFilters"
-            class="flex-1 px-4 py-2 rounded-lg border border-[rgb(var(--border-rgb))] text-[rgb(var(--text))] hover:bg-[rgb(var(--border-rgb))] transition text-sm font-medium"
+            class="flex-1 px-4 py-2 rounded-lg border border-[var(--border)] text-[rgb(var(--text))] hover:bg-[var(--border)] transition text-sm font-medium"
           >
             {{ t('actions.reset') }}
           </button>

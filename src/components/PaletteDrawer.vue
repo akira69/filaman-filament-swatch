@@ -20,7 +20,7 @@
         </div>
         <button
           @click="$emit('close')"
-          class="p-1.5 hover:bg-[rgb(var(--border-rgb))] rounded transition text-[rgb(var(--text-muted))]"
+          class="p-1.5 hover:bg-[var(--border)] rounded transition text-[rgb(var(--text-muted))]"
         >
           <Icon icon="lucide:x" class="w-5 h-5" />
         </button>
@@ -133,7 +133,7 @@ const { t } = useI18n();
   width: min(360px, 100vw);
   height: 100vh;
   background: rgb(var(--surface));
-  border-left: 1px solid rgb(var(--border-rgb));
+  border-left: 1px solid var(--border);
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -170,7 +170,7 @@ const { t } = useI18n();
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(var(--border-rgb), 0.5);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -304,7 +304,7 @@ const { t } = useI18n();
 
 .palette-footer {
   padding-top: 12px;
-  border-top: 1px solid rgba(var(--border-rgb), 0.5);
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
 </style>

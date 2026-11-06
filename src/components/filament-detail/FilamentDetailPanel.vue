@@ -4,7 +4,6 @@ import {formatNumber} from '@/filaman/format';
 import {normalizeColor} from '@/lib/colorUtils';
 import { computed } from 'vue';
 import type { FilamentCard } from '@/composables/useFilaments';
-import { hexToRgba } from '@/lib/colorUtils';
 import { getFlatSwatchStyle } from '@/lib/swatchUtils';
 import { ColorSwatch } from '@/components/ui/color-swatch';
 import FilamentDetailHeader from './FilamentDetailHeader.vue';
@@ -43,15 +42,6 @@ const emit = defineEmits<{
   (e: 'selectFilament', filament: FilamentCard): void;
 }>();
 
-const panelBackgroundStyle = computed(() => {
-  if (!props.filament) return {};
-
-  const color = props.filament.colorHex;
-  return {
-    background: `linear-gradient(180deg, ${hexToRgba(color, 0.15)} 0%, ${hexToRgba(color, 0.30)} 100%)`,
-  };
-});
-
 const swatchStyle = computed(() => {
   if (!props.filament) return {};
   return getFlatSwatchStyle(
@@ -70,7 +60,7 @@ const showSpools = computed(() => {
 
 <template>
   <Transition name="slide-in">
-    <div v-if="filament" class="detail-panel" :style="panelBackgroundStyle">
+    <div v-if="filament" class="detail-panel">
       <FilamentDetailHeader
         :name="filament.name"
         :vendor="filament.vendor"
@@ -152,8 +142,7 @@ const showSpools = computed(() => {
   max-width: 90vw;
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 32px -8px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(32px) saturate(150%);
-  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  background: var(--card);
   z-index: 1000;
   pointer-events: auto;
   display: flex;
@@ -191,7 +180,7 @@ const showSpools = computed(() => {
   display: flex;
   align-items: flex-end;
   padding: 16px;
-  border: 1px solid rgba(var(--border-rgb), 0.5);
+  border: 1px solid var(--border);
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.3);
 }
 

@@ -79,7 +79,7 @@ defineProps<{
   gap: 8px;
   padding: 10px 12px;
   background: rgba(var(--surface-alt), 0.3);
-  border: 1px solid rgba(var(--border-rgb), 0.3);
+  border: 1px solid var(--border);
   border-radius: 12px;
   font-size: 13px;
   color: rgb(var(--text-muted));

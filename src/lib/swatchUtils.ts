@@ -56,7 +56,8 @@ export function getMultiColorGradient(colors: string[], direction: MultiColorDir
  * Creates the base shade gradient for single-color swatches
  */
 export function getBaseShade(colorHex: string): string {
-  return `${HIGHLIGHT_GRADIENT}, linear-gradient(145deg, ${colorHex} 0%, rgba(0,0,0,0.22) 115%)`;
+  // Shade an opaque color, never the theme surface beneath the swatch.
+  return `${HIGHLIGHT_GRADIENT}, linear-gradient(145deg, transparent 0%, rgba(0,0,0,0.22) 115%), ${colorHex}`;
 }
 
 /**

@@ -55,7 +55,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
 </script>
 
 <template>
-  <nav class="sticky top-0 z-40 border-b border-[rgb(var(--border-rgb))] bg-[rgb(var(--surface))] shadow-sm">
+  <nav class="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgb(var(--surface))] shadow-sm">
     <div class="px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
       <!-- Left: Logo & Navigation -->
       <div class="flex items-center gap-2 sm:gap-4 min-w-fit flex-shrink-0">
@@ -65,7 +65,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
         </div>
 
         <!-- View/Page Toggle -->
-        <div class="flex gap-0.5 sm:gap-1 border border-[rgb(var(--border-rgb))] rounded-lg bg-[rgb(var(--bg))] overflow-hidden">
+        <div class="flex gap-0.5 sm:gap-1 border border-[var(--border)] rounded-lg bg-[rgb(var(--bg))] overflow-hidden">
           <Button
             :variant="route.path.includes('/swatch') ? 'default' : 'ghost'"
             size="sm"
@@ -98,7 +98,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
             type="text"
             :value="searchQuery"
             :placeholder="t('search.placeholder')"
-            class="w-full bg-[rgb(var(--bg))] border border-[rgb(var(--border-rgb))] rounded-lg pl-9 pr-4 py-1.5 sm:py-2 text-sm text-[rgb(var(--text))] placeholder-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb))]"
+            class="w-full bg-[rgb(var(--bg))] border border-[var(--border)] rounded-lg pl-9 pr-4 py-1.5 sm:py-2 text-sm text-[rgb(var(--text))] placeholder-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb))]"
             @input="handleSearch"
           />
         </div>
@@ -110,7 +110,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
         <button
           v-if="isFilamentsView()"
           @click="$emit('openFilterModal')"
-          class="p-2 rounded-lg hover:bg-[rgb(var(--border-rgb))] transition text-[rgb(var(--text))] flex items-center gap-1.5"
+          class="p-2 rounded-lg hover:bg-[var(--border)] transition text-[rgb(var(--text))] flex items-center gap-1.5"
           :title="t('filters.filter')"
         >
           <Icon icon="lucide:sliders-horizontal" class="w-5 h-5" />
@@ -218,7 +218,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
                 <div class="p-2 flex flex-col gap-1">
                   <button
                     v-if="!props.isHosted"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors"
                     @click="handleOpenUrlDialog"
                   >
                     <div class="relative">
@@ -232,7 +232,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
                     </div>
                     {{ t('info.spoolmanUrl') || 'Spoolman Server' }}
                   </button>
-                  <hr v-if="!props.isHosted" class="border-[rgb(var(--border-rgb))]/50 my-1" />
+                  <hr v-if="!props.isHosted" class="border-[var(--border)]/50 my-1" />
                   <div v-if="!props.isHosted" class="flex items-center justify-between px-3 py-2">
                     <span class="text-xs text-[rgb(var(--text-muted))]">{{ t('theme.theme') || 'Theme' }}</span>
                     <ThemeSwitch />
@@ -241,9 +241,9 @@ const isFilamentsView = () => route.path.includes('/swatch');
 
 
                   </div>
-                  <hr class="border-[rgb(var(--border-rgb))]/50 my-1" />
+                  <hr class="border-[var(--border)]/50 my-1" />
                   <button
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors"
                     @click="handleOpenChangelog"
                   >
                     <Icon icon="lucide:sparkles" class="w-4 h-4" />
@@ -253,16 +253,16 @@ const isFilamentsView = () => route.path.includes('/swatch');
                     href="https://github.com/sponsors/Disane87"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="flex items-center gap-2 px-3 py-2 text-sm text-pink-500 hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors"
+                    class="flex items-center gap-2 px-3 py-2 text-sm text-pink-500 hover:bg-[var(--border)] rounded-md transition-colors"
                     @click="mobileMenuOpen = false"
                   >
                     <Icon icon="lucide:heart" class="w-4 h-4" />
                     {{ t('actions.sponsor') }}
                   </a>
-                  <hr class="border-[rgb(var(--border-rgb))]/50 my-1" />
+                  <hr class="border-[var(--border)]/50 my-1" />
                   <button
                     v-if="isFilamentsView()"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors w-full"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors w-full"
                     @click="$emit('openFilterModal'); mobileMenuOpen = false"
                   >
                     <Icon icon="lucide:sliders-horizontal" class="w-4 h-4" />
@@ -270,7 +270,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
                   </button>
                   <button
                     v-if="isFilamentsView()"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[rgb(var(--border-rgb))] rounded-md transition-colors w-full relative"
+                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors w-full relative"
                     @click="$emit('openPalette'); mobileMenuOpen = false"
                   >
                     <Icon icon="lucide:bookmark" class="w-4 h-4" />

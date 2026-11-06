@@ -36,7 +36,7 @@ defineEmits<{
   gap: 10px;
   padding: 8px 12px;
   background: rgba(var(--surface-alt), 0.4);
-  border: 1px solid rgba(var(--border-rgb), 0.3);
+  border: 1px solid var(--border);
   border-radius: 12px;
   cursor: pointer;
   transition: all 150ms ease;

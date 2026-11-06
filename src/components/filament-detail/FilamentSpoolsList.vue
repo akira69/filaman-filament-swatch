@@ -72,7 +72,7 @@ defineProps<{
 
 .spool-item {
   background: rgba(var(--surface-alt), 0.3);
-  border: 1px solid rgba(var(--border-rgb), 0.3);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
   display: flex;

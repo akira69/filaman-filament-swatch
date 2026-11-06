@@ -62,7 +62,7 @@ const getCardBackgroundStyle = (colorHex: string) => {
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 2px solid rgba(var(--border-rgb), 0.6);
+  border: 2px solid var(--border);
   border-radius: 14px;
   cursor: pointer;
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);

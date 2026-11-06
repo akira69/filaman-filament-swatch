@@ -42,6 +42,8 @@ const emit = defineEmits<{
   (e: 'selectFilament', filament: FilamentCard): void;
 }>();
 
+const opacity = computed(()=>(normalizeColor(props.filament?.colorHex)?.alpha ?? 1)*100);
+
 const swatchStyle = computed(() => {
   if (!props.filament) return {};
   return getFlatSwatchStyle(
@@ -67,6 +69,7 @@ const showSpools = computed(() => {
         :material="filament.material"
         :source="filament.source"
         :logo-url="filament.logoUrl"
+        :filaman-href="filament.kind === 'inventory' ? `/filaments/${filament.nativeId}` : '/filaments/colors'"
         @close="emit('close')"
       />
 
@@ -78,13 +81,12 @@ const showSpools = computed(() => {
             <div class="color-info">
               <span class="color-hex">{{ filament.colorHex.toUpperCase() }}</span>
             </div>
+            <span v-if="opacity < 100" class="opacity-badge" :aria-label="`${t('discovery.opacity')}: ${formatNumber(opacity,1)}%`">{{ formatNumber(opacity,1) }}%</span>
           </div>
         </div>
 
         <!-- Filament Details -->
         <p v-if="filament.kind === 'catalog'">{{ t('discovery.usage', {count:filament.usageCount}) }}</p>
-        <a :href="filament.kind === 'inventory' ? `/filaments/${filament.nativeId}` : '/filaments/colors'" target="_top" class="underline">{{ t('discovery.edit') }}</a>
-        <p>{{ t('discovery.opacity') }}: {{ formatNumber((normalizeColor(filament.colorHex)?.alpha ?? 1)*100) }}%</p>
         <FilamentDetailInfo v-if="filament.kind === 'inventory'"
           :filament="filament"
           :labels="{ details: labels.details }"
@@ -175,6 +177,7 @@ const showSpools = computed(() => {
 }
 
 .color-swatch-large {
+  position:relative;
   height: 180px;
   border-radius: 16px;
   display: flex;
@@ -196,8 +199,8 @@ const showSpools = computed(() => {
 
 .color-hex {
   font-family: 'Courier New', monospace;
-  font-size: 16px;
-  font-weight: 700;
+  font-size:12px;
+  font-weight:600;
   color: white;
 }
 
@@ -212,4 +215,8 @@ const showSpools = computed(() => {
   transform: translateX(100%);
   opacity: 0;
 }
+</style>
+
+<style scoped>
+.opacity-badge {position:absolute;right:16px;bottom:16px;padding:4px 7px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:600;line-height:1.2;}
 </style>

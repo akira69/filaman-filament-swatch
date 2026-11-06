@@ -75,9 +75,17 @@
           <div class="card-meta">
             <div class="card-top">
               <div>
-                <div class="card-name">{{ filament.name }}</div>
+                <button type="button" class="card-name w-full text-left" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
                 <div v-if="filament.kind === 'inventory'" class="card-sub"><VendorLogoBadge :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" /> {{ filament.material }}</div>
               </div>
+
+            </div>
+            <div class="card-bottom">
+              <div class="card-color-readout">
+                <span class="card-hex">{{ filament.colorHex.toUpperCase() }}</span>
+                <ColorRgbReadout class="card-rgb" :color-hex="filament.colorHex" />
+              </div>
+              <div class="card-actions">
               <button
                 type="button"
                 class="pin-btn"
@@ -87,12 +95,6 @@
               >
                 <Icon :icon="isPinned(filament.id) ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
               </button>
-            </div>
-            <div class="card-bottom">
-              <div class="card-color-readout">
-                <span class="card-hex">{{ filament.colorHex.toUpperCase() }}</span>
-                <span class="card-rgb">RGB: {{ hexToRgbString(filament.colorHex) }}</span>
-              </div>
               <Badge
                 :variant="filament.source === 'spoolman' ? 'accent' : 'neutral'"
                 class="text-[10px] sm:text-xs whitespace-nowrap"
@@ -101,6 +103,7 @@
                 <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
                 {{ getSourceLabel(filament.source) }}
               </Badge>
+              </div>
             </div>
           </div>
         </div>
@@ -116,7 +119,7 @@ import type { FilamentCard as FilamentCardType } from "../composables/useFilamen
 import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { hexToRgbString } from '@/lib/colorUtils';
+import ColorRgbReadout from './ColorRgbReadout.vue';
 import { getSwatchStyle } from '@/lib/swatchUtils';
 import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import {
@@ -480,12 +483,15 @@ const minimapStyle = swatchStyle;
 }
 
 .card-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:6px;
+  margin-top:auto;
   font-size: 12px;
 }
+
+.card-top > div {width:100%;min-width:0;}
 
 .card-color-readout {
   display: flex;
@@ -500,6 +506,7 @@ const minimapStyle = swatchStyle;
 }
 
 .card-rgb {
+  white-space:nowrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   color: rgb(var(--text-muted));
   font-size: 11px;

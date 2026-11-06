@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {formatMoney} from '@/filaman/format';
+import {formatMoney,formatNumber} from '@/filaman/format';
 import {hostContext} from '@/filaman/context';
 import { Icon } from '@iconify/vue';
 import { InfoBadge } from '@/components/ui/info-badge';
@@ -31,17 +31,17 @@ defineProps<{
     </div>
 
     <div class="info-badges">
-      <InfoBadge v-if="filament.weight" icon="lucide:weight" :value="`${filament.weight}g`" />
+      <InfoBadge v-if="filament.weight" icon="lucide:weight" :value="`${formatNumber(filament.weight)}g`" />
       <InfoBadge
         v-if="filament.remainingWeight !== null && filament.remainingWeight !== undefined"
         icon="lucide:gauge"
-        :value="`${filament.remainingWeight}g`"
+        :value="`${formatNumber(filament.remainingWeight)}g`"
       />
       <InfoBadge v-if="filament.price != null" icon="lucide:banknote" :value="formatMoney(filament.price, filament.priceCurrency ?? hostContext.currency)" />
-      <InfoBadge v-if="filament.density" icon="lucide:box" :value="`${filament.density} g/cm³`" />
-      <InfoBadge v-if="filament.diameter" icon="lucide:ruler" :value="`${filament.diameter}mm`" />
-      <InfoBadge v-if="filament.extruderTemp" icon="lucide:flame" :value="`${filament.extruderTemp}°C`" />
-      <InfoBadge v-if="filament.bedTemp" icon="lucide:thermometer" :value="`${filament.bedTemp}°C`" />
+      <InfoBadge v-if="filament.density" icon="lucide:box" :value="`${formatNumber(filament.density)} g/cm³`" />
+      <InfoBadge v-if="filament.diameter" icon="lucide:ruler" :value="`${formatNumber(filament.diameter)}mm`" />
+      <InfoBadge v-if="filament.extruderTemp" icon="lucide:flame" :value="`${formatNumber(filament.extruderTemp)}°C`" />
+      <InfoBadge v-if="filament.bedTemp" icon="lucide:thermometer" :value="`${formatNumber(filament.bedTemp)}°C`" />
       <InfoBadge v-if="filament.articleNumber" icon="lucide:hash" :value="filament.articleNumber" :wide="true" />
     </div>
 
@@ -71,8 +71,10 @@ defineProps<{
 .info-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap:6px;
 }
+.info-badges :deep(.info-badge) {gap:4px;padding:5px 7px;font-size:12px;}
+.info-badges :deep(.badge-icon) {width:12px;height:12px;}
 
 .info-comment {
   display: flex;

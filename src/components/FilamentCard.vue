@@ -5,32 +5,14 @@
   >
     <div class="flex items-start justify-between gap-2 sm:gap-3">
       <div>
-        <p class="text-base sm:text-lg font-semibold">{{ filament.name }}</p>
+        <button type="button" class="card-name text-base sm:text-lg font-semibold text-left w-full" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
         <div class="flex items-center gap-2 text-xs sm:text-sm">
           <VendorLogoBadge v-if="filament.kind === 'inventory'" :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" />
           <span class="text-[rgb(var(--text-muted))]">·</span>
           <span class="text-[rgb(var(--text-muted))]">{{ filament.material }}</span>
         </div>
       </div>
-      <div class="flex flex-col items-end gap-1.5 sm:gap-2">
-        <Badge 
-          :variant="filament.source === 'spoolman' ? 'accent' : 'neutral'" 
-          class="text-[10px] sm:text-xs whitespace-nowrap"
-          :class="getSourceBadgeClass(filament.source)"
-        >
-          <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
-          {{ getSourceLabel(filament.source) }}
-        </Badge>
-        <button
-          type="button"
-          class="pin-btn h-8 w-8 sm:h-9 sm:w-9"
-          :aria-pressed="pinned"
-          @click.stop="$emit('togglePin', filament)"
-          :title="pinned ? labels.unpin : labels.pin"
-        >
-          <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
-        </button>
-      </div>
+
     </div>
 
     <div class="flex flex-1 items-center justify-center">
@@ -69,12 +51,32 @@
           HEX: {{ filament.colorHex.toUpperCase() }}
         </span>
         <span class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
-          RGB: {{ hexToRgbString(filament.colorHex) }}
+          <ColorRgbReadout :color-hex="filament.colorHex" />
         </span>
       </div>
-      <Button size="sm" variant="secondary" @click.stop="copyHex" class="h-8 w-8 sm:h-9 sm:w-9 p-0">
+
+    </div>
+    <div class="card-actions">
+        <button
+          type="button"
+          class="pin-btn h-8 w-8 sm:h-9 sm:w-9"
+          :aria-pressed="pinned"
+          @click.stop="$emit('togglePin', filament)"
+          :title="pinned ? labels.unpin : labels.pin"
+        >
+          <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
+        </button>
+      <Button size="sm" variant="secondary" :title="labels.copy" @click.stop="copyHex" class="h-8 w-8 sm:h-9 sm:w-9 p-0">
         <Icon :icon="copied ? 'lucide:check' : 'lucide:copy'" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       </Button>
+        <Badge
+          :variant="filament.source === 'spoolman' ? 'accent' : 'neutral'"
+          class="text-[10px] sm:text-xs whitespace-nowrap"
+          :class="getSourceBadgeClass(filament.source)"
+        >
+          <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
+          {{ getSourceLabel(filament.source) }}
+        </Badge>
     </div>
   </div>
 </template>
@@ -87,7 +89,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from '@iconify/vue';
 import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import { getSwatchStyle } from '@/lib/swatchUtils';
-import { hexToRgbString } from '@/lib/colorUtils';
+import ColorRgbReadout from './ColorRgbReadout.vue';
 import VendorLogoBadge from './VendorLogoBadge.vue';
 
 const props = defineProps<{

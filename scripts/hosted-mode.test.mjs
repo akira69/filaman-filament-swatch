@@ -7,18 +7,18 @@ const fixture=JSON.parse(await readFile(new URL('./fixtures/filaman/contracts.js
 const themes=await readFile(new URL('./fixtures/filaman/themes.css',import.meta.url),'utf8');
 let browser;before(async()=>{browser=await puppeteer.launch({headless:true,args:process.env.CI?['--no-sandbox']:[]});});after(async()=>await browser?.close());
 async function open(options={}){
- const context=await browser.createBrowserContext();const page=await context.newPage();await page.setViewport({width:1400,height:900});
+ const context=await browser.createBrowserContext();const page=await context.newPage();await page.setViewport(options.mobileHost?{width:390,height:844}:{width:1400,height:900});
  const requests=[],errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.evaluateOnNewDocument(()=>{localStorage.setItem('spoolman-url','/old-server');localStorage.setItem('locale','de');});
  await page.setRequestInterception(true);
  page.on('request',async request=>{
   const u=new URL(request.url());requests.push(u.href);const respond=(value,status=200)=>request.respond({status,contentType:'application/json',body:JSON.stringify(value)});
   if(u.origin!==origin){if(process.env.CAPTURE_SWATCH && /(?:iconify\.design|googleapis\.com|gstatic\.com)$/.test(u.hostname))return request.continue();return respond([]);}
-  if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body><iframe src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
+  if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body style="margin:0">${options.mobileHost?'<button id="sidebar-toggle" style="position:fixed;left:7px;top:13px;width:40px;height:40px;z-index:50">Menu</button>':''}<iframe style="width:100%;height:100vh;border:0" src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
   if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
   if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
-  if(u.pathname==='/api/v1/me')return respond({id:1,language:options.language||'en'},options.expireSettings?401:200);
+  if(u.pathname==='/api/v1/me')return respond({id:1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
   if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'});
   if(u.pathname.startsWith('/api/v1/')){
    if(options.denyInventory && u.pathname==='/api/v1/filaments')return respond({},403);
@@ -27,7 +27,7 @@ async function open(options={}){
     const page=Number(u.searchParams.get('page')||1),size=Number(u.searchParams.get('page_size')||200),total=1392;
     return respond({items:Array.from({length:Math.max(0,Math.min(size,total-(page-1)*size))},(_,i)=>({id:10000+(page-1)*size+i,name:`Catalog ${(page-1)*size+i}`,hex_code:'#00AE42',usage_count:0})),page,page_size:size,total});
    }
-   const value=fixture[u.pathname];if(value)return respond(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);
+   const value=fixture[u.pathname];if(value){const page=structuredClone(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);if(options.detailMetrics&&u.pathname==='/api/v1/filaments')for(const item of page.items)if(item.id===17)Object.assign(item,{raw_material_weight_g:1000,price:8,density_g_cm3:1.06,diameter_mm:1.75});return respond(page);}
    return respond({},404);
   }
   if(u.pathname==='/real-spool-reel.js'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'application/javascript',body:await readFile(process.env.SHARED_REEL_FILE,'utf8')});
@@ -205,5 +205,35 @@ test('wheel separates clean RGB display from alpha preview without changing nati
  await page.waitForFunction(()=>Math.abs(document.querySelector('.detail-panel').getBoundingClientRect().right-innerWidth)<1);
  await page.click('.wheel-transparency input');assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF000000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),1);assert.equal(await page.$$('.wheel-svg circle[r="100"]').then(x=>x.length),0);
  assert.equal(await page.$eval('.color-hex',e=>e.textContent),'#FF000000');await page.click('.wheel-transparency input');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
+ }finally{await close();}
+});
+
+test('native detail links and opacity badges stay compact; RGB and four metrics fit',async()=>{
+ const options={detailMetrics:true};const {page,close}=await open(options);try{
+ const rows=await page.$$eval('.board-card',cards=>cards.map(card=>{const rgb=card.querySelector('.card-rgb').getBoundingClientRect(),source=card.querySelector('.card-actions').getBoundingClientRect();return {rgbHeight:rgb.height,sourceTop:source.top,rgbBottom:rgb.bottom};}));
+ const pin=await page.$eval('.board-card:first-child',e=>{const title=e.querySelector('.card-name').getBoundingClientRect(),pin=e.querySelector('.pin-btn').getBoundingClientRect(),rgb=e.querySelector('.card-rgb').getBoundingClientRect();return {titleWidth:title.width,metaWidth:e.querySelector('.card-meta').clientWidth,pinBelow:pin.top>=rgb.bottom};});assert.ok(pin.pinBelow);assert.ok(pin.titleWidth>pin.metaWidth*.75);
+ const labels=await page.$$eval('.board-card:first-child .rgb-label',x=>x.map(e=>e.textContent.trim()));assert.deepEqual(labels,['R:','G:','B:']);
+ for(const row of rows){assert.ok(row.rgbHeight<20,'RGB stays on one line');assert.ok(row.sourceTop>=row.rgbBottom,'source badge sits below RGB');}
+ await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
+ assert.equal(await page.$eval('.detail-filaman-link',e=>e.getAttribute('href')),'/filaments/17');assert.equal(await page.$eval('.detail-filaman-link',e=>e.target),'_top');assert.ok(await page.$eval('.detail-filaman-link',e=>e.classList.contains('connected')));
+ assert.equal(await page.$eval('.opacity-badge',e=>e.textContent.trim()),'0%');
+ const tops=await page.$$eval('.info-badges .info-badge',items=>items.map(e=>Math.round(e.getBoundingClientRect().top)));assert.equal(tops.length,4);assert.equal(new Set(tops).size,1,'four metrics occupy one desktop row');
+ options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>!document.querySelector('.detail-filaman-link').classList.contains('connected'));
+ await page.$eval('.detail-overlay',e=>e.click());await page.$eval('[id="board-card-filament:19"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.equal(await page.$('.opacity-badge'),null,'opaque colors need no opacity badge');
+ }finally{await close();}
+});
+
+test('card titles open details by keyboard and pin actions leave full title width',async()=>{
+ const {page,close}=await open();try{
+
+ await page.focus('.board-card:first-child .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel',{timeout:4000});await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.click('button[title="Carousel"]');await page.waitForSelector('.card-container .card-name');await page.focus('.card-container .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel');
+ }finally{await close();}
+});
+
+test('embedded mobile toolbar stays clear of the FilaMan hamburger',async()=>{
+ const {page,close}=await open({parent:true,mobileHost:true});try{
+ const frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');const host=await page.$eval('#sidebar-toggle',e=>e.getBoundingClientRect().right);
+ const buttons=await frame.$$eval('nav button',items=>items.map(e=>e.getBoundingClientRect()).filter(r=>r.width>0).map(r=>({left:r.left,right:r.right})));assert.ok(buttons.length>0);assert.ok(buttons.every(b=>b.left>=host&&b.right<=390),'header actions must be visible beside host navigation');
  }finally{await close();}
 });

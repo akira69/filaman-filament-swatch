@@ -14,6 +14,8 @@
     "inventory": "Inventaire",
     "catalog": "Catalogue de couleurs",
     "unknown": "Quantité restante inconnue",
+    "connected": "Connecté à FilaMan",
+    "disconnected": "FilaMan indisponible",
     "opacity": "Opacité",
     "edit": "Ouvrir dans FilaMan",
     "usage": "{count} affectations de couleur",

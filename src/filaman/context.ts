@@ -1,8 +1,8 @@
 import { reactive } from 'vue';
 import { normalizeColor, hexToRgbString } from '../lib/colorUtils';
 import { loadNativeSettings } from '../api/filaman';
-export type HostContext = {language:'en'|'de'|'fr'; currency:string|null; theme:string;userId?:number|null};
-export const hostContext = reactive<HostContext>({language:'en',currency:null,theme:'brand',userId:null});
+export type HostContext = {language:'en'|'de'|'fr'; currency:string|null; theme:string;userId?:number|null;connected?:boolean};
+export const hostContext = reactive<HostContext>({language:'en',currency:null,theme:'brand',userId:null,connected:false});
 export function startHostContext() {
   let stopped=false,sequence=0,languageRevision=0;
   const controller=new AbortController();
@@ -26,10 +26,13 @@ export function startHostContext() {
   };
   const refresh=async()=>{
     const current=++sequence,revision=languageRevision;
-    const settings=await loadNativeSettings(controller.signal);
+    const settings=await loadNativeSettings(controller.signal).catch(error=>{
+      if(!stopped&&current===sequence)hostContext.connected=false;
+      throw error;
+    });
     if(stopped||current!==sequence)return;
     if(revision===languageRevision)hostContext.language=settings.language==='de'||settings.language==='fr'?settings.language:'en';
-    hostContext.userId=settings.userId;hostContext.currency=settings.currency || null;syncTheme();
+    hostContext.connected=true;hostContext.userId=settings.userId;hostContext.currency=settings.currency || null;syncTheme();
   };
   const background=()=>void refresh().catch(error=>{if(!stopped)console.error('Could not refresh FilaMan presentation',error);});
   const visible=()=>{if(document.visibilityState==='visible')background();};

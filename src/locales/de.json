@@ -510,6 +510,8 @@
     "inventory": "Bestand",
     "catalog": "Farbkatalog",
     "unknown": "Restmenge unbekannt",
+    "connected": "Mit FilaMan verbunden",
+    "disconnected": "FilaMan nicht erreichbar",
     "opacity": "Deckkraft",
     "edit": "In FilaMan öffnen",
     "usage": "{count} Farbzuordnungen",

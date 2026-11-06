@@ -128,3 +128,13 @@ Source guide: <https://github.com/Disane87/spoolman-filament-swatch/blob/935d349
 Verdict: rework finding 1 and the unmet submission items before treating PR53 as ready; keep it open meanwhile.
 
 Not checked: real Spoolman/external services, responsive manual QA, full console audit, fresh builds/Node24 locally, native edition implementation, published screenshots, image/release execution. Main risk: standalone server selection can silently revert on reload until finding 1 is fixed.
+
+## Implemented disposition
+
+Keep PR53 open as draft for rework. The stale standalone `surl` regression was
+fixed with a failing-then-passing regression and squash-integrated via fork
+[PR15](https://github.com/akira69/filaman-filament-swatch/pull/15). Corrected head:
+`0638277846fb9e2ed85a4fb901cd59abcb280b74`. Hosted production build and all 13
+original standalone/hosted/query tests passed. PR53 title/body now state its
+generic scope and the unmet real-service/manual/screenshot requirements. It is
+not declared submission-ready; native fork work proceeds independently.

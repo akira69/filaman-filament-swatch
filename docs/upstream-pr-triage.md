@@ -76,4 +76,3 @@ When importing PR68 or a later verified dependency selection, retain author cred
 - `upstream-triage-reproduce.cjs` and `upstream-triage-reproduction.json`: isolated executable before/after checks and passing results. Run `node upstream-triage-reproduce.cjs` from this artifact directory; it uses the existing source checkout's installed Vue/compiler/TypeScript dependencies and pinned git objects. Source checkout was not modified.
 
 Not checked: upgraded dependency installs/builds, real Spoolman server routing, full browser import flow, complete binary/license graph, or GitHub branch mergeability. No candidate is release-ready merely from this report.
-

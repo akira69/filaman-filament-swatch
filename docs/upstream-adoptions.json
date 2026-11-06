@@ -1650,7 +1650,7 @@
       "headSha": "1f133caa5a7f79c592a82f4da22e2c69a2af69c4",
       "baseSha": "935d3496df98faaec18e38aa4eba18c43d246c2f",
       "patchId": "66d407454d1e48e2af905f3e96b052e0b2d131d7",
-      "localCommit": "4871504",
+      "localCommit": "54d7cb3c43a21fe519c110cbe264f0814053baca",
       "decision": "adapt",
       "reason": "Six import strings adapted with French and FilaMan wording; behavior reproduced in import-i18n.test.mjs. Credit: IdefixRC. Local patch identity recorded after commit.",
       "paths": [

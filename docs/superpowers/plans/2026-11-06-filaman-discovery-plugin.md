@@ -10,7 +10,8 @@
 
 **Spec:** [Approved design](../specs/2026-11-06-filaman-discovery-plugin-design.md).
 
-**Execution status:** Planning only. The user deferred the authorized rename, repository/PR management and implementation until this plan is executed. No GitHub mutation, workflow deployment, selected-PR adoption or product code change belongs to the planning turn.
+**Execution status:** Implemented and locally verified; see [verification](../../implementation-verification.md) and [transition tracker](https://github.com/akira69/filaman-filament-swatch/issues/14). Core PR204 remains a release dependency. Feature PRs remain unmerged and no tag/release is published. The original planning-only text below records the approved execution gates; repository/PR results are tracked in the transition records.
+
 
 ## Global Constraints
 

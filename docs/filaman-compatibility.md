@@ -22,3 +22,17 @@ visual capabilities; discovery and textual links survive their absence.
 
 No FilaMan database migrations, native editing, SpoolmanAPI plugin, external
 catalog service or analytics is required by this edition.
+
+## Current release gate
+
+Core [PR204](https://github.com/Fire-Devils/filaman-system/pull/204), based on
+`devel` at `c8c76c4f97d28c3ea9165f000edcdc756d3228ed`, supplies the integration
+shell, asset installer/proxy and preservation of mounted child state. A stock
+released core is not yet claimed compatible with the ZIP installation path.
+The existing shared renderer was merged in core commit
+`4d5eabb5142b6a891d78ba7ad9df227d485e43e6`; it is not duplicated here.
+
+The isolated source-copy preview has these capabilities staged without replacing
+its photo/profile-capable backend. Final package install and upgrade each
+converged across 16 fresh HTTP connections; native counts remain 33/38/1392,
+photo/profile links 4/4, and SpoolmanAPI is inactive. Source data was untouched.

@@ -2,11 +2,15 @@
 
 Edition: 1.1.0. Upstream source: 935d3496df98faaec18e38aa4eba18c43d246c2f.
 
-- Native production build, TypeScript check, 28 Node/browser tests and eight
+- Native production build, TypeScript check, 30 Node/browser tests and eight
   Python wrapper/package tests pass. Tests include complete paging, 401 login
   versus 403 mode isolation, revoked cache/detail access, per-user host-reload
   restoration, history/query navigation including project-detail return, French bootstrap failure text, RGBA zero, localized money and unknown
   legacy cost, native logos/links/fill, stale-build packaging and updater recovery.
+- FilaMan Default, Light and Dark palettes use live host tokens, flat surfaces,
+  semantic alpha borders and shared typography/radii. Browser checks cover token
+  parity and identical rendered opaque swatch pixels across all three themes;
+  RGBA/checkerboard and multicolor behavior remain intact.
 - Core PR204 is based on upstream devel c8c76c4f97d28c3ea9165f000edcdc756d3228ed:
   19 frontend tests, 24 backend installer tests and static build pass. The existing
   shared renderer is reused; stock released-core compatibility is not claimed.

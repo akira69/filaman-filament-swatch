@@ -4,6 +4,7 @@ import {before,after,test} from 'node:test';
 import puppeteer from 'puppeteer';
 const origin='http://swatch.test',base='/plugins/filament-swatch/';
 const fixture=JSON.parse(await readFile(new URL('./fixtures/filaman/contracts.json',import.meta.url),'utf8'));
+const themes=await readFile(new URL('./fixtures/filaman/themes.css',import.meta.url),'utf8');
 let browser;before(async()=>{browser=await puppeteer.launch({headless:true,args:process.env.CI?['--no-sandbox']:[]});});after(async()=>await browser?.close());
 async function open(options={}){
  const context=await browser.createBrowserContext();const page=await context.newPage();await page.setViewport({width:1400,height:900});
@@ -13,7 +14,7 @@ async function open(options={}){
  page.on('request',async request=>{
   const u=new URL(request.url());requests.push(u.href);const respond=(value,status=200)=>request.respond({status,contentType:'application/json',body:JSON.stringify(value)});
   if(u.origin!==origin){if(process.env.CAPTURE_SWATCH && /(?:iconify\.design|googleapis\.com|gstatic\.com)$/.test(u.hostname))return request.continue();return respond([]);}
-  if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><body><iframe src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
+  if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body><iframe src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
   if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
   if(u.pathname==='/api/v1/me')return respond({id:1,language:options.language||'en'},options.expireSettings?401:200);
@@ -131,5 +132,38 @@ test('returning from a project detail preserves the active discovery mode and se
 test('French host startup failures use French retry text before profile loading',async()=>{
  const {page,close}=await open({badConfig:true,query:'&spoolman_locale=fr'});try{
  assert.match(await page.$eval('[role=alert]',e=>e.textContent),/Impossible/);assert.ok(await page.evaluate(()=>[...document.querySelectorAll('button')].some(e=>e.textContent==='Réessayer')));
+ }finally{await close();}
+});
+
+test('native surfaces follow all three FilaMan themes without tinting filament colors',async()=>{
+ const {page,close}=await open({parent:true});try{
+ const frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');
+ await frame.$eval('[id="board-card-color:17"]',e=>e.click());await frame.waitForSelector('.detail-panel');
+ const swatch=await frame.$eval('.color-swatch-large',e=>getComputedStyle(e).backgroundImage);
+ for(const theme of ['brand','light','dark']){
+  await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+  await frame.waitForFunction(theme=>document.documentElement.dataset.theme===theme,{},theme);
+  const expected=await page.$eval('html',e=>{const s=getComputedStyle(e);return {background:s.backgroundColor,text:s.color,border:s.borderColor,card:s.getPropertyValue('--bg-elevated').trim(),accent:s.getPropertyValue('--accent').trim()};});
+  await frame.waitForFunction(border=>getComputedStyle(document.querySelector('.board-card')).borderColor===border,{},expected.border);
+  const actual=await frame.evaluate(()=>{const s=getComputedStyle(document.body),card=getComputedStyle(document.querySelector('.board-card')),detail=getComputedStyle(document.querySelector('.detail-panel'));return {background:s.backgroundColor,image:s.backgroundImage,text:s.color,card:card.backgroundColor,detail:detail.backgroundColor,border:card.borderColor,accent:getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim()};});
+  assert.equal(actual.background,expected.background,theme+' background');assert.equal(actual.image,'none',theme+' decorative wash');assert.equal(actual.text,expected.text,theme+' text');assert.equal(actual.border,expected.border,theme+' border');
+  const rgb=hex=>'rgb('+hex.match(/\w\w/g).map(v=>parseInt(v,16)).join(', ')+')';
+  assert.equal(actual.card,rgb(expected.card),theme+' card');assert.equal(actual.detail,rgb(expected.card),theme+' details');assert.equal('rgb('+actual.accent+')',rgb(expected.accent),theme+' accent');
+  assert.equal(await frame.$eval('.color-swatch-large',e=>getComputedStyle(e).backgroundImage),swatch,'theme must preserve RGBA');
+ }
+ // The host owns its palette, including future changes to the same theme.
+ await page.evaluate(()=>{document.documentElement.style.setProperty('--accent','#123456');document.documentElement.dataset.theme='brand';});
+ await frame.waitForFunction(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim()==='18, 52, 86');
+ }finally{await close();}
+});
+
+test('opaque shaded swatches render identically over every theme surface',async()=>{
+ const {page,close}=await open();try{
+ const swatch=await page.waitForSelector('[id="board-card-filament:19"] .swatch');
+ const box=await swatch.boundingBox();const clip={x:box.x+20,y:box.y+20,width:50,height:50};let reference;
+ for(const theme of ['brand','light','dark']){
+  await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+  const pixels=await page.screenshot({clip});if(reference)assert.deepEqual(pixels,reference,theme+' must not recolor opaque filament');else reference=pixels;
+ }
  }finally{await close();}
 });

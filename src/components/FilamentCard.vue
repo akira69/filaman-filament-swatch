@@ -1,6 +1,6 @@
 <template>
   <div
-    class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[rgb(var(--border-rgb))] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent-rgb),0.6)]"
+    class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent-rgb),0.6)]"
     @click="$emit('selectFilament', filament)"
   >
     <div class="flex items-start justify-between gap-2 sm:gap-3">
@@ -152,7 +152,7 @@ const copyHex = async () => {
   letter-spacing: 0.02em;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(var(--border-rgb), 0.7);
+  border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);

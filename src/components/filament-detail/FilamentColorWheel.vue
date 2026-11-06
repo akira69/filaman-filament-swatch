@@ -138,7 +138,7 @@ const {
 
         <!-- Center circle with current color -->
         <circle cx="100" cy="100" r="35" :fill="filament.colorHex" class="wheel-center" />
-        <circle cx="100" cy="100" r="35" fill="none" stroke="rgba(var(--border-rgb), 0.5)" stroke-width="2" />
+        <circle cx="100" cy="100" r="35" fill="none" stroke="var(--border)" stroke-width="2" />
       </svg>
 
       <div class="wheel-legend">
@@ -217,7 +217,7 @@ const {
   gap: 16px;
   padding: 16px;
   background: rgba(var(--surface-alt), 0.2);
-  border: 1px solid rgba(var(--border-rgb), 0.3);
+  border: 1px solid var(--border);
   border-radius: 16px;
 }
 
@@ -266,7 +266,7 @@ const {
   gap: 6px;
   padding: 6px 10px;
   background: rgba(var(--surface-alt), 0.4);
-  border: 1px solid rgba(var(--border-rgb), 0.3);
+  border: 1px solid var(--border);
   border-radius: 20px;
   font-size: 11px;
   color: rgb(var(--text-muted));

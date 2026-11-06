@@ -241,7 +241,7 @@ const minimapStyle = swatchStyle;
 
 <style scoped>
 .board-wrapper {
-  border: 1px solid rgba(var(--border-rgb), 0.6);
+  border: 1px solid var(--border);
   background: rgba(var(--surface), 0.8);
   display: flex;
   flex-direction: column;
@@ -320,7 +320,7 @@ const minimapStyle = swatchStyle;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 4px;
-  border: 1px solid rgba(var(--border-rgb), 0.6);
+  border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.7);
   flex-shrink: 0;
 }
@@ -516,7 +516,7 @@ const minimapStyle = swatchStyle;
   letter-spacing: 0.02em;
   padding: 6px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(var(--border-rgb), 0.7);
+  border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 120ms ease;
@@ -551,7 +551,7 @@ const minimapStyle = swatchStyle;
   height: 16px;
   flex-shrink: 0;
   border-radius: 5px;
-  border: 1px solid rgba(var(--border-rgb), 0.6);
+  border: 1px solid var(--border);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease;

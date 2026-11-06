@@ -2,7 +2,7 @@
 
 Edition: 1.1.0. Upstream source: 935d3496df98faaec18e38aa4eba18c43d246c2f.
 
-- Native production build, TypeScript check, 34 Node/browser tests and eight
+- Native production build, TypeScript check, 37 Node/browser tests and eight
   Python wrapper/package tests pass. Tests include complete paging, 401 login
   versus 403 mode isolation, revoked cache/detail access, per-user host-reload
   restoration, history/query navigation including project-detail return, French bootstrap failure text, RGBA zero, localized money and unknown
@@ -19,6 +19,11 @@ Edition: 1.1.0. Upstream source: 935d3496df98faaec18e38aa4eba18c43d246c2f.
   A small Include transparency checkbox separates RGB display from alpha preview,
   with checkerboard limited to transparent segments/center and no data mutation.
   Missing hues stay empty; each color occupies at most 30 degrees near its actual hue.
+- Compact readouts place native links/status in the header, show opacity only
+  below 100%, keep common metrics in one row, and display muted RGB labels with
+  theme-foreground values. Pin/source actions sit below full-width title buttons;
+  keyboard opening works in board/carousel, and mobile toolbar actions avoid
+  the core hamburger. Fresh copied data also migrates and runs under exact PR204.
 - Core PR204 is based on upstream devel c8c76c4f97d28c3ea9165f000edcdc756d3228ed:
   19 frontend tests, 24 backend installer tests and static build pass. The existing
   shared renderer is reused; stock released-core compatibility is not claimed.
@@ -47,3 +52,12 @@ Real Spoolman/external-service submission evidence remains outstanding there.
 Public PR screenshots use synthetic records; the private inventory snapshot and
 all credentials remain outside source commits. Qwen drafted only the README
 usage guide; Codex checked commands and corrected it. Token savings unmeasured.
+
+## Final combined review — merge held
+
+The current shared project store is not separated by native account. A mounted
+plugin also retains the prior account's filters/pins when the account changes
+in another tab. These account-isolation findings remain open; the PR stays draft.
+Inactive cached modes also miss revalidation when revisited after a scoped 403.
+That is a contract regression gap, not a demonstrated inventory-only permission
+bypass on current stock core, whose native GET routes require authentication.

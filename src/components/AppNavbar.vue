@@ -29,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const inFilamanShell=window.parent!==window && !!window.parent.document.getElementById('sidebar-toggle');
 const route = useRoute();
 const router = useRouter();
 const {discoveryQuery}=useFilaments();
@@ -55,11 +56,11 @@ const isFilamentsView = () => route.path.includes('/swatch');
 </script>
 
 <template>
-  <nav class="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgb(var(--surface))] shadow-sm">
-    <div class="px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
+  <nav :class="{'in-filaman-shell':inFilamanShell}" class="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgb(var(--surface))] shadow-sm">
+    <div class="app-navbar-inner px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
       <!-- Left: Logo & Navigation -->
       <div class="flex items-center gap-2 sm:gap-4 min-w-fit flex-shrink-0">
-        <div class="flex items-center gap-2">
+        <div class="app-brand flex items-center gap-2">
           <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" />
           <span class="hidden sm:inline font-semibold text-[rgb(var(--text))] text-base">{{ appTitle }}</span>
         </div>
@@ -301,5 +302,9 @@ const isFilamentsView = () => route.path.includes('/swatch');
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+@media (max-width:599px) {
+  .in-filaman-shell .app-navbar-inner {padding-left:52px;}
+  .in-filaman-shell .app-brand {display:none;}
 }
 </style>

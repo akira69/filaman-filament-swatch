@@ -145,7 +145,7 @@ const {
 
         <!-- Center circle with current color -->
         <circle v-if="showTransparency && isTransparent(filament.colorHex)" cx="100" cy="100" r="35" :fill="`url(#${checkerId})`" />
-        <circle cx="100" cy="100" r="35" :fill="displayColor(filament.colorHex)" class="wheel-center" />
+        <circle cx="100" cy="100" r="35" :fill="displayColor(filament.colorHex)" class="wheel-center"><title>{{ labels.currentColor }}: {{ filament.colorHex }}</title></circle>
         <circle cx="100" cy="100" r="35" fill="none" stroke="var(--border)" stroke-width="2" />
       </svg>
 

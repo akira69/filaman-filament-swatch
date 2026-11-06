@@ -19,3 +19,6 @@ html[data-theme] h1 { font-family:var(--font-serif); }
 html[data-theme] :is(.board-wrapper,.board-card,.card-container,.control-card,.palette-panel) { background:var(--card); }
 html[data-theme] :is(.board-card,.card-container) { border-radius:var(--radius-md);box-shadow:var(--shadow-sm); }
 html[data-theme] .detail-header { background:var(--muted); }
+
+.card-actions {display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;}
+.card-name:focus-visible {outline:2px solid var(--ring);outline-offset:3px;border-radius:4px;}

@@ -514,6 +514,8 @@
     "inventory": "Inventory",
     "catalog": "Color catalog",
     "unknown": "Unknown remaining amount",
+    "connected": "Connected to FilaMan",
+    "disconnected": "FilaMan unavailable",
     "opacity": "Opacity",
     "edit": "Open in FilaMan",
     "usage": "{count} color assignments",

@@ -117,3 +117,19 @@ test('semantic dialog backgrounds are valid in each host theme',async()=>{
 test('expired native bootstrap returns to top-level FilaMan login',async()=>{
  const {page,close}=await open({expireSettings:true});try{await page.waitForFunction(()=>location.pathname==='/login');assert.match(new URL(page.url()).searchParams.get('next'),/app\/swatch/);}finally{await close();}
 });
+test('returning from a project detail preserves the active discovery mode and search',async()=>{
+ const {page,close}=await open({query:'&mode=catalog&q=Transparent'});try{
+ await page.evaluate(()=>localStorage.setItem('spoolman-projects',JSON.stringify([{id:'demo-project',name:'Demo project',status:'planning',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),filamentUsage:[]}])));
+ await click(page,'Projects');await page.waitForFunction(()=>document.body.innerText.includes('Demo project'));
+ await page.evaluate(()=>[...document.querySelectorAll('h3,div')].find(e=>e.textContent.trim()==='Demo project')?.click());
+ await page.waitForFunction(()=>location.pathname.endsWith('/projects/demo-project'));
+ await click(page,'Filaments');await page.waitForFunction(()=>location.pathname.endsWith('/app/swatch'));
+ assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$eval('.card-name',e=>e.textContent.trim()),'Transparent');
+ }finally{await close();}
+});
+test('French host startup failures use French retry text before profile loading',async()=>{
+ const {page,close}=await open({badConfig:true,query:'&spoolman_locale=fr'});try{
+ assert.match(await page.$eval('[role=alert]',e=>e.textContent),/Impossible/);assert.ok(await page.evaluate(()=>[...document.querySelectorAll('button')].some(e=>e.textContent==='Réessayer')));
+ }finally{await close();}
+});

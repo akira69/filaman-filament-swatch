@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {useFilaments} from '@/composables/useFilaments';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -30,6 +31,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+const {discoveryQuery}=useFilaments();
 
 const mobileMenuOpen = ref(false);
 const appTitle = computed(() => (props.isHosted ? t('app.hostedTitle') : t('app.title')));
@@ -67,7 +69,7 @@ const isFilamentsView = () => route.path.includes('/swatch');
           <Button
             :variant="route.path.includes('/swatch') ? 'default' : 'ghost'"
             size="sm"
-            @click="router.push({path:'/app/swatch',query:route.query})"
+            @click="router.push({path:'/app/swatch',query:discoveryQuery()})"
             class="h-8 sm:h-9 px-2 sm:px-3 rounded-none"
           >
             <Icon icon="lucide:palette" class="w-4 h-4 sm:mr-1" />

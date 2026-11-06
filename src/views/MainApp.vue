@@ -1,26 +1,34 @@
 <template>
   <div class="mx-auto flex h-screen flex-col overflow-hidden">
     <!-- Main Content Wrapper (gets blurred when panels are open) -->
-    <div class="main-content-wrapper" :class="{ blurred: paletteOpen || selectedFilament }">
+    <div class="main-content-wrapper flex min-h-0 flex-1 flex-col" :class="{ blurred: paletteOpen || selectedFilament }">
       <!-- Top Navigation Bar -->
       <AppNavbar
         :projects-count="projectsCount"
         :pinned-count="pinnedItems.length"
         :is-connected="isConnected"
         :has-url="hasUrl"
+        :is-hosted="isHosted"
+        :view-mode="viewMode"
         @open-url-dialog="openUrlDialog"
         @open-palette="paletteOpen = true"
         @open-changelog="openChangelog"
         @open-import-dialog="showImportDialog = true"
+        @changeView="viewMode = $event"
+        @openFilterModal="filterModalOpen = true"
+        @search="handleSearch"
       />
 
       <!-- Router Outlet -->
-      <div class="router-content px-3 sm:px-6 py-1 sm:py-2">
+      <div
+        class="router-content flex-1 min-h-0 overflow-y-auto"
+        :class="isHosted ? 'px-3 sm:px-4 py-1 sm:py-1.5' : 'px-3 sm:px-6 py-1 sm:py-2'"
+      >
         <RouterView class="flex-1 min-h-0" />
       </div>
 
       <!-- App Footer -->
-      <footer class="flex-shrink-0 border-t border-border/40 bg-[rgb(var(--background))]/80 backdrop-blur-sm">
+      <footer v-if="!isHosted" class="flex-shrink-0 border-t border-border/40 bg-[rgb(var(--background))]/80 backdrop-blur-sm">
         <div class="px-3 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[rgb(var(--text-muted))]">
           <div class="flex items-center gap-4">
             <span class="flex items-center gap-1.5">
@@ -87,51 +95,17 @@
     </div>
 
     <!-- Palette Drawer -->
-    <div class="palette-drawer" :class="{ open: paletteOpen }">
-      <div class="palette-overlay" @click="paletteOpen = false" />
-      <div class="palette-panel">
-        <div class="palette-panel__header">
-          <div>
-            <p class="label text-[10px] sm:text-xs">{{ t('info.palette') }}</p>
-            <p class="mono text-sm sm:text-base text-[rgb(var(--text))]">{{ pinnedItems.length }} {{ pinnedItems.length === 1 ? t('info.item') : t('info.items') }}</p>
-          </div>
-          <div class="flex gap-1 sm:gap-2">
-            <Button v-if="pinnedItems.length" size="sm" variant="ghost" @click="clearPalette" class="h-9 px-2 sm:px-3">
-              <Icon icon="lucide:trash-2" class="w-4 h-4 sm:mr-1" />
-              <span class="hidden sm:inline">{{ t('actions.clearPalette') }}</span>
-            </Button>
-            <Button size="sm" variant="secondary" @click="paletteOpen = false" class="h-9 w-9 p-0">
-              <Icon icon="lucide:x" class="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-        <div class="palette-panel__body">
-          <div v-if="pinnedItems.length" class="summary-palette">
-            <button
-              v-for="item in pinnedItems"
-              :key="item.id"
-              class="summary-chip"
-              :style="{ background: item.colorHex }"
-              @click="scrollToPinned(item.id)"
-            >
-              <span>{{ item.name }}</span>
-              <span class="mono">{{ item.colorHex.toUpperCase() }}</span>
-            </button>
-          </div>
-          <div v-else class="flex flex-col items-center justify-center gap-3 py-12 text-center">
-            <p class="text-sm text-[rgb(var(--text-muted))]">
-              {{ t('info.paletteEmpty') }}
-            </p>
-            <p class="text-xs text-[rgb(var(--text-muted))]">
-              {{ t('info.paletteHint') }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PaletteDrawer
+      :is-open="paletteOpen"
+      :pinned-items="pinnedItems"
+      @close="paletteOpen = false"
+      @removePin="togglePin({ id: $event })"
+      @clearPalette="clearPalette"
+      @scrollTo="scrollToPinned"
+    />
 
     <!-- URL Dialog -->
-    <Dialog v-model:open="urlDialogOpen">
+    <Dialog v-if="!isHosted" v-model:open="urlDialogOpen">
       <DialogContent class="sm:max-w-md" :onInteractOutside="(e) => { if (!hasUrl) e.preventDefault(); }">
         <DialogHeader>
           <DialogTitle>{{ t("dialog.spoolmanUrlTitle") }}</DialogTitle>
@@ -245,9 +219,11 @@ import { useI18n } from "vue-i18n";
 import { useRouter, RouterView } from "vue-router";
 import { useSeo } from "../composables/useSeo";
 import { useSpoolmanUrl } from "../composables/useSpoolmanUrl";
+import { isHostedMode } from "../composables/useHostedMode";
 import { getProjects } from "../api/projects";
 import { useFilaments } from "../composables/useFilaments";
 import AppNavbar from "../components/AppNavbar.vue";
+import PaletteDrawer from "../components/PaletteDrawer.vue";
 import ChangelogModal from "../components/ChangelogModal.vue";
 import ProjectImportDialog from "../components/ProjectImportDialog.vue";
 import { FilamentDetailPanel } from "@/components/filament-detail";
@@ -275,8 +251,17 @@ const paletteOpen = ref(false);
 const selectedFilament = ref<FilamentCard | null>(null);
 const changelogModal = ref<InstanceType<typeof ChangelogModal> | null>(null);
 const showImportDialog = ref(false);
+const filterModalOpen = ref(false);
 
 const projectsCount = computed(() => getProjects().length);
+
+// RGB is now always displayed (no toggle needed)
+
+// Handle search input from navbar
+const handleSearch = (query: string) => {
+  // Search is handled by useFilaments composable in FilamentsView
+  // This handler can be extended if needed for navbar-level search
+};
 
 // Define functions before providing them
 const selectFilament = (filament: FilamentCard) => {
@@ -299,6 +284,7 @@ provide('pinnedIds', pinnedIds);
 provide('selectedFilament', selectedFilament);
 provide('togglePin', togglePin);
 provide('selectFilament', selectFilament);
+provide('filterModalOpen', filterModalOpen);
 
 // Detail panel labels
 const detailLabels = computed(() => ({
@@ -370,6 +356,7 @@ const scrollToPinned = (id: string) => {
 };
 
 const { spoolmanUrl, setSpoolmanUrl, resetSpoolmanUrl, hasUrl } = useSpoolmanUrl();
+const isHosted = isHostedMode();
 const urlDialogOpen = ref(false);
 const spoolmanUrlInput = ref(spoolmanUrl.value);
 const connectionChecking = ref(false);
@@ -385,6 +372,10 @@ const currentDomain = computed(() => {
 });
 
 const openUrlDialog = async () => {
+  if (isHosted) {
+    return;
+  }
+
   spoolmanUrlInput.value = spoolmanUrl.value;
   connectionStatus.value = null;
   urlDialogOpen.value = true;
@@ -428,6 +419,10 @@ const applySpoolmanUrl = async () => {
 };
 
 const resetUrlToDefault = () => {
+  if (isHosted) {
+    return;
+  }
+
   resetSpoolmanUrl();
   spoolmanUrlInput.value = spoolmanUrl.value;
   urlDialogOpen.value = false;
@@ -462,10 +457,10 @@ useSeo(
 );
 
 onMounted(async () => {
-  if (!hasUrl.value) {
+  if (!hasUrl.value && !isHosted) {
     urlDialogOpen.value = true;
   } else {
-    // Check connection status on mount
+    // Hosted mode bypasses the server-picker flow and refreshes directly against the injected API base.
     await checkConnection(spoolmanUrl.value);
     refresh();
   }
@@ -476,4 +471,3 @@ onMounted(async () => {
   }
 });
 </script>
-

@@ -39,6 +39,7 @@ jobs:
       - name: Assemble plugin directory
         run: |
           cp -r dist/ filaman-plugin/static/
+          find filaman-plugin/static -name .gitkeep -delete
 
       - name: Create ZIP
         run: |

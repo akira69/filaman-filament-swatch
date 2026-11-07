@@ -78,7 +78,10 @@
             <div class="card-top">
               <div>
                 <button type="button" class="card-name w-full text-left" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
-                <div v-if="filament.kind === 'inventory'" class="card-sub"><VendorLogoBadge :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" /> {{ filament.material }}</div>
+                <div v-if="filament.kind === 'inventory'" class="card-sub">
+                  <VendorLogoBadge v-if="filament.vendor || filament.logoUrl" :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" />
+                  <span class="card-material">{{ filament.material }}</span>
+                </div>
               </div>
 
             </div>
@@ -461,6 +464,9 @@ const minimapStyle = swatchStyle;
 }
 
 .card-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   color: rgb(var(--text-muted));
   line-height: 1.3;

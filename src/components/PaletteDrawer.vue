@@ -37,7 +37,7 @@
             :style="{ '--color': item.colorHex } as any"
             @click="$emit('scrollTo', item.id)"
           >
-            <div class="chip-color" :style="getFlatSwatchStyle(item.colorHex, item.multiColorHexes)" />
+            <div class="chip-color" :style="getFlatSwatchStyle(item.colorHex, item.multiColorHexes, item.multiColorDirection, item.nativeColorStyle)" />
             <div class="chip-info">
               <div class="chip-name">{{ item.name }}</div>
               <div class="chip-hex">{{ item.colorHex.toUpperCase() }}</div>

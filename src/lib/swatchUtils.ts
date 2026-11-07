@@ -1,7 +1,6 @@
 import { normalizeColor } from './colorUtils';
-export interface SwatchStyle {
-  background: string;
-}
+import type {CSSProperties} from 'vue';
+export type SwatchStyle=CSSProperties;
 
 export type MultiColorDirection = 'coaxial' | 'longitudinal';
 
@@ -32,7 +31,8 @@ export function getMaterialLayer(material: string): string {
 /**
  * Creates a gradient for multi-color filaments
  */
-export function getMultiColorGradient(colors: string[], direction: MultiColorDirection = 'longitudinal'): string {
+export function getMultiColorGradient(colors: string[], direction: MultiColorDirection = 'longitudinal', style:'striped'|'gradient'='gradient'): string {
+  if(style==='striped')return `linear-gradient(135deg, ${colors.flatMap((color,i)=>[`${color} ${i/colors.length*100}%`,`${color} ${(i+1)/colors.length*100}%`]).join(', ')})`;
   if (direction === 'coaxial') {
     const stops = colors.map((c, i) => {
       const center = (i / (colors.length - 1)) * 100;
@@ -67,16 +67,17 @@ export function getSwatchStyle(
   colorHex: string,
   material: string,
   multiColorHexes?: string[],
-  multiColorDirection?: MultiColorDirection
+  multiColorDirection?: MultiColorDirection,
+  nativeColorStyle?:'striped'|'gradient'
 ): SwatchStyle {
   const materialLayer = getMaterialLayer(material);
 
   const checker = 'repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%) 0 0 / 12px 12px';
   const transparent = (multiColorHexes ?? [colorHex]).some(c=>(normalizeColor(c)?.alpha ?? 1)<1);
-  if (transparent) return {background: `${multiColorHexes && multiColorHexes.length>1 ? getMultiColorGradient(multiColorHexes,multiColorDirection) : `linear-gradient(${colorHex},${colorHex})`}, ${checker}`};
+  if (transparent) return {background: `${multiColorHexes && multiColorHexes.length>1 ? getMultiColorGradient(multiColorHexes,multiColorDirection,nativeColorStyle) : `linear-gradient(${colorHex},${colorHex})`}, ${checker}`};
   // Multi-color gradient logic
   if (multiColorHexes && multiColorHexes.length > 1) {
-    const colorGradient = getMultiColorGradient(multiColorHexes, multiColorDirection);
+    const colorGradient = getMultiColorGradient(multiColorHexes, multiColorDirection,nativeColorStyle);
     return {
       background: [HIGHLIGHT_GRADIENT, materialLayer, colorGradient].join(', '),
     };
@@ -95,10 +96,11 @@ export function getSwatchStyle(
 export function getFlatSwatchStyle(
   colorHex: string,
   multiColorHexes?: string[],
-  multiColorDirection?: MultiColorDirection
+  multiColorDirection?: MultiColorDirection,
+  nativeColorStyle?:'striped'|'gradient'
 ): SwatchStyle {
   const checker = 'repeating-conic-gradient(#aaa 0% 25%, #eee 0% 50%) 0 0 / 12px 12px';
-  const fill = multiColorHexes && multiColorHexes.length>1 ? getMultiColorGradient(multiColorHexes,multiColorDirection) : `linear-gradient(${colorHex},${colorHex})`;
+  const fill = multiColorHexes && multiColorHexes.length>1 ? getMultiColorGradient(multiColorHexes,multiColorDirection,nativeColorStyle) : `linear-gradient(${colorHex},${colorHex})`;
   return {background:`${fill}, ${checker}`};
 
 }

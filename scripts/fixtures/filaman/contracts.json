@@ -167,7 +167,7 @@
   "/api/v1/spools/statuses": [
     {
       "id": 1,
-      "key": "available"
+      "key": "new"
     },
     {
       "id": 2,

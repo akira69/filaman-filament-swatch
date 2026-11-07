@@ -126,6 +126,8 @@ const props = defineProps<{
     copied: string;
     sourceSpoolman: string;
     sourceExternal: string;
+    pin:string;
+    unpin:string;
   };
   sortLabels: {
     name: string;

@@ -2,11 +2,11 @@
 
 Edition: 1.1.0. Upstream source: 935d3496df98faaec18e38aa4eba18c43d246c2f.
 
-- Native production build, TypeScript check, 37 Node/browser tests and eight
-  Python wrapper/package tests pass. Tests include complete paging, 401 login
-  versus 403 mode isolation, revoked cache/detail access, per-user host-reload
-  restoration, history/query navigation including project-detail return, French bootstrap failure text, RGBA zero, localized money and unknown
-  legacy cost, native logos/links/fill, stale-build packaging and updater recovery.
+- Native production build, Vue-aware type check, 41 Node/browser tests and eight
+  Python wrapper/package tests pass. Coverage includes complete paging, 401 login
+  versus 403 mode isolation, revoked cache/detail access, account switching,
+  per-user host-reload restoration, history and query navigation, French bootstrap
+  text, RGBA zero, native logos and links, localized prices, and packaging/updater recovery.
 - FilaMan Default, Light and Dark palettes use live host tokens, flat surfaces,
   semantic alpha borders and shared typography/radii. Browser checks cover token
   parity and identical rendered opaque swatch pixels across all three themes;
@@ -38,8 +38,8 @@ Edition: 1.1.0. Upstream source: 935d3496df98faaec18e38aa4eba18c43d246c2f.
   fork main or source marker. Local Git fixtures exercise conflict/reconciliation,
   squash ancestry, dependency-only changes, adopted overlap and publication retry.
 - One independent whole-branch review identified 16 actionable findings. The
-  correction pass fixes permissions, costs, router history, lifecycle and full
-  host reloads, catalog/import affordances, semantic themes, native validity,
+  correction pass fixes permissions, prices, router history, lifecycle and full
+  host reloads, catalog affordances, semantic themes, native validity,
   type contracts and updater trust/recovery. Saved pre-fix production assets and
   pure regression tests reproduced the material failures before correction.
 
@@ -49,15 +49,29 @@ exercise a real new-source update. Upstream PR53 remains draft/rework, with its
 standalone URL regression squash-fixed and all 13 original regressions passing.
 Real Spoolman/external-service submission evidence remains outstanding there.
 
-Public PR screenshots use synthetic records; the private inventory snapshot and
-all credentials remain outside source commits. Qwen drafted only the README
-usage guide; Codex checked commands and corrected it. Token savings unmeasured.
+Public PR screenshots show the isolated copy of the actual FilaMan data.
+Database files and credentials remain outside source commits. Qwen drafted the
+README usage guide and contributor prose. Codex verified the commands and
+policies. Token savings unmeasured.
 
-## Final combined review — merge held
+## Discovery review cleanup
 
-The current shared project store is not separated by native account. A mounted
-plugin also retains the prior account's filters/pins when the account changes
-in another tab. These account-isolation findings remain open; the PR stays draft.
-Inactive cached modes also miss revalidation when revisited after a scoped 403.
-That is a contract regression gap, not a demonstrated inventory-only permission
-bypass on current stock core, whose native GET routes require authentication.
+The native edition removes the unreleased Projects feature, its file importer,
+3D previews, storage, sample files and exclusive dependencies. Pinned palettes
+remain part of discovery. Old Projects URLs redirect to discovery.
+
+On a verified account switch, Swatch clears the mounted view and starts a clean
+launch before loading the new account's filters and pins. Switching between
+discovery modes revalidates cached data and clears inaccessible records after
+a 403. Inventory filters require a single spool to satisfy both location and
+stock scope, and Reset returns to the default inventory scope. Native multicolor
+swatches preserve their striped or gradient rendering and alpha.
+
+The follow-up independent review found no blocking issues. The carousel's
+remaining weight now uses the host locale for decimal formatting.
+
+The final ZIP upgraded the isolated preview on port 8087. Sixteen fresh
+requests served the new bundle. The copied database still exposed 33 filaments,
+38 spools and 1,392 colors. Chromium verified host fonts and theme tokens in
+Default, Light and Dark, plus native detail links and scrollable catalog details
+at desktop and mobile widths.

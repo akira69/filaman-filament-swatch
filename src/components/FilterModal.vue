@@ -204,14 +204,9 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Icon } from '@iconify/vue';
+import type {DiscoveryFilters} from '@/composables/useFilaments';
 
-interface FilterState {
-  vendor: string;
-  material: string;
-  location: string;
-  source: 'all' | 'spoolman' | 'external';
-  colorType: 'all' | 'single' | 'multi';
-}
+type FilterState=Pick<DiscoveryFilters,'vendor'|'material'|'location'|'source'|'colorType'|'inventoryScope'>;
 
 const props = defineProps<{
   mode?: string;
@@ -240,8 +235,9 @@ const resetFilters = () => {
     vendor: 'all',
     material: 'all',
     location: 'all',
-    source: 'all',
+    source: 'filaman',
     colorType: 'all',
+    inventoryScope:'filaments',
   };
 };
 

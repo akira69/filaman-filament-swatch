@@ -1652,7 +1652,7 @@
       "patchId": "66d407454d1e48e2af905f3e96b052e0b2d131d7",
       "localCommit": "54d7cb3c43a21fe519c110cbe264f0814053baca",
       "decision": "adapt",
-      "reason": "Six import strings adapted with French and FilaMan wording; behavior reproduced in import-i18n.test.mjs. Credit: IdefixRC. Local patch identity recorded after commit.",
+      "reason": "Historically adapted six import strings with French and FilaMan wording. The native edition subsequently removed Projects and its importer. Credit: IdefixRC. Original adoption commit and patch identity retained.",
       "paths": [
         "src/components/FilamentCombobox.vue",
         "src/components/ProjectImportDialog.vue",

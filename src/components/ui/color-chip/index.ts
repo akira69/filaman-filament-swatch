@@ -6,4 +6,7 @@ export interface ColorChipItem {
   name: string;
   vendor?: string|null;
   source: string;
+  multiColorHexes?:string[];
+  multiColorDirection?:'coaxial'|'longitudinal';
+  nativeColorStyle?:'striped'|'gradient';
 }

@@ -6,8 +6,6 @@
     "hostedTitle": "FilaMan Swatch",
     "subtitle": "Explore your filaments and color catalog",
     "tagline": "Swipe through colors, find materials, and remember perfect matches.",
-    "filaments": "Filaments",
-    "projects": "Projects",
     "footer": {
       "tagline": "Visual filament color browser",
       "handCrafted": "Hand crafted with",
@@ -414,87 +412,6 @@
       "madeWith": "Made with {heart} by {author} for the 3D printing community"
     }
   },
-  "projects": {
-    "title": "Projects",
-    "subtitle": "Manage your 3D printing projects and filament usage",
-    "import": "Import Project",
-    "create": "Create Project",
-    "delete": "Delete",
-    "edit": "Edit",
-    "save": "Save",
-    "cancel": "Cancel",
-    "noProjects": "No projects found",
-    "noProjectsHint": "Import your first .3mf or .gcode file to get started",
-    "noDescription": "No description",
-    "confirmDelete": "Delete Project?",
-    "confirmDeleteMessage": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
-    "stats": {
-      "total": "Total",
-      "active": "Active",
-      "printTime": "Print Time",
-      "filament": "Filament",
-      "used": "Used",
-      "estimated": "Estimated",
-      "projects": "Projects"
-    },
-    "status": {
-      "all": "All",
-      "planning": "Planning",
-      "inProgress": "In Progress",
-      "completed": "Completed",
-      "archived": "Archived"
-    },
-    "fields": {
-      "name": "Project Name",
-      "description": "Description",
-      "weight": "Weight",
-      "printTime": "Print Time",
-      "cost": "Cost",
-      "costs": "Costs",
-      "slicer": "Slicer",
-      "material": "Material",
-      "vendor": "Vendor",
-      "total": "Total",
-      "estimated": "Estimated",
-      "actual": "Actual",
-      "layerHeight": "Layer Height",
-      "updated": "Updated"
-    },
-    "time": {
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "daysAgo": "{count} days ago",
-      "weeksAgo": "{count} weeks ago"
-    },
-    "importDialog": {
-      "title": "Create Project from Slicer File",
-      "description": "Upload a .3mf or .gcode file to automatically extract filament information",
-      "dropzone": "Drop file here or click to select",
-      "supportedFormats": "Supported: .3mf, .gcode",
-      "processing": "Processing file...",
-      "errorParsing": "Error parsing file: {error}",
-      "errorCreating": "Error creating project: {error}",
-      "errorUnsupported": "Only .3mf and .gcode files are supported",
-      "filaments": "Detected Filaments ({count})",
-      "unknownMaterial": "Unknown Material",
-      "namePlaceholder": "e.g. Benchy, Vase, Case...",
-      "descriptionPlaceholder": "Additional notes about the project...",
-      "nameRequired": "Project Name *",
-      "descriptionOptional": "Description (optional)",
-      "preview": "Preview",
-      "selectFilament": "Assign FilaMan filament",
-      "searchFilament": "Search filaments…",
-      "noMatch": "No filaments found"
-    },
-    "detail": {
-      "backToProjects": "Back to Projects",
-      "projectInfo": "Project Information",
-      "filamentUsage": "Filament Usage",
-      "removeFilament": "Remove Filament",
-      "editProject": "Edit Project",
-      "deleteProject": "Delete Project"
-    }
-  },
   "upload": {
     "title": "Upload Logo",
     "instruction": "Upload a transparent PNG or SVG logo for this vendor. The file will be added to the project via GitHub.",
@@ -505,9 +422,6 @@
     "prReady": "Ready to contribute!",
     "createPr": "Create Pull Request on GitHub"
   },
-  "filamente": "Filaments",
-  "projekte": "Projects",
-  "import": "Import",
   "what-s-new": "What's New",
   "discovery": {
     "mode": "Discovery mode",
@@ -518,26 +432,6 @@
     "disconnected": "FilaMan unavailable",
     "opacity": "Opacity",
     "edit": "Open in FilaMan",
-    "usage": "{count} color assignments",
-    "capacityWarning": "Available amount is insufficient or unknown",
-    "costBreakdown": "Cost breakdown",
-    "perFilament": "Per filament",
-    "perPlate": "Per plate",
-    "created": "Created",
-    "updated": "Updated",
-    "printTime": "Print time",
-    "height": "Height",
-    "slicer": "Slicer",
-    "status": "Status",
-    "delete": "Delete",
-    "cost": "Cost",
-    "length": "Length",
-    "temperature": "Temperature",
-    "bed": "Bed",
-    "plate": "Plate",
-    "notes": "Notes",
-    "required": "Required",
-    "available": "Available",
-    "view3d": "Click for 3D view"
+    "usage": "{count} color assignments"
   }
 }

@@ -1,28 +1,19 @@
 <script setup lang="ts">
-import {useFilaments} from '@/composables/useFilaments';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { Button } from '@/components/ui/button';
 
-import ThemeSwitch from '@/components/ThemeSwitch.vue';
 
-const props = defineProps<{
-  projectsCount: number;
+defineProps<{
   pinnedCount: number;
-  isConnected: boolean;
-  hasUrl: boolean;
   searchQuery: string;
-  isHosted?: boolean;
   viewMode?: 'board' | 'carousel';
 }>();
 
 const emit = defineEmits<{
-  (e: 'openUrlDialog'): void;
   (e: 'openPalette'): void;
   (e: 'openChangelog'): void;
-  (e: 'openImportDialog'): void;
   (e: 'changeView', mode: 'board' | 'carousel'): void;
   (e: 'openFilterModal'): void;
   (e: 'search', query: string): void;
@@ -30,17 +21,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const inFilamanShell=window.parent!==window && !!window.parent.document.getElementById('sidebar-toggle');
-const route = useRoute();
-const router = useRouter();
-const {discoveryQuery}=useFilaments();
 
 const mobileMenuOpen = ref(false);
-const appTitle = computed(() => (props.isHosted ? t('app.hostedTitle') : t('app.title')));
+const appTitle = computed(() => t('app.hostedTitle'));
 
-const handleOpenUrlDialog = () => {
-  emit('openUrlDialog');
-  mobileMenuOpen.value = false;
-};
 
 const handleOpenChangelog = () => {
   emit('openChangelog');
@@ -52,47 +36,17 @@ const handleSearch = (e: Event) => {
   emit('search', target.value);
 };
 
-const isFilamentsView = () => route.path.includes('/swatch');
 </script>
 
 <template>
   <nav :class="{'in-filaman-shell':inFilamanShell}" class="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgb(var(--surface))] shadow-sm">
     <div class="app-navbar-inner px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
-      <!-- Left: Logo & Navigation -->
-      <div class="flex items-center gap-2 sm:gap-4 min-w-fit flex-shrink-0">
-        <div class="app-brand flex items-center gap-2">
-          <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" />
-          <span class="hidden sm:inline font-semibold text-[rgb(var(--text))] text-base">{{ appTitle }}</span>
-        </div>
-
-        <!-- View/Page Toggle -->
-        <div class="flex gap-0.5 sm:gap-1 border border-[var(--border)] rounded-lg bg-[rgb(var(--bg))] overflow-hidden">
-          <Button
-            :variant="route.path.includes('/swatch') ? 'default' : 'ghost'"
-            size="sm"
-            @click="router.push({path:'/app/swatch',query:discoveryQuery()})"
-            class="h-8 sm:h-9 px-2 sm:px-3 rounded-none"
-          >
-            <Icon icon="lucide:palette" class="w-4 h-4 sm:mr-1" />
-            <span class="hidden md:inline text-xs">{{ t('app.filaments') || 'Filamente' }}</span>
-          </Button>
-          <Button
-            :variant="route.path.includes('/projects') ? 'default' : 'ghost'"
-            size="sm"
-            @click="router.push({path:'/app/projects',query:route.query})"
-            class="h-8 sm:h-9 px-2 sm:px-3 relative rounded-none"
-          >
-            <Icon icon="lucide:folder" class="w-4 h-4 sm:mr-1" />
-            <span class="hidden md:inline text-xs">{{ t('app.projects') || 'Projekte' }}</span>
-            <span v-if="projectsCount > 0" class="ml-1 sm:ml-1.5 flex h-4 sm:h-5 w-4 sm:w-5 items-center justify-center rounded-full bg-primary/20 text-[9px] sm:text-[10px] font-bold">
-              {{ projectsCount }}
-            </span>
-          </Button>
-        </div>
+      <div class="app-brand flex shrink-0 items-center gap-2">
+        <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" />
+        <span class="hidden sm:inline font-semibold text-[rgb(var(--text))] text-base">{{ appTitle }}</span>
       </div>
 
-      <!-- Center: Search (Filaments view only) -->
-      <div v-if="isFilamentsView()" class="flex-1 max-w-md">
+      <div class="flex-1 min-w-0 max-w-md">
         <div class="relative">
           <Icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--text-muted))]" />
           <input
@@ -107,9 +61,8 @@ const isFilamentsView = () => route.path.includes('/swatch');
 
       <!-- Right: Controls -->
       <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-        <!-- Filter Button (Filaments view only) -->
+        <!-- Filter Button -->
         <button
-          v-if="isFilamentsView()"
           @click="$emit('openFilterModal')"
           class="p-2 rounded-lg hover:bg-[var(--border)] transition text-[rgb(var(--text))] flex items-center gap-1.5"
           :title="t('filters.filter')"
@@ -118,8 +71,8 @@ const isFilamentsView = () => route.path.includes('/swatch');
           <span class="hidden sm:inline text-sm">{{ t('filters.filter') || 'Filters' }}</span>
         </button>
 
-        <!-- View Toggle (Filaments view only) -->
-        <div v-if="isFilamentsView()" class="flex items-center gap-1 bg-[rgb(var(--bg))] rounded-lg p-1">
+        <!-- View Toggle -->
+        <div class="flex items-center gap-1 bg-[rgb(var(--bg))] rounded-lg p-1">
           <button
             :class="[
               'p-1.5 rounded transition',
@@ -146,26 +99,6 @@ const isFilamentsView = () => route.path.includes('/swatch');
           </button>
         </div>
 
-        <!-- Server Status Button -->
-        <Button
-          v-if="!props.isHosted"
-          size="sm"
-          variant="outline"
-          @click="emit('openUrlDialog')"
-          class="relative h-8 sm:h-9 w-8 sm:w-9 p-0 hidden sm:flex"
-          :aria-label="t('info.spoolmanUrl')"
-        >
-          <Icon icon="lucide:server" class="w-4 h-4" />
-          <!-- Connection status indicator -->
-          <span v-if="isConnected" class="absolute -right-1 -top-1 flex h-3 w-3">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-          <span v-else-if="hasUrl" class="absolute -right-1 -top-1 flex h-3 w-3">
-            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </span>
-        </Button>
-
         <!-- Desktop: Palette button -->
         <Button
           size="sm"
@@ -182,12 +115,6 @@ const isFilamentsView = () => route.path.includes('/swatch');
             {{ pinnedCount }}
           </span>
         </Button>
-
-        <!-- Desktop: Theme & Locale -->
-        <div class="hidden sm:flex items-center gap-1">
-
-          <ThemeSwitch v-if="!props.isHosted" />
-        </div>
 
         <!-- Desktop: Changelog -->
         <Button
@@ -217,31 +144,6 @@ const isFilamentsView = () => route.path.includes('/swatch');
               <div class="fixed inset-0 z-40" @click="mobileMenuOpen = false"></div>
               <div class="absolute right-0 top-full mt-2 w-48 rounded-lg border bg-[rgb(var(--surface))] shadow-lg z-50">
                 <div class="p-2 flex flex-col gap-1">
-                  <button
-                    v-if="!props.isHosted"
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors"
-                    @click="handleOpenUrlDialog"
-                  >
-                    <div class="relative">
-                      <Icon icon="lucide:server" class="w-4 h-4" />
-                      <span v-if="isConnected" class="absolute -right-1 -top-1 flex h-2 w-2">
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
-                      <span v-else-if="hasUrl" class="absolute -right-1 -top-1 flex h-2 w-2">
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                      </span>
-                    </div>
-                    {{ t('info.spoolmanUrl') || 'Spoolman Server' }}
-                  </button>
-                  <hr v-if="!props.isHosted" class="border-[var(--border)]/50 my-1" />
-                  <div v-if="!props.isHosted" class="flex items-center justify-between px-3 py-2">
-                    <span class="text-xs text-[rgb(var(--text-muted))]">{{ t('theme.theme') || 'Theme' }}</span>
-                    <ThemeSwitch />
-                  </div>
-                  <div class="flex items-center justify-between px-3 py-2">
-
-
-                  </div>
                   <hr class="border-[var(--border)]/50 my-1" />
                   <button
                     class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors"
@@ -262,7 +164,6 @@ const isFilamentsView = () => route.path.includes('/swatch');
                   </a>
                   <hr class="border-[var(--border)]/50 my-1" />
                   <button
-                    v-if="isFilamentsView()"
                     class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors w-full"
                     @click="$emit('openFilterModal'); mobileMenuOpen = false"
                   >
@@ -270,7 +171,6 @@ const isFilamentsView = () => route.path.includes('/swatch');
                     {{ t('filters.filter') || 'Filters' }}
                   </button>
                   <button
-                    v-if="isFilamentsView()"
                     class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors w-full relative"
                     @click="$emit('openPalette'); mobileMenuOpen = false"
                   >

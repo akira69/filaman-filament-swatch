@@ -10,7 +10,6 @@ import { startHostContext } from "./filaman/context";
 import { watch } from "vue";
 import "./styles/filaman.css";
 import { type HostedConfig, type HostedWindow } from "./composables/useHostedMode";
-import { setupTheme } from "./composables/useTheme";
 
 const fonts=document.createElement('link');
 fonts.rel='stylesheet';fonts.href='/plugin-fonts.css';document.head.append(fonts);

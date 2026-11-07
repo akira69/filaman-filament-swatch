@@ -4,7 +4,7 @@ import { loadNativeSettings } from '../api/filaman';
 export type HostContext = {language:'en'|'de'|'fr'; currency:string|null; theme:string;userId?:number|null;connected?:boolean};
 export const hostContext = reactive<HostContext>({language:'en',currency:null,theme:'brand',userId:null,connected:false});
 export function startHostContext() {
-  let stopped=false,sequence=0,languageRevision=0;
+  let stopped=false,identityChanging=false,sequence=0,languageRevision=0;
   const controller=new AbortController();
   const parentRoot=window.parent.document.documentElement;
   const syncTheme=()=>{
@@ -25,12 +25,20 @@ export function startHostContext() {
     }
   };
   const refresh=async()=>{
+    if(identityChanging)return;
     const current=++sequence,revision=languageRevision;
     const settings=await loadNativeSettings(controller.signal).catch(error=>{
       if(!stopped&&current===sequence)hostContext.connected=false;
       throw error;
     });
-    if(stopped||current!==sequence)return;
+    if(stopped||identityChanging||current!==sequence)return;
+    if(hostContext.userId!==null && hostContext.userId!==settings.userId){
+      identityChanging=true;
+      hostContext.connected=false;hostContext.userId=null;
+      const query=new URLSearchParams({filaman_hosted:'1',filaman_hosted_config:'/plugins/filament-swatch/hosted-config'});
+      window.location.replace(`/plugins/filament-swatch/?${query}`);
+      return;
+    }
     if(revision===languageRevision)hostContext.language=settings.language==='de'||settings.language==='fr'?settings.language:'en';
     hostContext.connected=true;hostContext.userId=settings.userId;hostContext.currency=settings.currency || null;syncTheme();
   };

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {before,after,test} from 'node:test';
 import puppeteer from 'puppeteer';
-const origin='http://swatch.test',base='/plugins/filament-swatch/';
+const origin='https://swatch.test',base='/plugins/filament-swatch/';
 const fixture=JSON.parse(await readFile(new URL('./fixtures/filaman/contracts.json',import.meta.url),'utf8'));
 const themes=await readFile(new URL('./fixtures/filaman/themes.css',import.meta.url),'utf8');
 let browser;before(async()=>{browser=await puppeteer.launch({headless:true,args:process.env.CI?['--no-sandbox']:[]});});after(async()=>await browser?.close());
@@ -18,7 +18,7 @@ async function open(options={}){
   if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
   if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
-  if(u.pathname==='/api/v1/me')return respond({id:1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
+  if(u.pathname==='/api/v1/me')return respond({id:options.userId??1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
   if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'});
   if(u.pathname.startsWith('/api/v1/')){
    if(options.denyInventory && u.pathname==='/api/v1/filaments')return respond({},403);
@@ -36,10 +36,10 @@ async function open(options={}){
   const path=u.pathname.slice(base.length);let body;try{body=await readFile(new URL((process.env.SWATCH_DIST || '../dist/')+path,import.meta.url));}catch{body=await readFile(new URL((process.env.SWATCH_DIST || '../dist/')+'index.html',import.meta.url));}
   await request.respond({contentType:({js:'application/javascript',css:'text/css',svg:'image/svg+xml'})[path.split('.').pop()]||'text/html',body});
  });
- await page.goto(options.parent?`${origin}/shell`:`${origin}${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${encodeURIComponent(base+'hosted-config')}${options.query||''}`,{waitUntil:'networkidle0'});
+ await page.goto(options.parent?`${origin}/shell`:`${origin}${base}${options.path || 'app/swatch'}?filaman_hosted=1&filaman_hosted_config=${encodeURIComponent(base+'hosted-config')}${options.query||''}`,{waitUntil:'networkidle0'});
  return {page,requests,errors,close:()=>context.close()};
 }
-async function click(page,label){assert.ok(await page.evaluate(label=>{const e=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===label);e?.click();return !!e;},label),`missing button ${label}`);}
+async function click(page,label){await page.waitForFunction(label=>[...document.querySelectorAll('button')].some(e=>e.textContent.trim()===label),{timeout:5000},label);assert.ok(await page.evaluate(label=>{const e=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===label);e?.click();return !!e;},label),`missing button ${label}`);}
 test('native inventory, search, filter modal, catalog and navigation',async()=>{
  const {page,requests,errors,close}=await open();try{
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
@@ -85,13 +85,13 @@ test('invalid config fails closed without inventory requests',async()=>{
  const {page,requests,close}=await open({badConfig:true});try{assert.ok(await page.$('[role=alert]'));assert.equal(requests.some(u=>u.includes('/api/v1/filaments')),false);}finally{await close();}
 });
 
-test('router history restores destination filters and preserves catalog across project navigation',async()=>{
+test('router history restores destination filters and catalog survives reload',async()=>{
  const {page,close}=await open();try{
  await click(page,'Color catalog');await page.type('nav input[type=text]','Transparent');
  await click(page,'Inventory');await page.type('nav input[type=text]','Blue');
  await page.goBack();await page.waitForFunction(()=>document.querySelector('nav input[type=text]').value==='Transparent');
  await page.goBack();await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'');
- await click(page,'Color catalog');await click(page,'Projects');await click(page,'Filaments');await page.reload({waitUntil:'networkidle0'});assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.ok(await page.evaluate(()=>document.body.innerText.includes('Transparent')));
+ await click(page,'Color catalog');await page.reload({waitUntil:'networkidle0'});assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.ok(await page.evaluate(()=>document.body.innerText.includes('Transparent')));
  }finally{await close();}
 });
 test('revoked inventory clears open details and cached projections',async()=>{
@@ -118,22 +118,20 @@ test('parent language/theme and bfcache return keep discovery and synchronize cu
 });
 test('semantic dialog backgrounds are valid in each host theme',async()=>{
  for(const theme of ['brand','light','dark']){const {page,close}=await open();try{
- await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await click(page,'Projects');await click(page,'Import Project');await page.waitForSelector('[role=dialog]');
+ await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await page.click('button[aria-label="What\'s New"]');await page.waitForSelector('[role=dialog]');
  const color=await page.$eval('[role=dialog]',e=>getComputedStyle(e).backgroundColor);assert.notEqual(color,'rgba(0, 0, 0, 0)');assert.notEqual(color,'transparent');
  }finally{await close();}}
 });
 test('expired native bootstrap returns to top-level FilaMan login',async()=>{
  const {page,close}=await open({expireSettings:true});try{await page.waitForFunction(()=>location.pathname==='/login');assert.match(new URL(page.url()).searchParams.get('next'),/app\/swatch/);}finally{await close();}
 });
-test('returning from a project detail preserves the active discovery mode and search',async()=>{
- const {page,close}=await open({query:'&mode=catalog&q=Transparent'});try{
- await page.evaluate(()=>localStorage.setItem('spoolman-projects',JSON.stringify([{id:'demo-project',name:'Demo project',status:'planning',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),filamentUsage:[]}])));
- await click(page,'Projects');await page.waitForFunction(()=>document.body.innerText.includes('Demo project'));
- await page.evaluate(()=>[...document.querySelectorAll('h3,div')].find(e=>e.textContent.trim()==='Demo project')?.click());
- await page.waitForFunction(()=>location.pathname.endsWith('/projects/demo-project'));
- await click(page,'Filaments');await page.waitForFunction(()=>location.pathname.endsWith('/app/swatch'));
- assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Transparent');
- await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$eval('.card-name',e=>e.textContent.trim()),'Transparent');
+test('obsolete project URLs return to discovery and preserve launch parameters',async()=>{
+ const {page,errors,close}=await open({path:'app/projects/demo-project',query:'&mode=catalog&q=Transparent'});try{
+ await page.waitForFunction(()=>location.pathname.endsWith('/app/swatch'),{timeout:5000});
+ assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
+ assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ assert.equal(await page.$eval('.card-name',e=>e.textContent.trim()),'Transparent');
+ assert.deepEqual(errors,[]);
  }finally{await close();}
 });
 test('French host startup failures use French retry text before profile loading',async()=>{
@@ -235,5 +233,33 @@ test('embedded mobile toolbar stays clear of the FilaMan hamburger',async()=>{
  const {page,close}=await open({parent:true,mobileHost:true});try{
  const frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');const host=await page.$eval('#sidebar-toggle',e=>e.getBoundingClientRect().right);
  const buttons=await frame.$$eval('nav button',items=>items.map(e=>e.getBoundingClientRect()).filter(r=>r.width>0).map(r=>({left:r.left,right:r.right})));assert.ok(buttons.length>0);assert.ok(buttons.every(b=>b.left>=host&&b.right<=390),'header actions must be visible beside host navigation');
+ }finally{await close();}
+});
+
+test('a mounted account change discards old query and pins before restoring the new owner',async()=>{
+ const options={parent:true};const {page,close}=await open(options);try{
+ let frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');
+ await frame.type('nav input[type=text]','Transparent');
+ await frame.waitForFunction(()=>document.querySelectorAll('.board-card').length===1);
+ await frame.click('.pin-btn');
+ await frame.evaluate(()=>{
+  sessionStorage.setItem('filaman-swatch:discovery:2',JSON.stringify({mode:'inventory',filters:{inventory:{search:'Blue'}},pins:[]}));
+ });
+ options.userId=2;await frame.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.waitForFunction(()=>{const f=document.querySelector('iframe');return f?.contentDocument?.querySelector('nav input')?.value==='Blue';},{timeout:5000});
+ frame=page.frames().find(f=>f.url().includes('/plugins/'));
+ assert.equal(await frame.$eval('nav input[type=text]',e=>e.value),'Blue');
+ assert.notEqual(new URL(frame.url()).searchParams.get('q'),'Transparent');
+ assert.deepEqual(await frame.evaluate(()=>JSON.parse(sessionStorage.getItem('filaman-swatch:discovery:2')).pins),[]);
+ assert.equal(await frame.$('.detail-panel'),null);
+ }finally{await close();}
+});
+
+test('resetting native filters restores a valid inventory scope',async()=>{
+ const {page,close}=await open();try{
+ await page.click('button[title="Filters"]');await page.waitForSelector('select');
+ await page.select('select','on_hand_spools');await click(page,'Reset');
+ assert.equal(await page.$eval('select',e=>e.value),'filaments');
+ await click(page,'Save');assert.equal(new URL(page.url()).searchParams.has('i'),false);
  }finally{await close();}
 });

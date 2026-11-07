@@ -6,7 +6,6 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 
 let builtBase = "/";
-const hostedMode = process.env.VITE_HOSTED_MODE === "1";
 
 const hostedIndexPlugin: PluginOption = {
   name: "hosted-index-shell",
@@ -21,10 +20,6 @@ const hostedIndexPlugin: PluginOption = {
     });
   },
   transformIndexHtml(html) {
-    if (!hostedMode) {
-      return html;
-    }
-
     return html
       .replace(/\s*<link rel="manifest"[^>]*>\n?/g, "")
       .replace(/\s*<link rel="search"[^>]*>\n?/g, "")

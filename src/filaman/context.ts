@@ -29,6 +29,12 @@ export function verifyHostIdentity() {
   }).finally(() => { identityCheck = undefined; });
 }
 
+export async function confirmHostIdentity() {
+  // A check started before the data response may still represent the old session.
+  if (identityCheck) await identityCheck;
+  return verifyHostIdentity();
+}
+
 export function startHostContext() {
   let stopped=false,sequence=0,languageRevision=0;
   const controller=new AbortController();
@@ -59,10 +65,11 @@ export function startHostContext() {
       hostContext.language = profile.language === 'de' || profile.language === 'fr' ? profile.language : 'en';
     }
     syncTheme();
-    const currency = await loadNativeCurrency(controller.signal).catch(() => null);
-    if (!stopped && !identityChanging && current === sequence && currency !== null) {
-      hostContext.currency = currency;
-    }
+    void loadNativeCurrency(controller.signal).then(currency => {
+      if (!stopped && !identityChanging && current === sequence && currency !== null) {
+        hostContext.currency = currency;
+      }
+    }).catch(() => { /* Keep the last known currency during an outage. */ });
   };
   const background=()=>void refresh().catch(error=>{if(!stopped)console.error('Could not refresh FilaMan presentation',error);});
   const visible=()=>{if(document.visibilityState==='visible')background();};

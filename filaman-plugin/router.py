@@ -11,11 +11,14 @@ so final paths are /plugins/filament-swatch/hosted-config and
 """
 
 from pathlib import Path
+from stat import S_ISREG
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse, Response
+from starlette.staticfiles import StaticFiles
 
 router = APIRouter()
+static_files = StaticFiles()
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -35,7 +38,7 @@ async def hosted_config() -> JSONResponse:
 
 
 @router.get("/{path:path}")
-async def spa_static(path: str) -> FileResponse:
+async def spa_static(path: str, request: Request) -> Response:
     """
     Serve the pre-built SPA bundle.
 
@@ -44,15 +47,29 @@ async def spa_static(path: str) -> FileResponse:
     """
     try:
         static_dir = STATIC_DIR.resolve()
-        paths = [path or "index.html"]
-        if path and path.split("/", 1)[0] != "assets" and not Path(path).suffix:
-            paths.append("index.html")
-        for name in paths:
-            target = (static_dir / name).resolve()
-            if not target.is_relative_to(static_dir):
-                raise HTTPException(status_code=404, detail="Not found")
-            if target.is_file():
-                return FileResponse(target)
+        target = (static_dir / (path or "index.html")).resolve()
+        if not target.is_relative_to(static_dir):
+            raise HTTPException(status_code=404, detail="Not found")
+
+        def serve(file: Path) -> Response | None:
+            try:
+                metadata = file.stat()
+            except (FileNotFoundError, NotADirectoryError):
+                return None
+            if S_ISREG(metadata.st_mode):
+                return static_files.file_response(file, metadata, request.scope)
+            return None
+
+        response = serve(target)
+        if response is not None:
+            return response
+        relative = target.relative_to(static_dir)
+        if not relative.suffix and relative.parts[:1] != ("assets",):
+            index = (static_dir / "index.html").resolve()
+            if index.is_relative_to(static_dir):
+                response = serve(index)
+                if response is not None:
+                    return response
     except (OSError, RuntimeError, ValueError):
         pass
     raise HTTPException(status_code=404, detail="Not found")

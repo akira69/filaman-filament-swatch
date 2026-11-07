@@ -19,9 +19,21 @@ async function open(options={}){
   if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
   if(u.pathname==='/api/v1/me')return respond({id:options.userId??1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
-  if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'},options.currencyFailed?503:200);
+  if(u.pathname==='/api/v1/app-settings/public-info'){
+   if(options.currencyGate)await options.currencyGate;
+   return respond({currency:options.currency||'EUR'},options.currencyFailed?503:200);
+  }
   if(u.pathname.startsWith('/api/v1/')){
-   if(options.denyInventory && u.pathname==='/api/v1/filaments')return respond({},403);
+   if(options.switchDuringCatalog && u.pathname==='/api/v1/colors') {
+    options.switchDuringCatalog=false;
+    options.userId=2;
+   }
+   if(options.inventoryGate && u.pathname==='/api/v1/filaments')await options.inventoryGate;
+   if(options.denyCatalog && u.pathname==='/api/v1/colors')return respond({},403);
+   if(options.denyInventory && u.pathname==='/api/v1/filaments'){
+    if(options.failProfileAfterDenial)options.failSettings=true;
+    return respond({},403);
+   }
    if(u.pathname.includes('/manufacturers/'))return request.respond({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="red"/></svg>'});
    if(options.largeCatalog && u.pathname==='/api/v1/colors'){
     const page=Number(u.searchParams.get('page')||1),size=Number(u.searchParams.get('page_size')||200),total=1392;
@@ -36,7 +48,7 @@ async function open(options={}){
   const path=u.pathname.slice(base.length);let body;try{body=await readFile(new URL((process.env.SWATCH_DIST || '../dist/')+path,import.meta.url));}catch{body=await readFile(new URL((process.env.SWATCH_DIST || '../dist/')+'index.html',import.meta.url));}
   await request.respond({contentType:({js:'application/javascript',css:'text/css',svg:'image/svg+xml'})[path.split('.').pop()]||'text/html',body});
  });
- await page.goto(options.parent?`${origin}/shell`:`${origin}${base}${options.path || 'app/swatch'}?filaman_hosted=1&filaman_hosted_config=${encodeURIComponent(base+'hosted-config')}${options.query||''}`,{waitUntil:'networkidle0'});
+ await page.goto(options.parent?`${origin}/shell`:`${origin}${base}${options.path || 'app/swatch'}?filaman_hosted=1&filaman_hosted_config=${encodeURIComponent(base+'hosted-config')}${options.query||''}`,{waitUntil:options.waitUntil||'networkidle0'});
  return {page,requests,errors,close:()=>context.close()};
 }
 async function click(page,label){await page.waitForFunction(label=>[...document.querySelectorAll('button')].some(e=>e.textContent.trim()===label),{timeout:5000},label);assert.ok(await page.evaluate(label=>{const e=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===label);e?.click();return !!e;},label),`missing button ${label}`);}
@@ -189,7 +201,25 @@ test('a full 1392-color catalog leaves cards and detail content scrollable',asyn
  const {page,errors,close}=await open({query:'&mode=catalog',largeCatalog:true});try{
  await page.waitForFunction(()=>document.querySelectorAll('.board-card').length===1392);
  const size=await page.evaluate(()=>({map:document.querySelector('.minimap').getBoundingClientRect().height,grid:document.querySelector('.board-grid').getBoundingClientRect().height}));assert.ok(size.map<=56,'minimap must remain a compact strip');assert.ok(size.grid>=200,'cards need a usable viewport');
- await page.$eval('.board-grid',e=>{e.scrollTop=e.scrollHeight;});await page.waitForFunction(()=>document.querySelector('.board-grid').scrollTop>0);
+ await page.evaluate(()=>{
+  const bounds=Element.prototype.getBoundingClientRect;
+  const offset=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'offsetTop');
+  window.cardLayoutReads=0;
+  Element.prototype.getBoundingClientRect=function(){if(this.matches('.board-card'))window.cardLayoutReads++;return bounds.call(this);};
+  Object.defineProperty(HTMLElement.prototype,'offsetTop',{...offset,get(){if(this.matches('.board-card'))window.cardLayoutReads++;return offset.get.call(this);}});
+ });
+ await page.$eval('.board-grid',e=>{e.scrollTop=e.scrollHeight;});
+ await page.waitForFunction(()=>{
+  const dots=[...document.querySelectorAll('.minimap-dot')];
+  return dots.indexOf(document.querySelector('.minimap-dot.active'))>1300;
+ });
+ assert.ok(await page.evaluate(()=>window.cardLayoutReads)<150,'scrolling should measure only visible rows');
+ await page.$eval('.minimap-dot:last-child',e=>e.click());
+ await page.waitForFunction(()=>{
+  const card=document.querySelector('.board-card:last-child').getBoundingClientRect();
+  const grid=document.querySelector('.board-grid').getBoundingClientRect();
+  return card.top>=grid.top && card.bottom<=grid.bottom+1;
+ });
  const last=await page.$eval('.board-card:last-child',e=>{const card=e.getBoundingClientRect(),grid=e.parentElement.getBoundingClientRect();return {name:e.querySelector('.card-name').textContent.trim(),visible:card.bottom<=grid.bottom+1&&card.top>=grid.top};});assert.ok(last.visible,'last card is reachable by scrolling');await page.click('.board-card:last-child .card-name');await page.waitForSelector('.detail-panel',{timeout:5000});assert.equal(await page.$eval('.detail-title',e=>e.textContent),last.name);
  await page.$eval('.detail-body',e=>{e.scrollTop=e.scrollHeight;});assert.ok(await page.$eval('.detail-body',e=>e.scrollTop>0));
  await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.ok(await page.$eval('.detail-body',e=>e.clientHeight>100));
@@ -266,16 +296,84 @@ test('resetting native filters restores a valid inventory scope',async()=>{
  }finally{await close();}
 });
 
-test('focus removes revoked inventory pins while catalog stays open',async()=>{
+for(const failProfileAfterDenial of [false,true])test(`focus removes revoked inventory pins (postflight failure: ${failProfileAfterDenial})`,async()=>{
  const options={};const {page,close}=await open(options);try{
   await page.$eval('[id="board-card-filament:17"] .pin-btn',button=>button.click());
   await page.waitForSelector('.palette-panel.active .chip-name');
   await page.$eval('.palette-header button',button=>button.click());
   await click(page,'Color catalog');
   await page.waitForSelector('[id="board-card-color:17"]');
-  options.denyInventory=true;
+  Object.assign(options,{denyInventory:true,failProfileAfterDenial});
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.waitForFunction(()=>!document.querySelector('.chip-name'),{timeout:5000});
-  assert.ok(await page.$('[id="board-card-color:17"]'));
+  assert.equal(await page.$eval('#discovery-tab-catalog',e=>e.getAttribute('aria-selected')),'true');
  }finally{await close();}
+});
+
+
+for(const denyCatalog of [false,true])test(`a session change during catalog paging invalidates the mounted account (403: ${denyCatalog})`,async()=>{
+ const options={};const {page,close}=await open(options);try{
+  options.switchDuringCatalog=true;
+  options.denyCatalog=denyCatalog;
+  await click(page,'Color catalog');
+  await page.waitForFunction(()=>sessionStorage.getItem('filaman-swatch:discovery:2')!==null,{timeout:5000});
+  assert.equal(await page.$eval('#discovery-tab-inventory',e=>e.getAttribute('aria-selected')),'true');
+ }finally{await close();}
+});
+
+test('a saved inventory pin can open its details after reloading in catalog',async()=>{
+ const {page,close}=await open();try{
+  await page.$eval('[id="board-card-filament:17"] .pin-btn',e=>e.click());
+  await page.waitForSelector('.palette-panel.active .chip-name');
+  await page.$eval('.palette-header button',e=>e.click());
+  await click(page,'Color catalog');
+  await page.reload({waitUntil:'networkidle0'});
+  await page.waitForSelector('.palette-chip',{timeout:5000});
+  await page.$eval('.chip-target',e=>e.click());
+  await page.waitForSelector('.detail-panel',{timeout:5000});
+  assert.equal(await page.$eval('.detail-filaman-link',e=>e.getAttribute('href')),'/filaments/17');
+ }finally{await close();}
+});
+
+test('palette stays reachable at tablet widths',async()=>{
+ const {page,close}=await open();try{
+  await page.setViewport({width:700,height:844});
+  await page.waitForSelector('button[aria-label="Open palette"]',{visible:true});
+ }finally{await close();}
+});
+
+
+test('an optional currency response cannot delay discovery startup',async()=>{
+ let releaseCurrency;
+ const currencyGate=new Promise(resolve=>{releaseCurrency=resolve;});
+ const {page,close}=await open({currencyGate,waitUntil:'domcontentloaded'});try{
+  await page.waitForSelector('.board-card',{timeout:5000});
+ }finally{releaseCurrency();await close();}
+});
+
+for(const closeDrawer of [false,true])test(`a pending pin cannot override the latest palette action (close: ${closeDrawer})`, async () => {
+  const options = {};
+  const {page,close} = await open(options);
+  let release;
+  try {
+    const names = await page.$$eval('.board-card .card-name', nodes => nodes.slice(0,2).map(node=>node.textContent));
+    await page.$$eval('.board-card .pin-btn', nodes => nodes.slice(0,2).forEach(node=>node.click()));
+    await page.waitForFunction(()=>document.querySelectorAll('.chip-target').length===2);
+    await page.$eval('.palette-header button', node=>node.click());
+    await click(page,'Color catalog');
+    await page.waitForSelector('[id="board-card-color:17"]');
+    await page.$eval('button[aria-label="Open palette"]', node=>node.click());
+    options.inventoryGate = new Promise(resolve=>{release=resolve});
+    await page.$eval('.chip-target', node=>node.click());
+    await page.waitForFunction(()=>document.querySelector('#discovery-tab-inventory').getAttribute('aria-selected')==='true');
+    if(closeDrawer)await page.$eval('.palette-header button',node=>node.click());
+    else {
+      await page.$$eval('.chip-target', nodes=>nodes[1].click());
+      await page.waitForFunction(name=>document.querySelector('.detail-title')?.textContent===name,{timeout:5000},names[1]);
+    }
+    release();
+    await page.waitForNetworkIdle();
+    if(closeDrawer)assert.equal(await page.$('.detail-panel'),null);
+    else assert.equal(await page.$eval('.detail-title',node=>node.textContent),names[1]);
+  } finally { release?.(); await close(); }
 });

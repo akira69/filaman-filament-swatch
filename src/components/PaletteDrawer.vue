@@ -8,7 +8,7 @@
     />
 
     <!-- Drawer Panel -->
-    <div class="palette-panel" :class="{ active: isOpen }">
+    <div class="palette-panel" :class="{ active: isOpen }" :inert="!isOpen">
       <!-- Header -->
       <div class="palette-header">
         <div class="palette-title">
@@ -30,25 +30,23 @@
       <div class="palette-content">
         <!-- Pinned Items -->
         <div v-if="pinnedItems.length" class="palette-chips">
-          <button
-            v-for="item in pinnedItems"
-            :key="item.id"
-            class="palette-chip"
-            :style="{ '--color': item.colorHex } as any"
-            @click="$emit('scrollTo', item.id)"
-          >
-            <div class="chip-color" :style="getFlatSwatchStyle(item.colorHex, item.multiColorHexes, item.multiColorDirection, item.nativeColorStyle)" />
-            <div class="chip-info">
-              <div class="chip-name">{{ item.name }}</div>
-              <div class="chip-hex">{{ item.colorHex.toUpperCase() }}</div>
-            </div>
+          <div v-for="item in pinnedItems" :key="item.id" class="palette-chip">
+            <button type="button" class="chip-target" @click="$emit('scrollTo', item.id)">
+              <div class="chip-color" :style="getFlatSwatchStyle(item.colorHex, item.multiColorHexes, item.multiColorDirection, item.nativeColorStyle)" />
+              <div class="chip-info">
+                <div class="chip-name">{{ item.name }}</div>
+                <div class="chip-hex">{{ item.colorHex.toUpperCase() }}</div>
+              </div>
+            </button>
             <button
+              type="button"
               class="chip-remove"
-              @click.stop="$emit('removePin', item.id)"
+              :aria-label="t('actions.unpin')"
+              @click="$emit('removePin', item.id)"
             >
               <Icon icon="lucide:x" class="w-3.5 h-3.5" />
             </button>
-          </button>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -232,6 +230,15 @@ const { t } = useI18n();
   transform: translateX(-4px);
 }
 
+.chip-target {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
 .chip-color {
   width: 36px;
   height: 36px;
@@ -278,7 +285,8 @@ const { t } = useI18n();
   flex-shrink: 0;
 }
 
-.palette-chip:hover .chip-remove {
+.palette-chip:hover .chip-remove,
+.palette-chip:focus-within .chip-remove {
   opacity: 1;
   background: rgba(var(--accent-rgb), 0.1);
   color: rgb(var(--accent-rgb));

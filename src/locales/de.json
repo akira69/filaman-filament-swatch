@@ -161,6 +161,16 @@
     "title": "Spoolman Filament Swatch",
     "description": "Lokaler Farbpicker fuer Spoolman mit Spulen- und Filamentkarussell."
   },
+  "pluginInfo": {
+    "title": "Über FilaMan Swatch",
+    "description": "Durchsuche den FilaMan-Bestand und den Farbkatalog, vergleiche Farbharmonien und hefte Paletten an. Filament- und Spulenlinks öffnen FilaMan.",
+    "preview": "Vorschauversion · {date}",
+    "edition": "FilaMan-Edition von akira69",
+    "original": "Ursprüngliches Design von Disane87",
+    "license": "Lizenz",
+    "issues": "Problem melden",
+    "close": "Schließen"
+  },
   "changelog": {
     "title": "Was gibt's Neues",
     "released": "Veröffentlicht {date}",

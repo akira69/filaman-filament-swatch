@@ -161,6 +161,16 @@
     "title": "Spoolman Filament Swatch",
     "description": "Local color picker for Spoolman with a filament carousel."
   },
+  "pluginInfo": {
+    "title": "About FilaMan Swatch",
+    "description": "Browse FilaMan inventory and its color catalog, compare color harmonies, and pin palettes. Filament and spool links open in FilaMan.",
+    "preview": "Preview build · {date}",
+    "edition": "FilaMan edition by akira69",
+    "original": "Original design by Disane87",
+    "license": "License",
+    "issues": "Report an issue",
+    "close": "Close"
+  },
   "changelog": {
     "title": "What's New",
     "released": "Released {date}",

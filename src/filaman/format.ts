@@ -5,4 +5,4 @@ export function formatMoney(amount:number|null|undefined, amountCurrency:string|
   try{return new Intl.NumberFormat(locales[context.language],{style:'currency',currency:amountCurrency}).format(amount);}catch{return '—';}
 }
 export const formatNumber=(amount:number,maximumFractionDigits=2)=>new Intl.NumberFormat(locales[hostContext.language],{maximumFractionDigits}).format(amount);
-export const formatDate=(value:string)=>new Intl.DateTimeFormat(locales[hostContext.language],{dateStyle:'medium'}).format(new Date(value));
+export const formatDate=(value:string)=>new Intl.DateTimeFormat(locales[hostContext.language],{dateStyle:'medium',timeZone:'UTC'}).format(new Date(value));

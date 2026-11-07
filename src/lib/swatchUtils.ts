@@ -31,9 +31,9 @@ export function getMaterialLayer(material: string): string {
 /**
  * Creates a gradient for multi-color filaments
  */
-export function getMultiColorGradient(colors: string[], direction: MultiColorDirection = 'longitudinal', style:'striped'|'gradient'='gradient'): string {
-  if(style==='striped')return `linear-gradient(135deg, ${colors.flatMap((color,i)=>[`${color} ${i/colors.length*100}%`,`${color} ${(i+1)/colors.length*100}%`]).join(', ')})`;
-  if (direction === 'coaxial') {
+export function getMultiColorGradient(colors: string[], direction: MultiColorDirection = 'longitudinal', style?:'striped'|'gradient'): string {
+  if(style==='striped')return `linear-gradient(90deg, ${colors.flatMap((color,i)=>[`${color} ${i/colors.length*100}%`,`${color} ${(i+1)/colors.length*100}%`]).join(', ')})`;
+  if (!style && direction === 'coaxial') {
     const stops = colors.map((c, i) => {
       const center = (i / (colors.length - 1)) * 100;
       const spread = 15;
@@ -49,7 +49,7 @@ export function getMultiColorGradient(colors: string[], direction: MultiColorDir
     const percent = (i / (colors.length - 1)) * 100;
     return `${c} ${percent}%`;
   }).join(', ');
-  return `linear-gradient(135deg, ${stops})`;
+  return `linear-gradient(90deg, ${stops})`;
 }
 
 /**

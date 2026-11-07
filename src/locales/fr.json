@@ -7,6 +7,10 @@
     "hostedConfigError": "Impossible de charger FilaMan Swatch. Vérifiez la configuration et réessayez.",
     "retry": "Réessayer"
   },
+  "detail": {
+    "color": "Couleur",
+    "pattern": { "striped": "Rayé", "gradient": "Dégradé" }
+  },
   "discovery": {
     "mode": "Mode de découverte",
     "inventory": "Inventaire",

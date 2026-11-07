@@ -5,7 +5,6 @@ import {normalizeColor} from '@/lib/colorUtils';
 import { computed } from 'vue';
 import type { FilamentCard } from '@/composables/useFilaments';
 import { getFlatSwatchStyle } from '@/lib/swatchUtils';
-import { ColorSwatch } from '@/components/ui/color-swatch';
 import FilamentDetailHeader from './FilamentDetailHeader.vue';
 import FilamentDetailInfo from './FilamentDetailInfo.vue';
 import FilamentSpoolsList from './FilamentSpoolsList.vue';
@@ -21,9 +20,6 @@ const props = defineProps<{
     details: string;
     spoolId: string;
     remainingWeight: string;
-    multiColorType: string;
-    coaxial: string;
-    longitudinal: string;
     similarColors: string;
     complementaryColors: string;
     spools: string;
@@ -44,13 +40,31 @@ const emit = defineEmits<{
 
 const opacity = computed(()=>(normalizeColor(props.filament?.colorHex)?.alpha ?? 1)*100);
 
+const colorStops = computed(() => props.filament?.colors.length
+  ? props.filament.colors.map(color => color.hex)
+  : [props.filament?.colorHex ?? '']);
+const pattern = computed(() => props.filament?.nativeColorStyle === 'striped' ? 'striped' : 'gradient');
+const labelRows = computed(() => Math.ceil(colorStops.value.length / 3));
+const stopLabels = computed(() => colorStops.value.map((hex, index) => {
+  const count = colorStops.value.length;
+  const position = count === 1 ? 0 : pattern.value === 'striped'
+    ? (index + .5) / count
+    : index / (count - 1);
+  return {
+    hex,
+    opacity: (normalizeColor(hex)?.alpha ?? 1) * 100,
+    left: `${position * 100}%`,
+    bottom: `${12 + (index % labelRows.value) * 36}px`,
+  };
+}));
+
 const swatchStyle = computed(() => {
   if (!props.filament) return {};
   return getFlatSwatchStyle(
     props.filament.colorHex,
     props.filament.multiColorHexes,
-    props.filament.multiColorDirection,
-    props.filament.nativeColorStyle
+    undefined,
+    pattern.value
   );
 });
 
@@ -76,12 +90,33 @@ const showSpools = computed(() => {
       <div class="detail-body">
         <!-- Color Swatch -->
         <div class="detail-section">
-          <h3 class="section-title">{{ labels.color }}</h3>
-          <div class="color-swatch-large" :style="swatchStyle">
-            <div class="color-info">
-              <span class="color-hex">{{ filament.colorHex.toUpperCase() }}</span>
-            </div>
-            <span v-if="opacity < 100" class="opacity-badge" :aria-label="`${t('discovery.opacity')}: ${formatNumber(opacity,1)}%`">{{ formatNumber(opacity,1) }}%</span>
+          <div class="color-heading">
+            <h3 class="section-title">{{ labels.color }}</h3>
+            <span v-if="colorStops.length > 1" class="color-pattern">
+              {{ t(`detail.pattern.${pattern}`) }}
+            </span>
+          </div>
+          <div class="color-swatch-large" :style="[swatchStyle, { minHeight: `${labelRows * 36 + 24}px` }]">
+            <template v-if="colorStops.length > 1">
+              <div
+                v-for="(stop, index) in stopLabels"
+                :key="index"
+                class="color-stop"
+                :style="{ '--stop-x': stop.left, bottom: stop.bottom }"
+              >
+                <span class="color-hex">{{ stop.hex }}</span>
+                <span v-if="stop.opacity < 100" class="color-stop-opacity"
+                  :aria-label="`${t('discovery.opacity')}: ${formatNumber(stop.opacity, 1)}%`">
+                  {{ formatNumber(stop.opacity, 1) }}%
+                </span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="color-info">
+                <span class="color-hex">{{ filament.colorHex.toUpperCase() }}</span>
+              </div>
+              <span v-if="opacity < 100" class="opacity-badge" :aria-label="`${t('discovery.opacity')}: ${formatNumber(opacity,1)}%`">{{ formatNumber(opacity,1) }}%</span>
+            </template>
           </div>
         </div>
 
@@ -174,6 +209,38 @@ const showSpools = computed(() => {
   letter-spacing: 0.1em;
   color: rgb(var(--text-muted));
   margin: 0;
+}
+
+.color-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.color-pattern {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.color-stop {
+  position: absolute;
+  left: clamp(38px, var(--stop-x), calc(100% - 38px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, .72);
+  color: white;
+  line-height: 1.2;
+}
+
+.color-stop .color-hex, .color-stop-opacity {
+  font-size: 11px;
 }
 
 .color-swatch-large {

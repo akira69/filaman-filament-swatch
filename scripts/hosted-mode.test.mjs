@@ -39,7 +39,10 @@ async function open(options={}){
     const page=Number(u.searchParams.get('page')||1),size=Number(u.searchParams.get('page_size')||200),total=1392;
     return respond({items:Array.from({length:Math.max(0,Math.min(size,total-(page-1)*size))},(_,i)=>({id:10000+(page-1)*size+i,name:`Catalog ${(page-1)*size+i}`,hex_code:'#00AE42',usage_count:0})),page,page_size:size,total});
    }
-   const value=fixture[u.pathname];if(value){const page=structuredClone(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);if(options.detailMetrics&&u.pathname==='/api/v1/filaments')for(const item of page.items)if(item.id===17)Object.assign(item,{raw_material_weight_g:1000,price:8,density_g_cm3:1.06,diameter_mm:1.75});return respond(page);}
+   const value=fixture[u.pathname];if(value){const page=structuredClone(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);if(u.pathname==='/api/v1/filaments'&&(options.detailMetrics||options.gradient))for(const item of page.items)if(item.id===17){
+    if(options.detailMetrics)Object.assign(item,{raw_material_weight_g:1000,price:8,density_g_cm3:1.06,diameter_mm:1.75});
+    if(options.gradient)Object.assign(item,{multi_color_style:'gradient',colors:['#FF0000','#00FF00','#0000FF'].map((hex_code,index)=>({position:index+1,color_id:index+1,color:{hex_code}}))});
+   }return respond(page);}
    return respond({},404);
   }
   if(u.pathname==='/real-spool-reel.js'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'application/javascript',body:await readFile(process.env.SHARED_REEL_FILE,'utf8')});
@@ -255,7 +258,7 @@ test('native detail links and opacity badges stay compact; RGB and four metrics 
  await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
  assert.equal(await page.$eval('.detail-filaman-link',e=>e.getAttribute('href')),'/filaments/17');assert.equal(await page.$eval('.detail-filaman-link',e=>e.target),'_top');assert.equal(await page.$eval('.detail-title',e=>e.textContent),await page.$eval('.detail-filaman-link',e=>e.textContent));
  assert.equal(await page.$('.detail-header .source-badge'),null);
- assert.equal(await page.$eval('.opacity-badge',e=>e.textContent.trim()),'0%');
+ assert.equal(await page.$eval('.color-stop-opacity',e=>e.textContent.trim()),'0%');
  const tops=await page.$$eval('.info-badges .info-badge',items=>items.map(e=>Math.round(e.getBoundingClientRect().top)));assert.equal(tops.length,4);assert.equal(new Set(tops).size,1,'four metrics occupy one desktop row');
  options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>document.body.innerText.includes('503'));
  options.failSettings=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
@@ -395,4 +398,18 @@ for(const closeDrawer of [false,true])test(`a pending pin cannot override the la
     if(closeDrawer)assert.equal(await page.$('.detail-panel'),null);
     else assert.equal(await page.$eval('.detail-title',node=>node.textContent),names[1]);
   } finally { release?.(); await close(); }
+});
+
+
+for(const gradient of [false,true])test(`detail swatch labels ordered colors and positions (${gradient?'gradient':'striped'})`,async()=>{
+ const {page,close}=await open({gradient,language:gradient?'fr':'en'});try{
+  await page.$eval('[id="board-card-filament:17"] .card-name',e=>e.click());
+  await page.waitForSelector('.color-stop');
+  assert.equal(await page.$eval('.color-pattern',e=>e.textContent.trim()),gradient?'Dégradé':'Striped');
+  assert.deepEqual(await page.$$eval('.color-stop .color-hex',labels=>labels.map(e=>e.textContent)),
+    gradient?['#FF0000','#00FF00','#0000FF']:['#FF000000','#FF000088']);
+  assert.deepEqual(await page.$$eval('.color-stop',labels=>labels.map(e=>e.style.getPropertyValue('--stop-x'))),
+    gradient?['0%','50%','100%']:['25%','75%']);
+  assert.match(await page.$eval('.color-swatch-large',e=>getComputedStyle(e).backgroundImage),/linear-gradient\(90deg/);
+ }finally{await close();}
 });

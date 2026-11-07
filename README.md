@@ -61,7 +61,7 @@ npm test
 python -m unittest discover -s tests
 ```
 
-The upstream wheel interactions are retained. Pinned palettes are stored in the browser. The FilaMan edition focuses on discovery; use FilaMan to edit filaments and colors.
+Color Harmonies uses the shared FilaMan wheel when the host provides it. Pinned palettes are stored in the browser. Use FilaMan to edit filaments and colors.
 
 ## Packaging
 

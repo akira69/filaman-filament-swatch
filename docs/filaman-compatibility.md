@@ -21,6 +21,11 @@ its version string. `/spool-reel.js` and `/reel-flange.webp` are optional shared
 visual capabilities; discovery and textual links survive their absence.
 The shared `/plugin-fonts.css` supplies the same local Space Grotesk UI faces
 inside the iframe. Development also proxies it and its `/_astro/` font assets.
+FilaMan [PR206](https://github.com/Fire-Devils/filaman-system/pull/206) supplies
+`/color-harmonies.js` and `/color-harmonies.css` for the shared detail wheel.
+Swatch loads them when a detail view opens and uses its existing wheel on hosts
+without these assets. Set `SHARED_HARMONY_DIR` to a built FilaMan static directory
+to run the shared-wheel browser test with `npm test`.
 
 No FilaMan database migrations, native editing, SpoolmanAPI plugin, external
 catalog service or analytics is required by this edition.

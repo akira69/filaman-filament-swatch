@@ -578,8 +578,9 @@ const minimapStyle = swatchStyle;
 
 .card-sub {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 4px 5px;
   font-size: 11px;
   color: rgb(var(--text-muted));
   line-height: 1.3;

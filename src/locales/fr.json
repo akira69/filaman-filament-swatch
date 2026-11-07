@@ -9,7 +9,8 @@
   },
   "detail": {
     "color": "Couleur",
-    "pattern": { "striped": "Rayé", "gradient": "Dégradé" }
+    "pattern": { "striped": "Rayé", "gradient": "Dégradé" },
+    "fullSpoolRemaining": "{weight} g restants par bobine"
   },
   "discovery": {
     "mode": "Mode de découverte",

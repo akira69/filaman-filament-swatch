@@ -41,7 +41,14 @@ async function open(options={}){
    }
    const value=fixture[u.pathname];if(value){const page=structuredClone(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);if(u.pathname==='/api/v1/filaments'&&(options.detailMetrics||options.gradient))for(const item of page.items)if(item.id===17){
     if(options.detailMetrics)Object.assign(item,{raw_material_weight_g:1000,price:8,density_g_cm3:1.06,diameter_mm:1.75});
-    if(options.gradient)Object.assign(item,{multi_color_style:'gradient',colors:['#FF0000','#00FF00','#0000FF'].map((hex_code,index)=>({position:index+1,color_id:index+1,color:{hex_code}}))});
+    if(options.gradient)Object.assign(item,{multi_color_style:'gradient',colors:['#FF0000AA','#BB00B8AA','#006A3FAA','#0000FFAA'].map((hex_code,index)=>({position:index+1,color_id:index+1,color:{hex_code}}))});
+   }
+   if(options.spoolGroups && u.pathname==='/api/v1/spools'){
+    const spool=(id,weight,percent,status_id=1,location_id=null)=>({id,filament_id:17,status_id,location_id,
+     metrics:{remaining_percent:percent,effective_remaining_weight_g:weight}});
+    const items=[spool(17,1000,100,1,1),spool(20,707,70.7),spool(18,1000,100),
+     spool(19,1000,100),spool(21,750,100),spool(22,1000,100,2),spool(23,null,null)];
+    return respond({items,page:1,page_size:200,total:items.length});
    }return respond(page);}
    return respond({},404);
   }
@@ -86,6 +93,9 @@ test('inventory forbidden still permits catalog discovery',async()=>{
 });
 test('native logo and linked spool use shared reel without losing alpha zero',async()=>{
  const {page,errors,close}=await open();try{
+ const centers=await page.$$eval('[id="board-card-filament:17"] :is(.vendor-logo,.vendor-identity,.card-material)',
+  nodes=>nodes.map(node=>{const {top,height}=node.getBoundingClientRect();return top+height/2;}));
+ assert.equal(centers.length,3);assert.ok(Math.max(...centers)-Math.min(...centers)<1);
  await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel',{timeout:3000}).catch(e=>{throw new Error(`${e.message}: ${errors.join('; ')}`)});
  assert.equal(await page.$eval('.detail-panel img',e=>new URL(e.src).pathname),'/api/v1/manufacturers/1/logo');
  assert.equal(await page.$eval('.spool-id',e=>e.getAttribute('href')),'/spools/17');assert.equal(await page.$eval('.spool-id',e=>e.target),'_top');
@@ -94,6 +104,23 @@ test('native logo and linked spool use shared reel without losing alpha zero',as
  const layout=await page.evaluate(()=>{const item=document.querySelector('.spool-item').getBoundingClientRect(),reel=document.querySelector('.corner-reel')?.getBoundingClientRect(),logo=document.querySelector('.detail-header img').getBoundingClientRect();return {item:{right:item.right,bottom:item.bottom,height:item.height},reel:reel&&{right:reel.right,bottom:reel.bottom,width:reel.width},logoWidth:logo.width};});
  assert.ok(layout.reel,'native corner reel');assert.ok(Math.abs(layout.item.right-layout.reel.right-1)<1);assert.ok(Math.abs(layout.item.bottom-layout.reel.bottom-1)<1);assert.ok(layout.reel.width>=110);assert.ok(layout.item.height<=120);assert.ok(layout.logoWidth>=90);
  assert.match(await page.$eval('.detail-panel',e=>e.innerText),/0 g/);assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+test('equal-weight full spools share a card and keep their individual links',async()=>{
+ const {page,close}=await open({spoolGroups:true});try{
+  await page.$eval('[id="board-card-filament:17"] .card-name',e=>e.click());
+  await page.waitForSelector('.spool-item');
+  const cards=await page.$$eval('.spool-item',nodes=>nodes.map(node=>({
+   links:[...node.querySelectorAll('a')].map(link=>link.getAttribute('href')),
+   text:node.innerText,
+  })));
+  assert.deepEqual(cards.map(card=>card.links),[[17,18,19],[20],[21],[22],[23]].map(ids=>ids.map(id=>`/spools/${id}`)));
+  assert.match(cards[0].text,/1,000 g remaining each/);
+  assert.match(cards[0].text,/Shelf/);
+  assert.match(cards[1].text,/707 g remaining/);
+  assert.match(cards[3].text,/Archived/);
+  assert.match(cards[4].text,/Unknown remaining amount/);
+  await page.waitForFunction(()=>document.querySelectorAll('.spool-item:first-child .corner-reel').length===1);
  }finally{await close();}
 });
 test('invalid config fails closed without inventory requests',async()=>{
@@ -407,9 +434,18 @@ for(const gradient of [false,true])test(`detail swatch labels ordered colors and
   await page.waitForSelector('.color-stop');
   assert.equal(await page.$eval('.color-pattern',e=>e.textContent.trim()),gradient?'Dégradé':'Striped');
   assert.deepEqual(await page.$$eval('.color-stop .color-hex',labels=>labels.map(e=>e.textContent)),
-    gradient?['#FF0000','#00FF00','#0000FF']:['#FF000000','#FF000088']);
-  assert.deepEqual(await page.$$eval('.color-stop',labels=>labels.map(e=>e.style.getPropertyValue('--stop-x'))),
-    gradient?['0%','50%','100%']:['25%','75%']);
+    gradient?['#FF0000AA','#BB00B8AA','#006A3FAA','#0000FFAA']:['#FF000000','#FF000088']);
+  assert.deepEqual(await page.$$eval('.color-stop',labels=>labels.map(e=>Number(e.style.getPropertyValue('--stop-position')))),
+    gradient?[0,1/3,2/3,1]:[.25,.75]);
   assert.match(await page.$eval('.color-swatch-large',e=>getComputedStyle(e).backgroundImage),/linear-gradient\(90deg/);
+  if(gradient){
+    await page.setViewport({width:320,height:640});
+    const {bounds,labels}=await page.$eval('.color-swatch-large',swatch=>({
+      bounds:swatch.getBoundingClientRect().toJSON(),
+      labels:[...swatch.querySelectorAll('.color-stop')].map(label=>label.getBoundingClientRect().toJSON()),
+    }));
+    assert.ok(labels.every((label,i)=>label.bottom===labels[0].bottom &&
+      label.left>=(labels[i-1]?.right ?? bounds.left) && label.right<=bounds.right));
+  }
  }finally{await close();}
 });

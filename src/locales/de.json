@@ -109,6 +109,7 @@
   },
   "detail": {
     "pattern": { "striped": "Gestreift", "gradient": "Verlauf" },
+    "fullSpoolRemaining": "Jeweils {weight} g übrig",
     "includeTransparency": "Transparenz einbeziehen",
     "color": "Farbe",
     "details": "Details",

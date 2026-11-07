@@ -44,7 +44,7 @@ const colorStops = computed(() => props.filament?.colors.length
   ? props.filament.colors.map(color => color.hex)
   : [props.filament?.colorHex ?? '']);
 const pattern = computed(() => props.filament?.nativeColorStyle === 'striped' ? 'striped' : 'gradient');
-const labelRows = computed(() => Math.ceil(colorStops.value.length / 3));
+const labelRows = computed(() => Math.ceil(colorStops.value.length / 4));
 const stopLabels = computed(() => colorStops.value.map((hex, index) => {
   const count = colorStops.value.length;
   const position = count === 1 ? 0 : pattern.value === 'striped'
@@ -53,7 +53,7 @@ const stopLabels = computed(() => colorStops.value.map((hex, index) => {
   return {
     hex,
     opacity: (normalizeColor(hex)?.alpha ?? 1) * 100,
-    left: `${position * 100}%`,
+    position,
     bottom: `${12 + (index % labelRows.value) * 36}px`,
   };
 }));
@@ -96,13 +96,14 @@ const showSpools = computed(() => {
               {{ t(`detail.pattern.${pattern}`) }}
             </span>
           </div>
-          <div class="color-swatch-large" :style="[swatchStyle, { minHeight: `${labelRows * 36 + 24}px` }]">
+          <div class="color-swatch-large" :class="{ 'color-swatch-gradient': pattern === 'gradient' }"
+            :style="[swatchStyle, { minHeight: `${labelRows * 36 + 24}px` }]">
             <template v-if="colorStops.length > 1">
               <div
                 v-for="(stop, index) in stopLabels"
                 :key="index"
                 class="color-stop"
-                :style="{ '--stop-x': stop.left, bottom: stop.bottom }"
+                :style="{ '--stop-position': stop.position, bottom: stop.bottom }"
               >
                 <span class="color-hex">{{ stop.hex }}</span>
                 <span v-if="stop.opacity < 100" class="color-stop-opacity"
@@ -226,21 +227,25 @@ const showSpools = computed(() => {
 
 .color-stop {
   position: absolute;
-  left: clamp(38px, var(--stop-x), calc(100% - 38px));
+  left: clamp(31px, calc(100% * var(--stop-position)), calc(100% - 31px));
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   white-space: nowrap;
-  padding: 4px 7px;
+  padding: 4px 3px;
   border-radius: 6px;
   background: rgba(0, 0, 0, .72);
   color: white;
   line-height: 1.2;
 }
 
+.color-swatch-gradient .color-stop {
+  left: calc(31px + (100% - 62px) * var(--stop-position));
+}
+
 .color-stop .color-hex, .color-stop-opacity {
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .color-swatch-large {

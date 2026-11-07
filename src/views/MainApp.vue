@@ -30,7 +30,7 @@
       @close="paletteOpen = false"
       @removePin="togglePin({ id: $event })"
       @clearPalette="clearPalette"
-      @scrollTo="scrollToPinned"
+      @scrollTo="showPinned"
     />
 
     <!-- Changelog Modal -->
@@ -65,7 +65,7 @@ import { FilamentDetailPanel } from "@/components/filament-detail";
 import type { FilamentCard } from "../composables/useFilaments";
 const { t, locale } = useI18n();
 const router = useRouter();
-const { refresh, allFilaments, cachedItems, filters, mode, connectRouter } = useFilaments();
+const { refresh, allFilaments, cachedItems, filters, mode, connectRouter, loadMode, setDiscoveryMode } = useFilaments();
 
 connectRouter(router);
 
@@ -82,7 +82,9 @@ const filterModalOpen = ref(false);
 // RGB is now always displayed (no toggle needed)
 
 // Define functions before providing them
+let pinSelection = 0;
 const selectFilament = (filament: FilamentCard) => {
+  pinSelection++;
   selectedFilament.value = filament;
 };
 
@@ -162,11 +164,14 @@ watch(
   { immediate: true },
 );
 
-const scrollToPinned = (id: string) => {
-  const el = document.getElementById(`board-card-${id}`);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-  }
+const showPinned = async (id: string) => {
+  const selection = ++pinSelection;
+  const target = id.startsWith('color:') ? 'catalog' : 'inventory';
+  await setDiscoveryMode(target);
+  const item = allFilaments.value.find(entry => entry.id === id);
+  if (selection !== pinSelection || !paletteOpen.value || !pinnedIds.value.has(id) || mode.value !== target || !item) return;
+  paletteOpen.value = false;
+  selectFilament(item);
 };
 
 useSeo(
@@ -175,5 +180,10 @@ useSeo(
   () => locale.value,
 );
 
-onMounted(() => { void refresh(); });
+onMounted(() => {
+  void refresh();
+  const other = mode.value === 'catalog' ? 'inventory' : 'catalog';
+  const prefix = other === 'catalog' ? 'color:' : 'filament:';
+  if ([...pinnedIds.value].some(id => id.startsWith(prefix))) void loadMode(other, false);
+});
 </script>

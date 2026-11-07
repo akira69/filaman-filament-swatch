@@ -79,7 +79,9 @@ export async function loadInventory(signal?: AbortSignal): Promise<InventorySnap
       remainingPercent:percent === null || percent<0 || percent>100 ? null : percent,
       remainingWeightG:number(Object.hasOwn(metric,'effective_remaining_weight_g') ? metric.effective_remaining_weight_g : spool.remaining_weight_g)};
     const key=id(spool.filament_id);
-    byFilament.set(key,[...(byFilament.get(key) ?? []),summary]);
+    const existing = byFilament.get(key);
+    if (existing) existing.push(summary);
+    else byFilament.set(key, [summary]);
   }
   return {items:filaments.map(value=>{
     const manufacturer=value.manufacturer == null ? null : record(value.manufacturer);

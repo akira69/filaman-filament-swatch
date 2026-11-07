@@ -104,7 +104,7 @@ const handleSearch = (e: Event) => {
           size="sm"
           variant="outline"
           @click="emit('openPalette')"
-          class="relative h-8 sm:h-9 w-8 sm:w-9 p-0 hidden md:flex"
+          class="relative h-8 sm:h-9 w-8 sm:w-9 p-0 hidden sm:flex"
           :aria-label="t('actions.openPalette')"
         >
           <Icon icon="lucide:bookmark" class="w-4 h-4" />

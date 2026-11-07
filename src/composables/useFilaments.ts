@@ -1,5 +1,5 @@
 import { computed, reactive, ref, watch } from 'vue';
-import {hostContext, verifyHostIdentity} from '../filaman/context';
+import {confirmHostIdentity, verifyHostIdentity} from '../filaman/context';
 import {readDiscoveryState,saveDiscoveryState} from '../filaman/discovery-state';
 import type {Router} from 'vue-router';
 import { NativeApiError, loadInventory, loadCatalog } from '../api/filaman';
@@ -58,8 +58,19 @@ function createFilamentsComposable() {
       try {
         const profile = await verifyHostIdentity();
         if (!profile || controller.signal.aborted) return;
-        const result=await (target==='inventory'?loadInventory:loadCatalog)(controller.signal);
-        if(current===generations[target] && hostContext.connected && hostContext.userId===profile.userId){snapshots[target]=result.items.map(project);stale[target]=false;}
+        const outcome = await (target === 'inventory' ? loadInventory : loadCatalog)(controller.signal)
+          .then(result => ({result}), error => ({error}));
+        if (controller.signal.aborted) return;
+        if ('error' in outcome && outcome.error instanceof NativeApiError) {
+          const {status} = outcome.error;
+          if (status === 401 || status === 403) snapshots[target] = null;
+          if (status === 401) throw outcome.error;
+        }
+        const confirmed = await confirmHostIdentity();
+        if (current !== generations[target] || confirmed?.userId !== profile.userId) return;
+        if ('error' in outcome) throw outcome.error;
+        snapshots[target] = outcome.result.items.map(project);
+        stale[target] = false;
       }catch(e){
         if(current===generations[target] && !(e instanceof Error && e.name==='AbortError')) {
           errors[target]=e instanceof Error?e.message:String(e);
@@ -79,9 +90,10 @@ function createFilamentsComposable() {
     return Object.fromEntries(query);
   }
   function sync(push=false) {
-    Object.assign(states[mode.value],filters);saveDiscoveryState({mode:mode.value,filters:states});
+    Object.assign(states[mode.value],filters);
     const query=discoveryQuery();
     if(router)return router[push?'push':'replace']({query});
+    saveDiscoveryState({mode:mode.value,filters:states});
     window.history[push?'pushState':'replaceState'](window.history.state??{},'',`${window.location.pathname}?${new URLSearchParams(query)}`);
     return Promise.resolve();
   }
@@ -97,7 +109,9 @@ function createFilamentsComposable() {
     if(next!==mode.value)stale[next]=true;
     switching=true;mode.value=next;Object.assign(filters,defaults());
     for(const [key,param] of Object.entries(keys))if(query.has(param))(filters as any)[key]=query.get(param);
-    Object.assign(states[next],filters);switching=false;void loadMode(next,false);
+    Object.assign(states[next],filters);
+    saveDiscoveryState({mode:next,filters:states});
+    switching=false;void loadMode(next,false);
   }
   function connectRouter(value:Router) {
     router=value;
@@ -112,19 +126,29 @@ function createFilamentsComposable() {
       if (target === mode.value || snapshots[target] || requests[target]) void loadMode(target);
     }
   };
+  const parent = window.parent;
+  const doc = typeof document === 'undefined' ? undefined : document;
+  const refreshVisible = () => {
+    if (doc?.visibilityState === 'visible') refreshCachedModes();
+  };
+  const onRestore = (event: PageTransitionEvent) => {
+    if (event.persisted) refreshCachedModes();
+  };
   window.addEventListener('focus', refreshCachedModes);
-  window.parent?.addEventListener('focus', refreshCachedModes);
-  if (typeof document !== 'undefined') {
-    const refreshVisible = () => {
-      if (document.visibilityState === 'visible') refreshCachedModes();
-    };
-    document.addEventListener('visibilitychange', refreshVisible);
-    window.parent?.document.addEventListener('visibilitychange', refreshVisible);
+  doc?.addEventListener('visibilitychange', refreshVisible);
+  window.addEventListener('pageshow', onRestore);
+  if (parent && parent !== window) {
+    parent.addEventListener('focus', refreshCachedModes);
+    parent.document.addEventListener('visibilitychange', refreshVisible);
+    window.addEventListener('pagehide', function releaseParentListeners(event) {
+      if ((event as PageTransitionEvent).persisted) return;
+      parent.removeEventListener('focus', refreshCachedModes);
+      parent.document.removeEventListener('visibilitychange', refreshVisible);
+    });
   }
-  window.addEventListener('pageshow', event => {
-    if ((event as PageTransitionEvent).persisted) refreshCachedModes();
-  });
-  const filtered=computed(()=>allFilaments.value.filter(item=>{
+  const filtered=computed(()=>{
+    const search = filters.search.toLowerCase();
+    const results = allFilaments.value.filter(item=>{
     if(filters.color!=='all' && item.colorHex.toLowerCase()!==filters.color.toLowerCase())return false;
     if(filters.colorType!=='all' && (filters.colorType==='multi') !== (item.colors.length>1))return false;
     if(item.kind==='inventory') {
@@ -134,14 +158,18 @@ function createFilamentsComposable() {
         !item.spools?.some(spool=>(filters.inventoryScope!=='on_hand_spools' || spool.onHand) &&
           (filters.location==='all' || spool.location?.toLowerCase()===filters.location.toLowerCase())))return false;
     }
-    return [item.name,item.colorName,item.colorHex,item.vendor,item.material].some(value=>value?.toLowerCase().includes(filters.search.toLowerCase()));
-  }).sort((a,b)=>{
-    const direction=filters.sortDir==='desc'?-1:1;
-    if(['hue','luminance','lightness'].includes(filters.sortField))return direction*(getColorMetrics(a.colorHex)[filters.sortField as 'hue']-getColorMetrics(b.colorHex)[filters.sortField as 'hue']);
-    return direction*String((a as any)[filters.sortField]??'').localeCompare(String((b as any)[filters.sortField]??''),undefined,{sensitivity:'base'});
-  }));
+      return !search || [item.name,item.colorName,item.colorHex,item.vendor,item.material].some(value=>value?.toLowerCase().includes(search));
+    });
+    const direction = filters.sortDir === 'desc' ? -1 : 1;
+    const field = filters.sortField;
+    if (field === 'hue' || field === 'luminance' || field === 'lightness') {
+      return results.map(item => ({item, value:getColorMetrics(item.colorHex)[field]}))
+        .sort((a,b) => direction*(a.value-b.value)).map(entry => entry.item);
+    }
+    return results.sort((a,b)=>direction*String((a as any)[field]??'').localeCompare(String((b as any)[field]??''),undefined,{sensitivity:'base'}));
+  });
   const options=(key:'vendor'|'material')=>computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.kind==='inventory' && i[key]?[i[key]!]:[]))].sort());
-  return {connectRouter,inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
+  return {connectRouter,loadMode,inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
     colorOptions:computed(()=>[...new Set(allFilaments.value.map(i=>i.colorHex))]),
     locationOptions:computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.locations??[]))].sort()),refresh};
 }

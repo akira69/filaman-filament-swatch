@@ -17,3 +17,21 @@ test('native striped swatches keep hard stops and zero alpha rather than blendin
  }
  }finally{await server.close()}
 });
+
+test('the wheel picks the original nearest slots and decodes each color once',async()=>{
+ const {ref}=await import('vue');
+ const server=await createServer({server:{middlewareMode:true,hmr:false,ws:false},optimizeDeps:{noDiscovery:true}});
+ try{
+  const {useColorWheel}=await server.ssrLoadModule('/src/composables/useColorWheel.ts');
+  const {getHue,hueDifference}=await server.ssrLoadModule('/src/lib/colorUtils.ts');
+  let reads=0;
+  const items=['#FE0020','#FF0000','#FE0020','#EAFF00','#78FF19','#888888','#0000FF','#D000FF']
+    .map((hex,id)=>({id:String(id),get colorHex(){reads++;return hex;}}));
+  const expected=Array.from({length:24},(_,slot)=>items.map(item=>({item,d:hueDifference(getHue(item.colorHex),slot*15)}))
+    .sort((a,b)=>a.d-b.d).find(entry=>entry.d<15)?.item.id??null);
+  reads=0;
+  const {colorWheelItems}=useColorWheel(ref(items[0]),ref(items));
+  assert.deepEqual(colorWheelItems.value.map(item=>item?.id??null),expected);
+  assert.equal(reads,items.length);
+ }finally{await server.close();}
+});

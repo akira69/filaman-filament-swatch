@@ -48,12 +48,13 @@
     </div>
 
     <div class="board-body">
-      <div class="minimap" aria-label="Color minimap" ref="minimapRef" @click.stop>
+      <div class="minimap" aria-label="Color minimap" @click.stop>
         <button
           v-for="filament in filaments"
           :key="filament.id"
           class="minimap-dot"
           :class="{ active: activeCardId === filament.id }"
+          v-memo="[filament, activeCardId === filament.id]"
           :title="filament.name"
           :style="minimapStyle(filament)"
           @click.stop.prevent="scrollToCard(filament.id)"
@@ -64,6 +65,7 @@
         <div
           v-for="filament in filaments"
           :key="filament.id"
+          v-memo="[filament, isPinned(filament.id), labels.pin, labels.unpin]"
           class="board-card"
           :id="cardId(filament.id)"
           :style="{
@@ -114,7 +116,7 @@
 
 <script setup lang="ts">
 import VendorLogoBadge from "./VendorLogoBadge.vue";
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
@@ -165,38 +167,43 @@ defineEmits<{
 }>();
 
 const gridRef = ref<HTMLElement | null>(null);
-const minimapRef = ref<HTMLElement | null>(null);
 const activeCardId = ref<string | null>(null);
 let scrollTimeout: number | null = null;
-let rafId: number | null = null;
 
 const updateActiveCard = () => {
-  if (!gridRef.value) return;
-  
-  const gridRect = gridRef.value.getBoundingClientRect();
-  const centerY = gridRect.top + gridRect.height / 2;
-  
-  // Only check visible cards using getBoundingClientRect
-  const cards = gridRef.value.querySelectorAll('.board-card');
-  let closestCard: { id: string; distance: number } | null = null;
-  
-  for(const card of cards) {
-    const rect = card.getBoundingClientRect();
-    // Skip cards not in viewport
-    if (rect.bottom < gridRect.top || rect.top > gridRect.bottom) continue;
-    
-    const cardCenterY = rect.top + rect.height / 2;
-    const distance = Math.abs(cardCenterY - centerY);
-    
-    if (!closestCard || distance < closestCard.distance) {
-      closestCard = { id: card.id.replace('board-card-', ''), distance };
+  const grid = gridRef.value;
+  if (!grid) return;
+  const top = grid.scrollTop;
+  const bottom = top + grid.clientHeight;
+  const center = (top + bottom) / 2;
+  const cards = grid.children as HTMLCollectionOf<HTMLElement>;
+
+  // Flex rows stretch to a common height, so card bottoms are ordered by row.
+  let first = 0;
+  let end = cards.length;
+  while (first < end) {
+    const mid = (first + end) >>> 1;
+    const card = cards[mid];
+    if (card.offsetTop + card.offsetHeight < top) first = mid + 1;
+    else end = mid;
+  }
+
+  let closest = null;
+  let closestDistance = Infinity;
+  for (let i = first; i < cards.length; i++) {
+    const card = cards[i];
+    const cardTop = card.offsetTop;
+    if (cardTop > bottom) break;
+    const distance = Math.abs(cardTop + card.offsetHeight / 2 - center);
+    if (distance < closestDistance) {
+      closest = card.id.slice('board-card-'.length);
+      closestDistance = distance;
     }
   }
-  
-  if (closestCard) {
-    activeCardId.value = closestCard.id;
-  }
+  activeCardId.value = closest;
 };
+
+watch(() => props.filaments, updateActiveCard, { flush: 'post' });
 
 const onScroll = () => {
   // Debounce active card update
@@ -219,9 +226,6 @@ onUnmounted(() => {
   }
   if (scrollTimeout) {
     window.clearTimeout(scrollTimeout);
-  }
-  if (rafId) {
-    window.cancelAnimationFrame(rafId);
   }
 });
 
@@ -343,6 +347,7 @@ const minimapStyle = swatchStyle;
 }
 
 .board-grid {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
@@ -401,7 +406,6 @@ const minimapStyle = swatchStyle;
   content-visibility: auto;
   contain-intrinsic-size: 180px 220px;
   contain: layout style paint;
-  will-change: transform;
 }
 
 @media (min-width: 641px) {

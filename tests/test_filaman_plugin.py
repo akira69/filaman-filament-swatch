@@ -47,9 +47,16 @@ class StaticBundleTests(unittest.TestCase):
         self.assertEqual(response.json()["api_base_path"], "/api/v1")
 
     def test_missing_assets_return_404_instead_of_the_spa(self):
-        for path in ("assets/missing.js", "assets/missing", "plugin-font.woff2"):
+        for path in ("assets/missing.js", "assets/missing", ".%2fassets%2fmissing", "plugin-font.woff2"):
             with self.subTest(path=path):
                 self.assertEqual(self.get(path).status_code, 404)
+
+    def test_asset_etag_avoids_resending_unchanged_bytes(self):
+        path = "/plugins/filament-swatch/assets/app.js"
+        initial = self.client.get(path)
+        response = self.client.get(path, headers={"If-None-Match": initial.headers["etag"]})
+        self.assertEqual(response.status_code, 304)
+        self.assertEqual(response.content, b"")
 
     def test_rejects_encoded_traversal_and_absolute_paths(self):
         for path in (

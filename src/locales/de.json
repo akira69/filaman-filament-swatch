@@ -108,6 +108,7 @@
     "sourceExternal": "Extern"
   },
   "detail": {
+    "multicolorPattern": "Mehrfarbig: {pattern}",
     "pattern": { "striped": "Gestreift", "gradient": "Verlauf" },
     "fullSpoolRemaining": "Jeweils {weight} g übrig",
     "includeTransparency": "Transparenz einbeziehen",

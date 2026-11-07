@@ -93,7 +93,7 @@ const showSpools = computed(() => {
           <div class="color-heading">
             <h3 class="section-title">{{ labels.color }}</h3>
             <span v-if="colorStops.length > 1" class="color-pattern">
-              {{ t(`detail.pattern.${pattern}`) }}
+              {{ t('detail.multicolorPattern', { pattern: t(`detail.pattern.${pattern}`) }) }}
             </span>
           </div>
           <div class="color-swatch-large" :class="{ 'color-swatch-gradient': pattern === 'gradient' }"

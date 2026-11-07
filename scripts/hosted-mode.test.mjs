@@ -432,7 +432,7 @@ for(const gradient of [false,true])test(`detail swatch labels ordered colors and
  const {page,close}=await open({gradient,language:gradient?'fr':'en'});try{
   await page.$eval('[id="board-card-filament:17"] .card-name',e=>e.click());
   await page.waitForSelector('.color-stop');
-  assert.equal(await page.$eval('.color-pattern',e=>e.textContent.trim()),gradient?'Dégradé':'Striped');
+  assert.equal(await page.$eval('.color-pattern',e=>e.textContent.trim()),gradient?'Multicolore\u00a0: Dégradé':'Multicolor: Striped');
   assert.deepEqual(await page.$$eval('.color-stop .color-hex',labels=>labels.map(e=>e.textContent)),
     gradient?['#FF0000AA','#BB00B8AA','#006A3FAA','#0000FFAA']:['#FF000000','#FF000088']);
   assert.deepEqual(await page.$$eval('.color-stop',labels=>labels.map(e=>Number(e.style.getPropertyValue('--stop-position')))),

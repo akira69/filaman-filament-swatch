@@ -24,6 +24,13 @@ async function open(options={}){
    return respond({currency:options.currency||'EUR'},options.currencyFailed?503:200);
   }
   if(u.pathname.startsWith('/api/v1/')){
+   if(options.catalogSnapshot && u.pathname==='/api/v1/colors/discovery/snapshot'){
+    const etag = `"catalog-${options.catalogSnapshot}"`;
+    if (options.denyCatalog) return respond({},403);
+    if (request.headers()['if-none-match'] === etag) return request.respond({status:304,headers:{etag}});
+    const items=Object.values(fixture['/api/v1/colors']).flatMap(page=>page.items);
+    return request.respond({contentType:'application/json',headers:{etag},body:JSON.stringify({items:options.catalogSnapshot === 1 ? items : items.slice(1)})});
+   }
    if(options.switchDuringCatalog && u.pathname==='/api/v1/colors') {
     options.switchDuringCatalog=false;
     options.userId=2;
@@ -230,7 +237,17 @@ test('discovery mode controls use compact native typography and bundled icons',a
 
 test('a full 1392-color catalog leaves cards and detail content scrollable',async()=>{
  const {page,errors,close}=await open({query:'&mode=catalog',largeCatalog:true});try{
- await page.waitForFunction(()=>document.querySelectorAll('.board-card').length===1392);
+ await page.waitForFunction(()=>document.querySelectorAll('.minimap-dot').length===1392);
+ const cardCount=()=>page.$$eval('.board-card',cards=>cards.length);
+ assert.ok(await cardCount()<65,'the initial catalog window should be small');
+ assert.equal(await page.$('[id="board-card-color:11391"]'),null);
+ await page.type('nav input[type=text]','Catalog 1391');
+ await page.waitForFunction(()=>document.querySelectorAll('.board-card').length===1 &&
+  document.querySelector('.card-name')?.textContent==='Catalog 1391');
+ await page.$eval('nav input[type=text]',e=>{e.value='';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.waitForFunction(()=>document.querySelectorAll('.minimap-dot').length===1392);
+ const lastName=await page.$eval('.minimap-dot:last-child',e=>e.title);
+ const lastId=`board-card-color:${10000+Number(lastName.slice('Catalog '.length))}`;
  const size=await page.evaluate(()=>({map:document.querySelector('.minimap').getBoundingClientRect().height,grid:document.querySelector('.board-grid').getBoundingClientRect().height}));assert.ok(size.map<=56,'minimap must remain a compact strip');assert.ok(size.grid>=200,'cards need a usable viewport');
  await page.evaluate(()=>{
   const bounds=Element.prototype.getBoundingClientRect;
@@ -246,14 +263,66 @@ test('a full 1392-color catalog leaves cards and detail content scrollable',asyn
  });
  assert.ok(await page.evaluate(()=>window.cardLayoutReads)<150,'scrolling should measure only visible rows');
  await page.$eval('.minimap-dot:last-child',e=>e.click());
- await page.waitForFunction(()=>{
-  const card=document.querySelector('.board-card:last-child').getBoundingClientRect();
+ await page.waitForFunction(id=>{
+  const card=document.getElementById(id)?.getBoundingClientRect();
   const grid=document.querySelector('.board-grid').getBoundingClientRect();
-  return card.top>=grid.top && card.bottom<=grid.bottom+1;
- });
- const last=await page.$eval('.board-card:last-child',e=>{const card=e.getBoundingClientRect(),grid=e.parentElement.getBoundingClientRect();return {name:e.querySelector('.card-name').textContent.trim(),visible:card.bottom<=grid.bottom+1&&card.top>=grid.top};});assert.ok(last.visible,'last card is reachable by scrolling');await page.click('.board-card:last-child .card-name');await page.waitForSelector('.detail-panel',{timeout:5000});assert.equal(await page.$eval('.detail-title',e=>e.textContent),last.name);
+  return card && card.top>=grid.top && card.bottom<=grid.bottom+1;
+ },{},lastId);
+ assert.ok(await cardCount()<80,'scrolling should release rows that are far away');
+ await page.focus(`[id="${lastId}"] .card-name`);
+ await page.keyboard.press('Home');
+ await page.waitForFunction(()=>document.activeElement.closest('.board-card')?.id==='board-card-color:10000');
+ await page.keyboard.press('End');
+ await page.waitForFunction(id=>document.activeElement.closest('.board-card')?.id===id,{},lastId);
+ await page.keyboard.press('Enter');
+ await page.waitForSelector('.detail-panel',{timeout:5000});
+ assert.equal(await page.$eval('.detail-title',e=>e.textContent),lastName);
  await page.$eval('.detail-body',e=>{e.scrollTop=e.scrollHeight;});assert.ok(await page.$eval('.detail-body',e=>e.scrollTop>0));
  await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.ok(await page.$eval('.detail-body',e=>e.clientHeight>100));
+ await page.$eval('.detail-header button',e=>e.click());
+ await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.$eval('nav button[title="Carousel"]',e=>e.click());
+ await page.waitForSelector('.carousel-track');
+ const reads=await page.$eval('.carousel-track',track=>{
+  const property=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'offsetLeft');
+  let reads=0;
+  Object.defineProperty(HTMLElement.prototype,'offsetLeft',{...property,get(){
+   if(this.matches('.carousel-card'))reads++;
+   return property.get.call(this);
+  }});
+  track.dispatchEvent(new Event('scroll'));
+  return new Promise(resolve=>requestAnimationFrame(()=>{
+   Object.defineProperty(HTMLElement.prototype,'offsetLeft',property);
+   resolve(reads);
+  }));
+ });
+ assert.ok(reads>0 && reads<40,`expected nearby carousel reads, received ${reads}`);
+ }finally{await close();}
+});
+
+test('catalog revalidation keeps an unchanged window and removes denied data',async()=>{
+ const options={query:'&mode=catalog',catalogSnapshot:1};
+ const {page,requests,close}=await open(options);try{
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+  await page.$eval('.card-name',e=>e.dataset.marker='retained');
+  const refresh=async()=>{
+   const response=page.waitForResponse(r=>r.url().endsWith('/colors/discovery/snapshot'));
+   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+   return response;
+  };
+  const unchanged=await refresh();
+  assert.equal(unchanged.status(),304);
+  assert.equal(unchanged.request().headers()['if-none-match'],'"catalog-1"');
+  await page.waitForNetworkIdle();
+  assert.equal(await page.$eval('.card-name',e=>e.dataset.marker),'retained');
+  assert.ok(!requests.some(url=>url.includes('/colors?page=')));
+  options.catalogSnapshot=2;
+  assert.equal((await refresh()).status(),200);
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===2);
+  options.denyCatalog=true;
+  assert.equal((await refresh()).status(),403);
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===0);
+  assert.ok(!requests.some(url=>url.includes('/colors?page=')));
  }finally{await close();}
 });
 

@@ -11,6 +11,7 @@ test('native snapshots preserve identity, pages, currencies, alpha and authorita
     calls.push(path);
     options?.signal?.throwIfAborted();
     const u=new URL(path,'http://test');
+    if (u.pathname.endsWith('/discovery/snapshot')) return new Response(null, {status:404});
     const data=fixture[u.pathname];
     assert.ok(data, `unexpected request ${path}`);
     return new Response(JSON.stringify(Array.isArray(data) ? data : data[u.searchParams.get('page') || '1']));
@@ -29,15 +30,18 @@ test('native snapshots preserve identity, pages, currencies, alpha and authorita
     assert.deepEqual(catalog.items.map(x=>x.id),['color:17','color:18','color:19']);
     assert.equal('price' in catalog.items[0],false);
     assert.equal(catalog.items[0].usageCount,0);
-    assert.equal(calls.length,8);
+    assert.equal(calls.length,9);
     assert.ok(calls.every(x=>x.startsWith('/api/v1/')));
     assert.ok(calls.some(x=>x.includes('include_metrics=true') && x.includes('include_archived=true')));
     fixture['/api/v1/spools']['1'].items[0].metrics.remaining_percent=135;
     assert.equal((await api.loadInventory()).items[0].spools[0].remainingPercent,null);
     fixture['/api/v1/spools']['1'].items[0].metrics.remaining_percent=0;
     for (const status of [401,403,500]) {
-      globalThis.fetch=async path => new URL(path,'http://test').searchParams.get('page')==='2' || status!==500
-        ? new Response('',{status}) : new Response(JSON.stringify(fixture['/api/v1/colors']['1']));
+      globalThis.fetch=async path => {
+        const url = new URL(path,'http://test');
+        if (url.pathname.endsWith('/discovery/snapshot')) return new Response(null,{status:status===500?404:status});
+        return url.searchParams.get('page')==='2' ? new Response(null,{status}) : Response.json(fixture['/api/v1/colors']['1']);
+      };
       await assert.rejects(api.loadCatalog(), e=>e.status===status);
     }
     const abort=new AbortController(); abort.abort();

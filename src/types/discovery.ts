@@ -18,4 +18,4 @@ export type InventoryItem = DiscoveryBase & {
 };
 export type DiscoveryItem = InventoryItem | CatalogItem;
 export type InventorySnapshot = {items: InventoryItem[]};
-export type CatalogSnapshot = {items: CatalogItem[]};
+export type CatalogSnapshot = {items: CatalogItem[]; etag?: string};

@@ -18,7 +18,7 @@ const number = (value: unknown): number | null => typeof value === 'number' && N
 const currency = (value: unknown): string | null => typeof value === 'string' && /^[A-Z]{3}$/.test(value) ? value : null;
 async function get(path: string, signal?: AbortSignal): Promise<unknown> {
   signal?.throwIfAborted();
-  const response = await fetch(`/api/v1${path}`, {credentials:'same-origin', signal});
+  const response = await fetch(`/api/v1${path}`, {credentials:'same-origin', cache:'no-store', signal});
   if(response.status === 401 && typeof window !== 'undefined' && window.parent?.location) {
     const host=window.parent.location;
     window.top?.location.assign(`/login?next=${encodeURIComponent(host.pathname+host.search+host.hash)}`);
@@ -95,7 +95,11 @@ export async function loadInventory(signal?: AbortSignal): Promise<InventorySnap
       articleNumber:text(value.manufacturer_sku) || null,spools:byFilament.get(id(value.id)) ?? []};
   })};
 }
-export async function loadNativeSettings(signal?: AbortSignal): Promise<{language:string;currency:string;userId:number}> {
-  const [me,settings]=await Promise.all([get('/me',signal),get('/app-settings/public-info',signal)]);
-  return {userId:id(record(me).id),language:text(record(me).language),currency:currency(record(settings).currency) ?? ''};
+export async function loadNativeProfile(signal?: AbortSignal) {
+  const me = record(await get('/me', signal));
+  return {userId:id(me.id), language:text(me.language)};
+}
+
+export async function loadNativeCurrency(signal?: AbortSignal) {
+  return currency(record(await get('/app-settings/public-info', signal)).currency);
 }

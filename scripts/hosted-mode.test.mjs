@@ -19,7 +19,7 @@ async function open(options={}){
   if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
   if(u.pathname==='/api/v1/me')return respond({id:options.userId??1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
-  if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'});
+  if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'},options.currencyFailed?503:200);
   if(u.pathname.startsWith('/api/v1/')){
    if(options.denyInventory && u.pathname==='/api/v1/filaments')return respond({},403);
    if(u.pathname.includes('/manufacturers/'))return request.respond({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="red"/></svg>'});
@@ -217,7 +217,9 @@ test('native detail links and opacity badges stay compact; RGB and four metrics 
  assert.equal(await page.$eval('.opacity-badge',e=>e.textContent.trim()),'0%');
  const tops=await page.$$eval('.info-badges .info-badge',items=>items.map(e=>Math.round(e.getBoundingClientRect().top)));assert.equal(tops.length,4);assert.equal(new Set(tops).size,1,'four metrics occupy one desktop row');
  options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>!document.querySelector('.detail-filaman-link').classList.contains('connected'));
- await page.$eval('.detail-overlay',e=>e.click());await page.$eval('[id="board-card-filament:19"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.equal(await page.$('.opacity-badge'),null,'opaque colors need no opacity badge');
+ options.failSettings=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.waitForSelector('[id="board-card-filament:19"]');await page.$eval('[id="board-card-filament:19"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.equal(await page.$('.opacity-badge'),null,'opaque colors need no opacity badge');
  }finally{await close();}
 });
 
@@ -245,7 +247,7 @@ test('a mounted account change discards old query and pins before restoring the 
  await frame.evaluate(()=>{
   sessionStorage.setItem('filaman-swatch:discovery:2',JSON.stringify({mode:'inventory',filters:{inventory:{search:'Blue'}},pins:[]}));
  });
- options.userId=2;await frame.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ options.userId=2;options.currencyFailed=true;await frame.evaluate(()=>window.dispatchEvent(new Event('focus')));
  await page.waitForFunction(()=>{const f=document.querySelector('iframe');return f?.contentDocument?.querySelector('nav input')?.value==='Blue';},{timeout:5000});
  frame=page.frames().find(f=>f.url().includes('/plugins/'));
  assert.equal(await frame.$eval('nav input[type=text]',e=>e.value),'Blue');
@@ -261,5 +263,19 @@ test('resetting native filters restores a valid inventory scope',async()=>{
  await page.select('select','on_hand_spools');await click(page,'Reset');
  assert.equal(await page.$eval('select',e=>e.value),'filaments');
  await click(page,'Save');assert.equal(new URL(page.url()).searchParams.has('i'),false);
+ }finally{await close();}
+});
+
+test('focus removes revoked inventory pins while catalog stays open',async()=>{
+ const options={};const {page,close}=await open(options);try{
+  await page.$eval('[id="board-card-filament:17"] .pin-btn',button=>button.click());
+  await page.waitForSelector('.palette-panel.active .chip-name');
+  await page.$eval('.palette-header button',button=>button.click());
+  await click(page,'Color catalog');
+  await page.waitForSelector('[id="board-card-color:17"]');
+  options.denyInventory=true;
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(()=>!document.querySelector('.chip-name'),{timeout:5000});
+  assert.ok(await page.$('[id="board-card-color:17"]'));
  }finally{await close();}
 });

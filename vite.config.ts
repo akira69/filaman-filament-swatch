@@ -5,11 +5,21 @@ import { defineConfig, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 
+let builtBase = "/";
 const hostedMode = process.env.VITE_HOSTED_MODE === "1";
 
 const hostedIndexPlugin: PluginOption = {
   name: "hosted-index-shell",
-  generateBundle() { this.emitFile({type:"asset",fileName:"filaman-release.json",source:JSON.stringify({version:notes.version,upstream:upstream.commit})}); },
+  configResolved(config) {
+    builtBase = config.base;
+  },
+  generateBundle() {
+    this.emitFile({
+      type: "asset",
+      fileName: "filaman-release.json",
+      source: JSON.stringify({ version: notes.version, upstream: upstream.commit, base: builtBase }),
+    });
+  },
   transformIndexHtml(html) {
     if (!hostedMode) {
       return html;

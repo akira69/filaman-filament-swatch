@@ -26,6 +26,8 @@ built = json.loads((bundle / "filaman-release.json").read_text())
 provenance = json.loads((root / "upstream-source.json").read_text())
 if built.get("version") != version or built.get("upstream") != provenance.get("commit"):
     raise SystemExit("Stale bundle metadata; rebuild before packaging")
+if built.get("base") != manifest["mount_prefix"].rstrip("/") + "/":
+    raise SystemExit("Bundle asset base must match the plugin mount prefix; rebuild before packaging")
 manifest["version"] = version
 archive_path = root / f"filament-swatch-{version}.zip"
 with ZipFile(archive_path, "w", ZIP_DEFLATED) as archive:

@@ -25,7 +25,7 @@ class PackageTests(unittest.TestCase):
         plugin = self.root / "filaman-plugin"
         plugin.mkdir()
         (plugin / "plugin.json").write_text(
-            json.dumps({"plugin_key": "filament_swatch", "version": "1.0.0"})
+            json.dumps({"plugin_key": "filament_swatch", "version": "1.0.0", "mount_prefix": "/plugins/filament-swatch"})
         )
         (plugin / "router.py").write_text("# router")
         (plugin / "__init__.py").write_text("")
@@ -33,7 +33,7 @@ class PackageTests(unittest.TestCase):
         (self.root / "dist/index.html").write_text("<main>Swatch</main>")
         (self.root / "dist/assets/app.js").write_text('console.log("Swatch")')
         (self.root / "dist/.gitkeep").touch()
-        (self.root / "dist/filaman-release.json").write_text('{"version":"1.0.1"}')
+        (self.root / "dist/filaman-release.json").write_text('{"version":"1.0.1","base":"/plugins/filament-swatch/"}')
 
     def package(self, tag):
         return subprocess.run(
@@ -73,6 +73,15 @@ class PackageTests(unittest.TestCase):
             ],
             "1.0.0",
         )
+
+    def test_root_asset_base_is_rejected(self):
+        (self.root / "dist/filaman-release.json").write_text(
+            '{"version":"1.0.1","base":"/"}'
+        )
+        result = self.package("filaman-v1.0.1")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("asset base", result.stderr)
+        self.assertFalse(list(self.root.glob("*.zip")))
 
     def test_stale_bundle_is_rejected(self):
         (self.root / "dist/filaman-release.json").write_text('{"version":"0.9.0"}')

@@ -12,5 +12,8 @@ test('RGBA normalization preserves zero opacity and leaves RGB ranking unchanged
   assert.equal(c.normalizeColor('#GGGGGG'),null);
   assert.equal(c.colorDistance('#F008','#FF000000'),0);
   assert.equal(c.getHue('#F008'),0);
+  assert.equal(c.averageColor(['#B15821','#FFBB00']),'#D88A11');
+  assert.equal(c.averageColor(['#FF000000','#00FF00']),'#80800080');
+  assert.equal(c.averageColor(['invalid']),null);
  }finally{await server.close()}
 });

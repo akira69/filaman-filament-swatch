@@ -346,19 +346,35 @@ test('FilaMan wheel keeps all five modes, exact stop selection, and pinnable mat
  const {page,errors,requests,close}=await open({sharedHarmony:true,gradient:true});try{
   assert.ok(!requests.some(url=>url.includes('/color-harmonies.')));
   await page.$eval('[id="board-card-filament:17"] .card-name',e=>e.click());
-  const selector='.fm-plugin-color-harmonies select';
-  await page.waitForSelector(selector,{timeout:5000});
+  await page.waitForSelector('.harmony-mode',{timeout:5000});
   const modes=['similar','complementary','analogous','triadic','split-complementary'];
-  assert.deepEqual(await page.$eval(selector,e=>Array.from(e.options,option=>option.value)),modes);
-  assert.equal(await page.$eval(selector,e=>e.value),'similar');
+  assert.deepEqual(await page.$$eval('.harmony-mode',nodes=>nodes.map(e=>e.dataset.harmonyMode)),modes);
+  const selectedMode=()=>page.$eval('.harmony-mode[aria-pressed=true]',e=>e.dataset.harmonyMode);
+  assert.equal(await selectedMode(),'similar');
+  assert.equal(await page.$eval('.fm-plugin-color-harmonies select',e=>getComputedStyle(e).display),'none');
   await page.waitForSelector('.harmony-result');
   assert.ok((await page.$$eval('.harmony-result',items=>items.map(item=>item.textContent))).some(name=>name.includes('Blue')));
-  for(const mode of modes)assert.deepEqual(await page.select(selector,mode),[mode]);
+  for(const mode of modes){
+   await page.$eval(`[data-harmony-mode="${mode}"]`,e=>e.click());
+   assert.equal(await selectedMode(),mode);
+  }
+  await page.setViewport({width:320,height:680});
+  const layout=await page.$eval('.harmony-modes',group=>{
+   const primary=group.querySelector('.harmony-mode-primary').getBoundingClientRect();
+   const hues=Array.from(group.querySelectorAll('.hue-modes button'),e=>e.getBoundingClientRect());
+   return {primary:primary.toJSON(),hues:hues.map(e=>e.toJSON())};
+  });
+  assert.ok(layout.hues.every((box,i)=>box.top===layout.hues[0].top && box.top>=layout.primary.bottom &&
+   box.left>=(layout.hues[i-1]?.right ?? layout.primary.left) && box.right<=layout.primary.right+1));
   await page.$eval('.transparency-toggle input',e=>e.click());
   await page.$eval('.color-stop:nth-child(2)',e=>e.click());
   await page.waitForFunction(()=>document.querySelector('.is-reference')?.getAttribute('data-color-marker')==='#BB00B8AA');
-  assert.equal(await page.$eval(selector,e=>e.value),'split-complementary');
-  await page.select(selector,'similar');
+  assert.equal(await selectedMode(),'split-complementary');
+  await page.$eval('.average-reference',e=>e.click());
+  await page.waitForFunction(()=>document.querySelector('.is-reference')?.getAttribute('data-color-marker')==='#6F1B7EAA');
+  assert.equal(await page.$eval('.average-reference',e=>e.getAttribute('aria-pressed')),'true');
+  assert.equal(await page.$eval('.harmony-reference code',e=>e.textContent),'#6F1B7EAA');
+  await page.$eval('[data-harmony-mode="similar"]',e=>e.click());
   await page.$eval('.harmony-pin',e=>e.click());
   assert.equal(await page.$eval('.harmony-pin',e=>e.getAttribute('aria-pressed')),'true');
   assert.equal(await page.$('.wheel-svg'),null);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref, shallowRef, watch, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Pin, PinOff } from 'lucide-vue-next';
+import { ArrowLeftRight, Blend, CircleDot, Pin, PinOff, Split, Triangle } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import type { FilamentCard } from '@/composables/useFilaments';
 import { harmonyModes, loadColorHarmonyWheel, type HarmonyResult } from '@/filaman/color-harmonies';
@@ -38,6 +38,8 @@ const modeLabels = {
   similar: 'similar', complementary: 'complementary', analogous: 'analogous',
   triadic: 'triadic', 'split-complementary': 'split',
 };
+const [, ...hueModes] = harmonyModes;
+const modeIcons = { complementary: ArrowLeftRight, analogous: Blend, triadic: Triangle, 'split-complementary': Split };
 const groups = computed(() => result.value?.groups.map(group => {
   const label = group.offset === 0 ? 'referenceRange' : modeLabels[result.value!.mode];
   return {
@@ -84,6 +86,21 @@ onBeforeUnmount(() => wheel?.destroy());
         {{ t('detail.includeTransparency') }}
       </label>
     </div>
+    <div v-if="available" class="harmony-modes" role="group" :aria-label="t('detail.colorHarmonies')">
+      <Button type="button" variant="outline" size="sm" class="harmony-mode harmony-mode-primary"
+        data-harmony-mode="similar" :aria-pressed="result?.mode === 'similar'" @click="wheel?.update({mode: 'similar'})">
+        <CircleDot :size="17" aria-hidden="true" />
+        {{ t('detail.similar') }}
+      </Button>
+      <div class="hue-modes">
+        <Button v-for="mode in hueModes" :key="mode" type="button" variant="outline" size="sm" class="harmony-mode"
+          :data-harmony-mode="mode" :title="t(`detail.${modeLabels[mode]}`)" :aria-label="t(`detail.${modeLabels[mode]}`)"
+          :aria-pressed="result?.mode === mode" @click="wheel?.update({mode})">
+          <component :is="modeIcons[mode]" :size="18" aria-hidden="true" />
+        </Button>
+      </div>
+      <p v-if="result && result.mode !== 'similar'" class="mode-label">{{ t(`detail.${modeLabels[result.mode]}`) }}</p>
+    </div>
     <div ref="host" class="shared-harmony-wheel" />
     <template v-if="available">
       <p v-if="!groups.length" class="empty-matches">{{ t('detail.noHarmonyMatches') }}</p>
@@ -114,12 +131,19 @@ onBeforeUnmount(() => wheel?.destroy());
 .harmony-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
 .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted-foreground); }
 .transparency-toggle { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted-foreground); }
+.harmony-modes { display: grid; gap: 5px; }
+.hue-modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.harmony-mode { min-width: 0; min-height: 36px; justify-content: center; }
+.harmony-mode[aria-pressed='true'] { background: var(--muted); border-color: var(--ring); }
+.mode-label { text-align: center; color: var(--muted-foreground); font-size: 11px; }
 .shared-harmony-wheel {
   --fm-harmony-surface: var(--muted);
   --fm-harmony-border: var(--border);
   --fm-harmony-text: var(--foreground);
   --fm-harmony-muted: var(--muted-foreground);
 }
+/* Swatch supplies the mode buttons and uses the host wheel for drawing and matching. */
+.shared-harmony-wheel :deep(.fm-plugin-color-harmonies > select) { display: none; }
 .harmony-group h4 { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; }
 .harmony-group h4 span, .empty-matches, .match-hex { font-size: 11px; color: var(--muted-foreground); }
 .harmony-match { display: flex; align-items: center; gap: 4px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 8px; }

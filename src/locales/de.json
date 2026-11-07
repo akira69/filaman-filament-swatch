@@ -108,6 +108,8 @@
     "sourceExternal": "Extern"
   },
   "detail": {
+    "harmonyReference": "Farbreferenz",
+    "averageReference": "Mittelwert",
     "referenceRange": "Referenzbereich",
     "noHarmonyMatches": "Keine passenden Farben.",
     "useHarmonyReference": "{hex} für die Farbharmonie verwenden",

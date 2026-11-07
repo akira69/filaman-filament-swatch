@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n';
 import {formatNumber} from '@/filaman/format';
-import {normalizeColor} from '@/lib/colorUtils';
+import {averageColor, normalizeColor} from '@/lib/colorUtils';
 import { computed, ref, watch } from 'vue';
 import type { FilamentCard } from '@/composables/useFilaments';
 import { getFlatSwatchStyle } from '@/lib/swatchUtils';
@@ -44,10 +44,11 @@ const opacity = computed(()=>(normalizeColor(props.filament?.colorHex)?.alpha ??
 const colorStops = computed(() => props.filament?.colors.length
   ? props.filament.colors.map(color => color.hex)
   : [props.filament?.colorHex ?? '']);
-const selectedStop = ref<string>();
-watch(() => props.filament?.id, () => { selectedStop.value = undefined; });
-const referenceHex = computed(() => selectedStop.value && colorStops.value.includes(selectedStop.value)
-  ? selectedStop.value : colorStops.value[0]);
+const selectedReference = ref<number | 'average'>(0);
+watch(() => props.filament?.id, () => { selectedReference.value = 0; });
+const averageHex = computed(() => colorStops.value.length > 1 ? averageColor(colorStops.value) : null);
+const referenceHex = computed(() => (selectedReference.value === 'average'
+  ? averageHex.value : colorStops.value[selectedReference.value]) ?? colorStops.value[0]);
 const harmonyFilament = computed(() => props.filament && { ...props.filament, colorHex: referenceHex.value });
 const pattern = computed(() => props.filament?.nativeColorStyle === 'striped' ? 'striped' : 'gradient');
 const labelRows = computed(() => Math.ceil(colorStops.value.length / 4));
@@ -112,8 +113,8 @@ const showSpools = computed(() => {
                 class="color-stop"
                 :style="{ '--stop-position': stop.position, bottom: stop.bottom }"
                 :title="t('detail.useHarmonyReference', {hex: stop.hex})"
-                :aria-pressed="referenceHex === stop.hex"
-                @click="selectedStop = stop.hex"
+                :aria-pressed="selectedReference === index"
+                @click="selectedReference = index"
               >
                 <span class="color-hex">{{ stop.hex }}</span>
                 <span v-if="stop.opacity < 100" class="color-stop-opacity"
@@ -128,6 +129,14 @@ const showSpools = computed(() => {
               </div>
               <span v-if="opacity < 100" class="opacity-badge" :aria-label="`${t('discovery.opacity')}: ${formatNumber(opacity,1)}%`">{{ formatNumber(opacity,1) }}%</span>
             </template>
+          </div>
+          <div v-if="averageHex" class="harmony-reference">
+            <span>{{ t('detail.harmonyReference') }} <code>{{ referenceHex }}</code></span>
+            <button class="average-reference" type="button" :aria-pressed="selectedReference === 'average'"
+              :title="t('detail.useHarmonyReference', { hex: averageHex })" @click="selectedReference = 'average'">
+              <span class="average-chip" :style="{ backgroundColor: averageHex }" aria-hidden="true" />
+              {{ t('detail.averageReference') }}
+            </button>
           </div>
         </div>
 
@@ -258,6 +267,30 @@ const showSpools = computed(() => {
   outline: 1px solid #fff;
   outline-offset: 2px;
 }
+
+.harmony-reference {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.harmony-reference code { margin-inline-start: 4px; color: var(--foreground); }
+.average-reference {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--foreground);
+}
+.average-reference[aria-pressed='true'] { background: var(--muted); border-color: var(--ring); }
+.average-reference:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.average-chip { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--border); }
 
 .color-swatch-gradient .color-stop {
   left: calc(31px + (100% - 62px) * var(--stop-position));

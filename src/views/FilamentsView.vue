@@ -126,8 +126,6 @@ const cardLabels = computed(() => ({
   weight: t("card.weight"),
   copy: t("actions.copy"),
   copied: t("actions.copied"),
-  sourceSpoolman: t("card.sourceSpoolman"),
-  sourceExternal: t("card.sourceExternal"),
   pin: t("actions.pin"),
   unpin: t("actions.unpin"),
 }));
@@ -135,8 +133,6 @@ const cardLabels = computed(() => ({
 const boardLabels = computed(() => ({
   pin: t("actions.pin"),
   unpin: t("actions.unpin"),
-  sourceSpoolman: t("card.sourceSpoolman"),
-  sourceExternal: t("card.sourceExternal"),
   legend: t("info.legend"),
 }));
 

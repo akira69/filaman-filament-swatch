@@ -83,28 +83,18 @@
 
             </div>
             <div class="card-bottom">
-              <div class="card-color-readout">
-                <span class="card-hex">{{ filament.colorHex.toUpperCase() }}</span>
-                <ColorRgbReadout class="card-rgb" :color-hex="filament.colorHex" />
-              </div>
+              <span class="card-hex">{{ filament.colorHex.toUpperCase() }}</span>
               <div class="card-actions">
-              <button
-                type="button"
-                class="pin-btn"
-                :aria-pressed="isPinned(filament.id)"
-                @click.stop="$emit('togglePin', filament)"
-                :title="isPinned(filament.id) ? labels.unpin : labels.pin"
-              >
-                <Icon :icon="isPinned(filament.id) ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
-              </button>
-              <Badge
-                variant="outline"
-                class="text-[10px] sm:text-xs whitespace-nowrap"
-                :class="getSourceBadgeClass(filament.source)"
-              >
-                <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
-                {{ getSourceLabel(filament.source) }}
-              </Badge>
+                <ColorRgbReadout class="card-rgb" :color-hex="filament.colorHex" />
+                <button
+                  type="button"
+                  class="pin-btn size-7 shrink-0"
+                  :aria-pressed="isPinned(filament.id)"
+                  @click.stop="$emit('togglePin', filament)"
+                  :title="isPinned(filament.id) ? labels.unpin : labels.pin"
+                >
+                  <Icon :icon="isPinned(filament.id) ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -120,10 +110,8 @@ import { ref, watch, onMounted, onUnmounted } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import ColorRgbReadout from './ColorRgbReadout.vue';
 import { getSwatchStyle } from '@/lib/swatchUtils';
-import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import {
   Select,
   SelectContent,
@@ -139,8 +127,6 @@ const props = defineProps<{
   labels: {
     pin: string;
     unpin: string;
-    sourceSpoolman: string;
-    sourceExternal: string;
     legend: string;
   };
   sortLabels: {
@@ -490,18 +476,12 @@ const minimapStyle = swatchStyle;
   display:flex;
   flex-direction:column;
   align-items:stretch;
-  gap:6px;
+  gap:2px;
   margin-top:auto;
   font-size: 12px;
 }
 
 .card-top > div {width:100%;min-width:0;}
-
-.card-color-readout {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
 
 .card-hex {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -516,40 +496,22 @@ const minimapStyle = swatchStyle;
   font-size: 11px;
 }
 
-.badge-spoolman {
-  background: rgba(100, 200, 100, 0.15);
-  color: rgb(80, 180, 80);
-}
 
-.card-source[data-kind="external"] {
-  background: rgba(var(--accent-2), 0.16);
-  border-color: rgba(var(--accent-2), 0.6);
-}
 
 .pin-btn {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  padding: 6px 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 120ms ease;
-  min-width: 32px;
-  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-@media (min-width: 640px) {
-  .pin-btn {
-    padding: 6px 10px;
-    min-width: auto;
-    min-height: auto;
-  }
-}
 
 .pin-btn:hover {
   border-color: rgba(var(--accent-2), 0.7);

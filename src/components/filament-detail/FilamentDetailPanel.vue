@@ -68,7 +68,6 @@ const showSpools = computed(() => {
         :name="filament.name"
         :vendor="filament.vendor"
         :material="filament.material"
-        :source="filament.source"
         :logo-url="filament.logoUrl"
         :filaman-href="filament.kind === 'inventory' ? `/filaments/${filament.nativeId}` : '/filaments/colors'"
         @close="emit('close')"

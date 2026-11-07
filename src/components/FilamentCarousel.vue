@@ -124,8 +124,6 @@ const props = defineProps<{
     weight: string;
     copy: string;
     copied: string;
-    sourceSpoolman: string;
-    sourceExternal: string;
     pin:string;
     unpin:string;
   };

@@ -8,7 +8,8 @@
         :view-mode="viewMode"
         :search-query="filters.search"
         @open-palette="paletteOpen = true"
-        @open-changelog="openChangelog"
+        @open-changelog="pluginInfo?.open('changes')"
+        @open-about="pluginInfo?.open('about')"
         @changeView="viewMode = $event"
         @openFilterModal="filterModalOpen = true"
         @search="filters.search = $event"
@@ -33,8 +34,7 @@
       @scrollTo="showPinned"
     />
 
-    <!-- Changelog Modal -->
-    <ChangelogModal ref="changelogModal" />
+    <PluginInfoDialog ref="pluginInfo" />
 
     <!-- Detail Panel Overlay -->
     <div v-if="selectedFilament" class="detail-overlay" @click="selectedFilament = null" />
@@ -60,7 +60,7 @@ import { useSeo } from "../composables/useSeo";
 import { useFilaments } from "../composables/useFilaments";
 import AppNavbar from "../components/AppNavbar.vue";
 import PaletteDrawer from "../components/PaletteDrawer.vue";
-import ChangelogModal from "../components/ChangelogModal.vue";
+import PluginInfoDialog from "../components/PluginInfoDialog.vue";
 import { FilamentDetailPanel } from "@/components/filament-detail";
 import type { FilamentCard } from "../composables/useFilaments";
 const { t, locale } = useI18n();
@@ -76,7 +76,7 @@ watch(pinnedIds,pins=>saveDiscoveryState({pins:[...pins]}));
 const paletteOpen = ref(false);
 const selectedFilament = ref<FilamentCard | null>(null);
 watch([allFilaments,mode],()=>{if(selectedFilament.value)selectedFilament.value=allFilaments.value.find(item=>item.id===selectedFilament.value?.id)??null;});
-const changelogModal = ref<InstanceType<typeof ChangelogModal> | null>(null);
+const pluginInfo = ref<InstanceType<typeof PluginInfoDialog> | null>(null);
 const filterModalOpen = ref(false);
 
 // RGB is now always displayed (no toggle needed)
@@ -132,10 +132,6 @@ const detailLabels = computed(() => ({
   complementary: t("detail.complementary"),
   similar: t("detail.similar"),
 }));
-
-const openChangelog = () => {
-  changelogModal.value?.open();
-};
 
 
 const clearPalette = () => {

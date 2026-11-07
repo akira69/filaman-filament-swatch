@@ -25,6 +25,16 @@
     "pattern": { "striped": "Rayé", "gradient": "Dégradé" },
     "fullSpoolRemaining": "{weight} g restants par bobine"
   },
+  "pluginInfo": {
+    "title": "À propos de FilaMan Swatch",
+    "description": "Parcourez l’inventaire et le catalogue de couleurs FilaMan, comparez les harmonies et épinglez des palettes. Les liens des filaments et des bobines s’ouvrent dans FilaMan.",
+    "preview": "Version de prévisualisation · {date}",
+    "edition": "Édition FilaMan par akira69",
+    "original": "Conception originale par Disane87",
+    "license": "Licence",
+    "issues": "Signaler un problème",
+    "close": "Fermer"
+  },
   "discovery": {
     "mode": "Mode de découverte",
     "inventory": "Inventaire",

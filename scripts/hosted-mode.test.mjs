@@ -74,6 +74,33 @@ async function open(options={}){
  return {page,requests,errors,close:()=>context.close()};
 }
 async function click(page,label){await page.waitForFunction(label=>[...document.querySelectorAll('button')].some(e=>e.textContent.trim()===label),{timeout:5000},label);assert.ok(await page.evaluate(label=>{const e=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===label);e?.click();return !!e;},label),`missing button ${label}`);}
+test('About and What’s New link the FilaMan fork and credit the original project',async()=>{
+ const {page,close}=await open();try{
+  await page.emulateTimezone('America/Chicago');
+  await page.click('button[aria-label="About FilaMan Swatch"]');
+  await page.waitForSelector('[role=dialog]');
+  const links=await page.$$eval('[role=dialog] a',nodes=>nodes.map(a=>[a.textContent.trim(),a.href]));
+  assert.deepEqual(links,[
+   ['akira69/filaman-filament-swatch','https://github.com/akira69/filaman-filament-swatch'],
+   ['Disane87/spoolman-filament-swatch','https://github.com/Disane87/spoolman-filament-swatch'],
+   ['MIT','https://github.com/Disane87/spoolman-filament-swatch/blob/935d3496df98faaec18e38aa4eba18c43d246c2f/LICENSE'],
+   ['Report an issue','https://github.com/akira69/filaman-filament-swatch/issues'],
+  ]);
+  assert.match(await page.$eval('[role=dialog]',e=>e.textContent),/Original design by Disane87/);
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role=dialog]',{hidden:true});
+  await page.click('button[aria-label="What\'s New"]');
+  await page.waitForSelector('[role=dialog]');
+  assert.match(await page.$eval('[role=dialog]',e=>e.textContent),/Preview build · Nov 6, 2026/);
+  assert.equal(await page.$eval('[role=dialog] a',a=>a.href),'https://github.com/akira69/filaman-filament-swatch/pull/16');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[role=dialog]',{hidden:true});
+  await page.setViewport({width:320,height:680});
+  await page.click('button[aria-label="Menu"]');
+  await click(page,'About FilaMan Swatch');
+  assert.ok(await page.$eval('[role=dialog]',e=>e.scrollWidth<=e.clientWidth));
+ }finally{await close();}
+});
 test('native inventory, search, filter modal, catalog and navigation',async()=>{
  const {page,requests,errors,close}=await open();try{
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);

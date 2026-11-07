@@ -14,6 +14,7 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'openPalette'): void;
   (e: 'openChangelog'): void;
+  (e: 'openAbout'): void;
   (e: 'changeView', mode: 'board' | 'carousel'): void;
   (e: 'openFilterModal'): void;
   (e: 'search', query: string): void;
@@ -41,10 +42,12 @@ const handleSearch = (e: Event) => {
 <template>
   <nav :class="{'in-filaman-shell':inFilamanShell}" class="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgb(var(--surface))] shadow-sm">
     <div class="app-navbar-inner px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
-      <div class="app-brand flex shrink-0 items-center gap-2">
-        <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" />
+      <button type="button" class="app-brand flex shrink-0 items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+        :aria-label="t('pluginInfo.title')" :title="t('pluginInfo.title')" aria-haspopup="dialog" @click="emit('openAbout')">
+        <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" aria-hidden="true" />
         <span class="hidden sm:inline font-semibold text-[rgb(var(--text))] text-base">{{ appTitle }}</span>
-      </div>
+        <Icon icon="lucide:info" class="hidden sm:block w-3.5 h-3.5 text-[rgb(var(--text-muted))]" aria-hidden="true" />
+      </button>
 
       <div class="flex-1 min-w-0 max-w-md">
         <div class="relative">
@@ -151,6 +154,11 @@ const handleSearch = (e: Event) => {
                   >
                     <Icon icon="lucide:sparkles" class="w-4 h-4" />
                     {{ t('changelog.title') || 'What\'s New' }}
+                  </button>
+                  <button type="button" class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors"
+                    @click="emit('openAbout'); mobileMenuOpen = false">
+                    <Icon icon="lucide:info" class="w-4 h-4" aria-hidden="true" />
+                    {{ t('pluginInfo.title') }}
                   </button>
                   <a
                     href="https://github.com/sponsors/Disane87"

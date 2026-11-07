@@ -88,8 +88,8 @@ test('native logo and linked spool use shared reel without losing alpha zero',as
  assert.equal(await page.$eval('.spool-id',e=>e.getAttribute('href')),'/spools/17');assert.equal(await page.$eval('.spool-id',e=>e.target),'_top');
  await page.waitForFunction(()=>window.__reelCalls?.length>0);const calls=await page.evaluate(()=>window.__reelCalls);assert.deepEqual(calls[0],[0,['#FF000000','#FF000088'],'striped',{view:'quarter'}]);
  if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/detail.png',fullPage:true});
- const layout=await page.evaluate(()=>{const item=document.querySelector('.spool-item').getBoundingClientRect(),reel=document.querySelector('.corner-reel')?.getBoundingClientRect(),logo=document.querySelector('.detail-header img').getBoundingClientRect();return {item:{right:item.right,bottom:item.bottom,height:item.height},reel:reel&&{right:reel.right,bottom:reel.bottom,width:reel.width},logoWidth:logo.width,sourceHeight:document.querySelector('.detail-header .source-badge').getBoundingClientRect().height};});
- assert.ok(layout.reel,'native corner reel');assert.ok(Math.abs(layout.item.right-layout.reel.right-1)<1);assert.ok(Math.abs(layout.item.bottom-layout.reel.bottom-1)<1);assert.ok(layout.reel.width>=110);assert.ok(layout.item.height<=120);assert.ok(layout.logoWidth>=90);assert.ok(layout.sourceHeight<=24);
+ const layout=await page.evaluate(()=>{const item=document.querySelector('.spool-item').getBoundingClientRect(),reel=document.querySelector('.corner-reel')?.getBoundingClientRect(),logo=document.querySelector('.detail-header img').getBoundingClientRect();return {item:{right:item.right,bottom:item.bottom,height:item.height},reel:reel&&{right:reel.right,bottom:reel.bottom,width:reel.width},logoWidth:logo.width};});
+ assert.ok(layout.reel,'native corner reel');assert.ok(Math.abs(layout.item.right-layout.reel.right-1)<1);assert.ok(Math.abs(layout.item.bottom-layout.reel.bottom-1)<1);assert.ok(layout.reel.width>=110);assert.ok(layout.item.height<=120);assert.ok(layout.logoWidth>=90);
  assert.match(await page.$eval('.detail-panel',e=>e.innerText),/0 g/);assert.deepEqual(errors,[]);
  }finally{await close();}
 });
@@ -140,6 +140,7 @@ test('expired native bootstrap returns to top-level FilaMan login',async()=>{
 test('obsolete project URLs return to discovery and preserve launch parameters',async()=>{
  const {page,errors,close}=await open({path:'app/projects/demo-project',query:'&mode=catalog&q=Transparent'});try{
  await page.waitForFunction(()=>location.pathname.endsWith('/app/swatch'),{timeout:5000});
+ assert.doesNotMatch(await page.$eval('nav',e=>e.innerText),/Projects/);
  assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
  assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Transparent');
  assert.equal(await page.$eval('.card-name',e=>e.textContent.trim()),'Transparent');
@@ -238,26 +239,44 @@ test('wheel separates clean RGB display from alpha preview without changing nati
 
 test('native detail links and opacity badges stay compact; RGB and four metrics fit',async()=>{
  const options={detailMetrics:true};const {page,close}=await open(options);try{
- const rows=await page.$$eval('.board-card',cards=>cards.map(card=>{const rgb=card.querySelector('.card-rgb').getBoundingClientRect(),source=card.querySelector('.card-actions').getBoundingClientRect();return {rgbHeight:rgb.height,sourceTop:source.top,rgbBottom:rgb.bottom};}));
- const pin=await page.$eval('.board-card:first-child',e=>{const title=e.querySelector('.card-name').getBoundingClientRect(),pin=e.querySelector('.pin-btn').getBoundingClientRect(),rgb=e.querySelector('.card-rgb').getBoundingClientRect();return {titleWidth:title.width,metaWidth:e.querySelector('.card-meta').clientWidth,pinBelow:pin.top>=rgb.bottom};});assert.ok(pin.pinBelow);assert.ok(pin.titleWidth>pin.metaWidth*.75);
+ const layout=await page.$eval('.board-card:first-child',card=>{
+  const title=card.querySelector('.card-name').getBoundingClientRect();
+  const rgb=card.querySelector('.card-rgb').getBoundingClientRect();
+  const button=card.querySelector('.pin-btn');
+  const pin=button.getBoundingClientRect();
+  return {titleWidth:title.width,metaWidth:card.querySelector('.card-meta').clientWidth,
+   rgbHeight:rgb.height,pinHeight:button.offsetHeight,sameRow:Math.abs(rgb.y+rgb.height/2-pin.y-pin.height/2)<1,pinRight:pin.left>rgb.right};
+ });
+ assert.ok(layout.titleWidth>layout.metaWidth*.75);
+ assert.equal(layout.pinHeight,28);
+ assert.ok(layout.rgbHeight<20 && layout.sameRow && layout.pinRight);
+ assert.doesNotMatch(await page.$eval('.board-card .card-actions',e=>e.textContent),/FilaMan/);
  const labels=await page.$$eval('.board-card:first-child .rgb-label',x=>x.map(e=>e.textContent.trim()));assert.deepEqual(labels,['R:','G:','B:']);
- for(const row of rows){assert.ok(row.rgbHeight<20,'RGB stays on one line');assert.ok(row.sourceTop>=row.rgbBottom,'source badge sits below RGB');}
  await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
- assert.equal(await page.$eval('.detail-filaman-link',e=>e.getAttribute('href')),'/filaments/17');assert.equal(await page.$eval('.detail-filaman-link',e=>e.target),'_top');assert.ok(await page.$eval('.detail-filaman-link',e=>e.classList.contains('connected')));
+ assert.equal(await page.$eval('.detail-filaman-link',e=>e.getAttribute('href')),'/filaments/17');assert.equal(await page.$eval('.detail-filaman-link',e=>e.target),'_top');assert.equal(await page.$eval('.detail-title',e=>e.textContent),await page.$eval('.detail-filaman-link',e=>e.textContent));
+ assert.equal(await page.$('.detail-header .source-badge'),null);
  assert.equal(await page.$eval('.opacity-badge',e=>e.textContent.trim()),'0%');
  const tops=await page.$$eval('.info-badges .info-badge',items=>items.map(e=>Math.round(e.getBoundingClientRect().top)));assert.equal(tops.length,4);assert.equal(new Set(tops).size,1,'four metrics occupy one desktop row');
- options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>!document.querySelector('.detail-filaman-link').classList.contains('connected'));
+ options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>document.body.innerText.includes('503'));
  options.failSettings=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
  await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
  await page.waitForSelector('[id="board-card-filament:19"]');await page.$eval('[id="board-card-filament:19"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.equal(await page.$('.opacity-badge'),null,'opaque colors need no opacity badge');
  }finally{await close();}
 });
 
-test('card titles open details by keyboard and pin actions leave full title width',async()=>{
+test('keyboard opens card details and carousel pin shares the RGB row',async()=>{
  const {page,close}=await open();try{
 
  await page.focus('.board-card:first-child .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel',{timeout:4000});await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
- await page.click('button[title="Carousel"]');await page.waitForSelector('.card-container .card-name');await page.focus('.card-container .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel');
+ await page.click('button[title="Carousel"]');await page.waitForSelector('.card-container .card-name');
+ assert.deepEqual(await page.$eval('.card-container',card=>[...card.querySelectorAll('.card-actions button')].map(e=>e.offsetHeight)),[28,28]);
+ assert.ok(await page.$eval('.card-container',card=>{
+  const rgb=card.querySelector('.card-rgb').getBoundingClientRect();
+  const pin=card.querySelector('.pin-btn').getBoundingClientRect();
+  return Math.abs(rgb.y+rgb.height/2-pin.y-pin.height/2)<1 && pin.left>rgb.right;
+ }));
+ assert.doesNotMatch(await page.$eval('.card-container .card-actions',e=>e.textContent),/FilaMan/);
+ await page.focus('.card-container .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel');
  }finally{await close();}
 });
 

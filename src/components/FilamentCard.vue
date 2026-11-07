@@ -41,38 +41,27 @@
       </div>
     </div>
 
-    <div class="flex items-center justify-between gap-2">
-      <div class="flex min-w-0 flex-col gap-0.5 text-left">
-        <span class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
-          HEX: {{ filament.colorHex.toUpperCase() }}
-        </span>
-        <span class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
-          <ColorRgbReadout :color-hex="filament.colorHex" />
-        </span>
+    <div class="flex flex-col gap-0.5">
+      <span class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
+        HEX: {{ filament.colorHex.toUpperCase() }}
+      </span>
+      <div class="card-actions">
+        <ColorRgbReadout class="mono card-rgb whitespace-nowrap text-[10px] sm:text-xs text-[rgb(var(--text-muted))]" :color-hex="filament.colorHex" />
+        <div class="flex shrink-0 gap-1">
+          <Button size="sm" variant="secondary" :title="labels.copy" @click.stop="copyHex" class="size-7 p-0">
+            <Icon :icon="copied ? 'lucide:check' : 'lucide:copy'" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </Button>
+          <button
+            type="button"
+            class="pin-btn size-7"
+            :aria-pressed="pinned"
+            @click.stop="$emit('togglePin', filament)"
+            :title="pinned ? labels.unpin : labels.pin"
+          >
+            <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
+          </button>
+        </div>
       </div>
-
-    </div>
-    <div class="card-actions">
-        <button
-          type="button"
-          class="pin-btn h-8 w-8 sm:h-9 sm:w-9"
-          :aria-pressed="pinned"
-          @click.stop="$emit('togglePin', filament)"
-          :title="pinned ? labels.unpin : labels.pin"
-        >
-          <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
-        </button>
-      <Button size="sm" variant="secondary" :title="labels.copy" @click.stop="copyHex" class="h-8 w-8 sm:h-9 sm:w-9 p-0">
-        <Icon :icon="copied ? 'lucide:check' : 'lucide:copy'" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-      </Button>
-        <Badge
-          variant="outline"
-          class="text-[10px] sm:text-xs whitespace-nowrap"
-          :class="getSourceBadgeClass(filament.source)"
-        >
-          <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
-          {{ getSourceLabel(filament.source) }}
-        </Badge>
     </div>
   </div>
 </template>
@@ -80,10 +69,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon } from '@iconify/vue';
-import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import { getSwatchStyle } from '@/lib/swatchUtils';
 import { formatNumber } from '@/filaman/format';
 import ColorRgbReadout from './ColorRgbReadout.vue';
@@ -99,8 +86,6 @@ const props = defineProps<{
     weight: string;
     copy: string;
     copied: string;
-    sourceSpoolman: string;
-    sourceExternal: string;
     pin: string;
     unpin: string;
   };
@@ -150,7 +135,6 @@ const copyHex = async () => {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.8);
@@ -168,13 +152,5 @@ const copyHex = async () => {
   background: rgba(var(--accent-rgb), 0.12);
 }
 
-.badge-spoolman {
-  background: rgba(100, 200, 100, 0.15);
-  color: rgb(80, 180, 80);
-}
 
-.badge-external {
-  background: rgba(150, 100, 255, 0.15);
-  color: rgb(150, 100, 255);
-}
 </style>

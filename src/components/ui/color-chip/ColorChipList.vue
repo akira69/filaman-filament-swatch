@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { SourceBadge } from '@/components/ui/source-badge';
 import { hexToRgba } from '@/lib/colorUtils';
 import {getFlatSwatchStyle} from '@/lib/swatchUtils';
 
@@ -37,7 +35,6 @@ const getCardBackgroundStyle = (colorHex: string) => {
           <span class="card-name">{{ color.name }}</span>
           <span class="card-vendor">{{ color.vendor }}</span>
         </div>
-        <SourceBadge :source="color.source" variant="chip" :show-label="false" />
       </div>
 
       <div class="card-swatch" :style="getFlatSwatchStyle(color.colorHex,color.multiColorHexes,color.multiColorDirection,color.nativeColorStyle)" />

@@ -49,7 +49,8 @@ const swatchStyle = computed(() => {
   return getFlatSwatchStyle(
     props.filament.colorHex,
     props.filament.multiColorHexes,
-    props.filament.multiColorDirection
+    props.filament.multiColorDirection,
+    props.filament.nativeColorStyle
   );
 });
 

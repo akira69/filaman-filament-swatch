@@ -55,7 +55,7 @@ Spool `#17` is an ordinary, keyboard-accessible link to `/spools/17`. When embed
 
 Filament detail can link to `/filaments/<id>`. Catalog items link to `/filaments/colors`, the existing Manage Colors destination. Do not assume that page already supports opening a particular color editor by query parameter. Inventory/color/spool editing remains in native FilaMan screens; returning or refocusing the plugin refreshes affected data without discarding discovery state.
 
-Retain existing browser-local palette/project helpers without adding a native project backend or inventory-editing features. Preserve existing browser-stored data; do not migrate or delete it implicitly. Their reachable text and money displays follow the same translation, native identity and currency rules as the discovery views. Broader project/import improvements are outside this work.
+Keep browser-local pinned palettes. The FilaMan edition omits the inherited Projects feature, including project storage, file import and 3D previews.
 
 ## Architecture and maintenance boundaries
 
@@ -105,7 +105,7 @@ Keep a small FilaMan stylesheet/token mapping, including its Default/brand, dark
 
 Use the authoritative FilaMan application currency and one formatter for every reachable money display. Use `Intl.NumberFormat` with the resolved language, including `fr-FR`, and the applicable currency. Remove hardcoded euro symbols, euro-only icons and `.toFixed(2) + currency` presentation. Zero is a valid price; missing price is not zero. Honor the currency's own minor-unit conventions.
 
-Preserve an explicit native `price_currency` where present; use the application currency when the native amount has no separate currency metadata. Changing the application setting must not silently relabel an explicitly foreign-currency amount. Display such an amount with its actual currency and do not sum unlike currencies. Old browser-local project amounts with no known currency remain visibly unqualified/unknown until recomputed from current native price inputs; do not silently assign them the newly selected currency. This is display synchronization, not exchange-rate conversion. Catalog colors have no invented price.
+Preserve an explicit native `price_currency` where present; use the application currency when the native amount has no separate currency metadata. Changing the application setting must not silently relabel an explicitly foreign-currency amount. Display such an amount with its actual currency and do not sum unlike currencies. This is display synchronization, not exchange-rate conversion. Catalog colors have no invented price.
 
 Re-read the setting on initial load and when focus/storage/host context changes indicate an update. If the currency is initially unknown, withhold the money label until resolved rather than assuming EUR. A failed refresh can retain the last verified setting while showing retry state. Invalid currency codes receive a safe, visibly qualified numeric/code fallback rather than crashing the view.
 

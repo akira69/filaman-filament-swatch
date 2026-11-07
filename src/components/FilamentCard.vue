@@ -33,14 +33,10 @@
         <span class="uppercase tracking-wide">{{ labels.material }}</span>
         <span class="text-[rgb(var(--text))]">{{ filament.material }}</span>
       </div>
-      <div v-if="filament.spoolId" class="flex items-center justify-between">
-        <span class="uppercase tracking-wide">{{ labels.spool }}</span>
-        <span class="text-[rgb(var(--text))]">#{{ filament.spoolId }}</span>
-      </div>
-      <div v-if="filament.remainingWeight" class="flex items-center justify-between">
+      <div v-if="filament.totalRemainingWeight != null" class="flex items-center justify-between">
         <span class="uppercase tracking-wide">{{ labels.weight }}</span>
         <span class="text-[rgb(var(--text))]">
-          {{ filament.remainingWeight }} g
+          {{ formatNumber(filament.totalRemainingWeight) }} g
         </span>
       </div>
     </div>
@@ -70,7 +66,7 @@
         <Icon :icon="copied ? 'lucide:check' : 'lucide:copy'" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       </Button>
         <Badge
-          :variant="filament.source === 'spoolman' ? 'accent' : 'neutral'"
+          variant="outline"
           class="text-[10px] sm:text-xs whitespace-nowrap"
           :class="getSourceBadgeClass(filament.source)"
         >
@@ -89,6 +85,7 @@ import { Button } from "@/components/ui/button";
 import { Icon } from '@iconify/vue';
 import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import { getSwatchStyle } from '@/lib/swatchUtils';
+import { formatNumber } from '@/filaman/format';
 import ColorRgbReadout from './ColorRgbReadout.vue';
 import VendorLogoBadge from './VendorLogoBadge.vue';
 
@@ -122,7 +119,8 @@ const swatchStyle = computed(() => {
     filament.colorHex,
     filament.material ?? '',
     filament.multiColorHexes,
-    filament.multiColorDirection
+    filament.multiColorDirection,
+    filament.nativeColorStyle
   );
 });
 

@@ -13,6 +13,7 @@ export type FilamentCard = DiscoveryItem & Partial<Omit<InventoryItem, keyof Dis
 export type InventoryScope = 'filaments'|'all_spools'|'on_hand_spools'|'everything';
 const defaults=()=>({search:'',vendor:'all',material:'all',source:'filaman',inventoryScope:'filaments' as InventoryScope,
   sortField:'name',sortDir:'asc',color:'all',colorType:'all',location:'all'});
+export type DiscoveryFilters=ReturnType<typeof defaults>;
 let instance: ReturnType<typeof createFilamentsComposable> | null = null;
 export const useFilaments=()=>instance ??= createFilamentsComposable();
 function createFilamentsComposable() {
@@ -28,6 +29,7 @@ function createFilamentsComposable() {
   Object.assign(filters,states[mode.value]);
   if(explicitFilters){Object.assign(filters,defaults());for(const [key,param] of Object.entries(keys))if(params.has(param))(filters as any)[key]=params.get(param);}
   const snapshots=reactive<Record<DiscoveryMode,FilamentCard[]|null>>({inventory:null,catalog:null});
+  const stale={inventory:false,catalog:false};
   const errors=reactive<Record<DiscoveryMode,string|null>>({inventory:null,catalog:null});
   const loadings=reactive({inventory:false,catalog:false});
   const loading=computed(()=>loadings[mode.value]);
@@ -47,14 +49,14 @@ function createFilamentsComposable() {
   }
   function loadMode(target:DiscoveryMode,force=true):Promise<void> {
     if(!force && requests[target])return requests[target]!;
-    if(!force && snapshots[target])return Promise.resolve();
+    if(!force && snapshots[target] && !stale[target])return Promise.resolve();
     controllers[target]?.abort();const current=++generations[target];
     const controller=new AbortController();controllers[target]=controller;
     loadings[target]=true;errors[target]=null;
     const request=(async()=>{
       try {
         const result=await (target==='inventory'?loadInventory:loadCatalog)(controller.signal);
-        if(current===generations[target])snapshots[target]=result.items.map(project);
+        if(current===generations[target]){snapshots[target]=result.items.map(project);stale[target]=false;}
       }catch(e){
         if(current===generations[target] && !(e instanceof Error && e.name==='AbortError')) {
           errors[target]=e instanceof Error?e.message:String(e);
@@ -82,12 +84,14 @@ function createFilamentsComposable() {
   }
   async function setDiscoveryMode(next:DiscoveryMode,history=true) {
     if(next===mode.value)return;
+    stale[next]=true;
     Object.assign(states[mode.value],filters);switching=true;
     mode.value=next;Object.assign(filters,states[next]);
     await sync(history);switching=false;await loadMode(next,false);
   }
   function hydrate(query:URLSearchParams) {
     const next=query.get('mode')==='catalog'?'catalog':'inventory';
+    if(next!==mode.value)stale[next]=true;
     switching=true;mode.value=next;Object.assign(filters,defaults());
     for(const [key,param] of Object.entries(keys))if(query.has(param))(filters as any)[key]=query.get(param);
     Object.assign(states[next],filters);switching=false;void loadMode(next,false);
@@ -109,9 +113,9 @@ function createFilamentsComposable() {
     if(item.kind==='inventory') {
       if(filters.vendor!=='all' && item.vendor?.toLowerCase()!==filters.vendor.toLowerCase())return false;
       if(filters.material!=='all' && item.material.toLowerCase()!==filters.material.toLowerCase())return false;
-      if(filters.location!=='all' && !item.locations?.some(s=>s.toLowerCase()===filters.location.toLowerCase()))return false;
-      if(filters.inventoryScope==='all_spools' && !item.hasSpools)return false;
-      if(filters.inventoryScope==='on_hand_spools' && !item.hasOnHandSpools)return false;
+      if((filters.location!=='all' || ['all_spools','on_hand_spools'].includes(filters.inventoryScope)) &&
+        !item.spools?.some(spool=>(filters.inventoryScope!=='on_hand_spools' || spool.onHand) &&
+          (filters.location==='all' || spool.location?.toLowerCase()===filters.location.toLowerCase())))return false;
     }
     return [item.name,item.colorName,item.colorHex,item.vendor,item.material].some(value=>value?.toLowerCase().includes(filters.search.toLowerCase()));
   }).sort((a,b)=>{
@@ -120,7 +124,7 @@ function createFilamentsComposable() {
     return direction*String((a as any)[filters.sortField]??'').localeCompare(String((b as any)[filters.sortField]??''),undefined,{sensitivity:'base'});
   }));
   const options=(key:'vendor'|'material')=>computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.kind==='inventory' && i[key]?[i[key]!]:[]))].sort());
-  return {discoveryQuery,connectRouter,ensureInventory:(force=false)=>loadMode('inventory',force),inventoryLoading:computed(()=>loadings.inventory),inventoryError:computed(()=>errors.inventory),inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
+  return {connectRouter,inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
     colorOptions:computed(()=>[...new Set(allFilaments.value.map(i=>i.colorHex))]),
     locationOptions:computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.locations??[]))].sort()),refresh};
 }

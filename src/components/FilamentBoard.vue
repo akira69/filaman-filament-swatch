@@ -96,7 +96,7 @@
                 <Icon :icon="isPinned(filament.id) ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
               </button>
               <Badge
-                :variant="filament.source === 'spoolman' ? 'accent' : 'neutral'"
+                variant="outline"
                 class="text-[10px] sm:text-xs whitespace-nowrap"
                 :class="getSourceBadgeClass(filament.source)"
               >
@@ -180,10 +180,10 @@ const updateActiveCard = () => {
   const cards = gridRef.value.querySelectorAll('.board-card');
   let closestCard: { id: string; distance: number } | null = null;
   
-  cards.forEach((card) => {
+  for(const card of cards) {
     const rect = card.getBoundingClientRect();
     // Skip cards not in viewport
-    if (rect.bottom < gridRect.top || rect.top > gridRect.bottom) return;
+    if (rect.bottom < gridRect.top || rect.top > gridRect.bottom) continue;
     
     const cardCenterY = rect.top + rect.height / 2;
     const distance = Math.abs(cardCenterY - centerY);
@@ -191,7 +191,7 @@ const updateActiveCard = () => {
     if (!closestCard || distance < closestCard.distance) {
       closestCard = { id: card.id.replace('board-card-', ''), distance };
     }
-  });
+  }
   
   if (closestCard) {
     activeCardId.value = closestCard.id;
@@ -230,7 +230,7 @@ const isPinned = (id: string) => {
   return props.pinnedIds.has(id);
 };
 
-const swatchStyle = (filament: FilamentCardType) => getSwatchStyle(filament.colorHex,filament.material ?? '',filament.multiColorHexes,filament.multiColorDirection);
+const swatchStyle = (filament: FilamentCardType) => getSwatchStyle(filament.colorHex,filament.material ?? '',filament.multiColorHexes,filament.multiColorDirection,filament.nativeColorStyle);
 
 const cardId = (id: string) => `board-card-${id}`;
 

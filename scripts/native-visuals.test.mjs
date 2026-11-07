@@ -7,3 +7,13 @@ test('shared reel uses native fill and ordered alpha colors, with explicit unkno
  assert.equal(renderNativeSpool(renderer,null,['#fff'],'gradient','s18'),null);assert.equal(calls.length,4);
  }finally{await server.close()}
 });
+test('native striped swatches keep hard stops and zero alpha rather than blending',async()=>{
+ const server=await createServer({configFile:false,server:{middlewareMode:true,hmr:false,ws:false},optimizeDeps:{noDiscovery:true}});
+ try{const {getFlatSwatchStyle,getSwatchStyle}=await server.ssrLoadModule('/src/lib/swatchUtils.ts');
+ const colors=['#FF000000','#0000FF'];
+ for(const css of [getFlatSwatchStyle(colors[0],colors,undefined,'striped'),getSwatchStyle(colors[0],'PLA',colors,undefined,'striped')]){
+  assert.match(css.background,/#FF000000 0%, #FF000000 50%, #0000FF 50%, #0000FF 100%/);
+  assert.match(css.background,/repeating-conic-gradient/);
+ }
+ }finally{await server.close()}
+});

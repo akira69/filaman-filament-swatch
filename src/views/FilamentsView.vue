@@ -40,13 +40,13 @@
           @togglePin="togglePin"
           @selectFilament="selectFilament"
           @changeView="viewMode = $event"
-          :pinned-ids="pinnedIds"
+          :pinned-ids="pinnedIds ?? new Set<string>()"
         />
 
         <FilamentBoard
           v-else
           :filaments="filtered"
-          :pinned-ids="pinnedIds"
+          :pinned-ids="pinnedIds ?? new Set<string>()"
           :labels="boardLabels"
           :filters="filters"
           :sort-labels="sortLabels"
@@ -106,7 +106,7 @@ const onModeKeydown=(event:KeyboardEvent)=>{
 const closeFilterModal = () => { if (filterModalOpen) filterModalOpen.value = false; };
 
 // Handle filter apply
-const applyFilters = (newFilters: typeof filters) => {
+const applyFilters = (newFilters: Pick<typeof filters,'vendor'|'material'|'location'|'source'|'colorType'|'inventoryScope'>) => {
   filters.inventoryScope = newFilters.inventoryScope;
   filters.vendor = newFilters.vendor;
   filters.material = newFilters.material;

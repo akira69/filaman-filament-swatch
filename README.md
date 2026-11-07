@@ -61,7 +61,7 @@ npm test
 python -m unittest discover -s tests
 ```
 
-The upstream wheel interactions are retained. Projects and palettes remain in browser-local storage. Existing data is preserved; legacy costs without currency metadata display as unknown until recomputed. This plugin has no native editing or backend project store.
+The upstream wheel interactions are retained. Pinned palettes are stored in the browser. The FilaMan edition focuses on discovery; use FilaMan to edit filaments and colors.
 
 ## Packaging
 

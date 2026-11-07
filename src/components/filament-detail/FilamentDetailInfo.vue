@@ -17,38 +17,14 @@ defineProps<{
   <div class="detail-section">
     <h3 class="section-title">{{ labels.details }}</h3>
 
-    <!-- External Source Notice -->
-    <div v-if="filament.source === 'external'" class="external-source-notice notice-external">
-      <Icon icon="lucide:link" class="w-4 h-4" />
-      <div class="notice-content">
-        <p class="notice-title">
-          <strong>Externe Datenbank</strong>
-        </p>
-        <p class="notice-text">
-          Diese Daten stammen aus einer externen Datenbank (SpoolmanDB Community oder andere Quellen). Keine Spulen-Informationen verfügbar.
-        </p>
-      </div>
-    </div>
-
     <div class="info-badges">
       <InfoBadge v-if="filament.weight" icon="lucide:weight" :value="`${formatNumber(filament.weight)}g`" />
-      <InfoBadge
-        v-if="filament.remainingWeight !== null && filament.remainingWeight !== undefined"
-        icon="lucide:gauge"
-        :value="`${formatNumber(filament.remainingWeight)}g`"
-      />
       <InfoBadge v-if="filament.price != null" icon="lucide:banknote" :value="formatMoney(filament.price, filament.priceCurrency ?? hostContext.currency)" />
       <InfoBadge v-if="filament.density" icon="lucide:box" :value="`${formatNumber(filament.density)} g/cm³`" />
       <InfoBadge v-if="filament.diameter" icon="lucide:ruler" :value="`${formatNumber(filament.diameter)}mm`" />
-      <InfoBadge v-if="filament.extruderTemp" icon="lucide:flame" :value="`${formatNumber(filament.extruderTemp)}°C`" />
-      <InfoBadge v-if="filament.bedTemp" icon="lucide:thermometer" :value="`${formatNumber(filament.bedTemp)}°C`" />
       <InfoBadge v-if="filament.articleNumber" icon="lucide:hash" :value="filament.articleNumber" :wide="true" />
     </div>
 
-    <div v-if="filament.comment" class="info-comment">
-      <Icon icon="lucide:message-square" class="w-4 h-4" />
-      <span>{{ filament.comment }}</span>
-    </div>
   </div>
 </template>
 

@@ -4,16 +4,11 @@
     <div class="main-content-wrapper flex min-h-0 flex-1 flex-col" :class="{ blurred: paletteOpen || selectedFilament }">
       <!-- Top Navigation Bar -->
       <AppNavbar
-        :projects-count="projectsCount"
         :pinned-count="pinnedItems.length"
-        :is-connected="true"
-        :has-url="true"
-        :is-hosted="true"
         :view-mode="viewMode"
         :search-query="filters.search"
         @open-palette="paletteOpen = true"
         @open-changelog="openChangelog"
-        @open-import-dialog="showImportDialog = true"
         @changeView="viewMode = $event"
         @openFilterModal="filterModalOpen = true"
         @search="filters.search = $event"
@@ -41,12 +36,6 @@
     <!-- Changelog Modal -->
     <ChangelogModal ref="changelogModal" />
 
-    <!-- Project Import Dialog -->
-    <ProjectImportDialog
-      v-model:open="showImportDialog"
-      @project-created="handleProjectCreated"
-    />
-
     <!-- Detail Panel Overlay -->
     <div v-if="selectedFilament" class="detail-overlay" @click="selectedFilament = null" />
 
@@ -68,12 +57,10 @@ import { computed, onMounted, ref, provide, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter, RouterView } from "vue-router";
 import { useSeo } from "../composables/useSeo";
-import { getProjects } from "../api/projects";
 import { useFilaments } from "../composables/useFilaments";
 import AppNavbar from "../components/AppNavbar.vue";
 import PaletteDrawer from "../components/PaletteDrawer.vue";
 import ChangelogModal from "../components/ChangelogModal.vue";
-import ProjectImportDialog from "../components/ProjectImportDialog.vue";
 import { FilamentDetailPanel } from "@/components/filament-detail";
 import type { FilamentCard } from "../composables/useFilaments";
 const { t, locale } = useI18n();
@@ -90,10 +77,7 @@ const paletteOpen = ref(false);
 const selectedFilament = ref<FilamentCard | null>(null);
 watch([allFilaments,mode],()=>{if(selectedFilament.value)selectedFilament.value=allFilaments.value.find(item=>item.id===selectedFilament.value?.id)??null;});
 const changelogModal = ref<InstanceType<typeof ChangelogModal> | null>(null);
-const showImportDialog = ref(false);
 const filterModalOpen = ref(false);
-
-const projectsCount = computed(() => getProjects().length);
 
 // RGB is now always displayed (no toggle needed)
 
@@ -154,10 +138,6 @@ const openChangelog = () => {
   changelogModal.value?.open();
 };
 
-const handleProjectCreated = (projectId: string) => {
-  showImportDialog.value = false;
-  router.push(`/app/projects/${projectId}`);
-};
 
 const clearPalette = () => {
   pinnedIds.value = new Set();

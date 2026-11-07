@@ -6,8 +6,6 @@
     "hostedTitle": "FilaMan Swatch",
     "subtitle": "Filamente und Farbkatalog entdecken",
     "tagline": "Wische durch Farben, finde Materialien und merke dir perfekte Matches.",
-    "filaments": "Filamente",
-    "projects": "Projekte",
     "footer": {
       "tagline": "Visueller Filament-Farbbrowser",
       "handCrafted": "Hand crafted with",
@@ -414,87 +412,6 @@
       "madeWith": "Gemacht mit {heart} von {author} für die 3D-Druck-Community"
     }
   },
-  "projects": {
-    "title": "Projekte",
-    "subtitle": "Verwalte deine 3D-Druck-Projekte und Filament-Verbrauch",
-    "import": "Projekt importieren",
-    "create": "Projekt erstellen",
-    "delete": "Löschen",
-    "edit": "Bearbeiten",
-    "save": "Speichern",
-    "cancel": "Abbrechen",
-    "noProjects": "Keine Projekte gefunden",
-    "noProjectsHint": "Importiere deine erste .3mf oder .gcode Datei, um loszulegen",
-    "noDescription": "Keine Beschreibung",
-    "confirmDelete": "Projekt löschen?",
-    "confirmDeleteMessage": "Möchtest du \"{name}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-    "stats": {
-      "total": "Gesamt",
-      "active": "Aktiv",
-      "printTime": "Druckzeit",
-      "filament": "Filament",
-      "used": "Verbraucht",
-      "estimated": "Geschätzt",
-      "projects": "Projekte"
-    },
-    "status": {
-      "all": "Alle",
-      "planning": "Planung",
-      "inProgress": "In Arbeit",
-      "completed": "Fertig",
-      "archived": "Archiviert"
-    },
-    "fields": {
-      "name": "Projektname",
-      "description": "Beschreibung",
-      "weight": "Gewicht",
-      "printTime": "Druckzeit",
-      "cost": "Kosten",
-      "costs": "Kosten",
-      "slicer": "Slicer",
-      "material": "Material",
-      "vendor": "Hersteller",
-      "total": "Gesamt",
-      "estimated": "Geschätzt",
-      "actual": "Tatsächlich",
-      "layerHeight": "Schichthöhe",
-      "updated": "Aktualisiert"
-    },
-    "time": {
-      "today": "Heute",
-      "yesterday": "Gestern",
-      "daysAgo": "vor {count} Tagen",
-      "weeksAgo": "vor {count} Wochen"
-    },
-    "importDialog": {
-      "title": "Projekt aus Slicer-Datei erstellen",
-      "description": "Lade eine .3mf oder .gcode Datei hoch, um automatisch Filament-Informationen zu extrahieren",
-      "dropzone": "Datei hier ablegen oder klicken zum Auswählen",
-      "supportedFormats": "Unterstützt: .3mf, .gcode",
-      "processing": "Datei wird verarbeitet...",
-      "errorParsing": "Fehler beim Parsen der Datei: {error}",
-      "errorCreating": "Fehler beim Erstellen des Projekts: {error}",
-      "errorUnsupported": "Nur .3mf und .gcode Dateien werden unterstützt",
-      "filaments": "Erkannte Filamente ({count})",
-      "unknownMaterial": "Unbekanntes Material",
-      "namePlaceholder": "z.B. Benchy, Vase, Gehäuse...",
-      "descriptionPlaceholder": "Zusätzliche Notizen zum Projekt...",
-      "nameRequired": "Projektname *",
-      "descriptionOptional": "Beschreibung (optional)",
-      "preview": "Vorschau",
-      "selectFilament": "FilaMan-Filament zuordnen",
-      "searchFilament": "Filamente suchen…",
-      "noMatch": "Keine Filamente gefunden"
-    },
-    "detail": {
-      "backToProjects": "Zurück zu Projekten",
-      "projectInfo": "Projekt-Informationen",
-      "filamentUsage": "Filament-Verbrauch",
-      "removeFilament": "Filament entfernen",
-      "editProject": "Projekt bearbeiten",
-      "deleteProject": "Projekt löschen"
-    }
-  },
   "upload": {
     "title": "Logo hochladen",
     "instruction": "Laden Sie ein transparentes PNG- oder SVG-Logo für diesen Hersteller hoch. Die Datei wird über GitHub zum Projekt hinzugefügt.",
@@ -514,29 +431,6 @@
     "disconnected": "FilaMan nicht erreichbar",
     "opacity": "Deckkraft",
     "edit": "In FilaMan öffnen",
-    "usage": "{count} Farbzuordnungen",
-    "capacityWarning": "Verfügbare Menge reicht nicht oder ist unbekannt",
-    "costBreakdown": "Kostenübersicht",
-    "perFilament": "Pro Filament",
-    "perPlate": "Pro Druckplatte",
-    "created": "Erstellt",
-    "updated": "Aktualisiert",
-    "printTime": "Druckzeit",
-    "height": "Höhe",
-    "slicer": "Slicer",
-    "status": "Status",
-    "delete": "Löschen",
-    "cost": "Kosten",
-    "length": "Länge",
-    "temperature": "Temperatur",
-    "bed": "Bett",
-    "plate": "Druckplatte",
-    "notes": "Notizen",
-    "required": "Benötigt",
-    "available": "Verfügbar",
-    "view3d": "Klick für 3D-Ansicht"
-  },
-  "filamente": "Filamente",
-  "projekte": "Projekte",
-  "what-s-new": "Neuigkeiten"
+    "usage": "{count} Farbzuordnungen"
+  }
 }

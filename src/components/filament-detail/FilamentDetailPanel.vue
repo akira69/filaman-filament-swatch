@@ -2,7 +2,7 @@
 import {useI18n} from 'vue-i18n';
 import {formatNumber} from '@/filaman/format';
 import {normalizeColor} from '@/lib/colorUtils';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { FilamentCard } from '@/composables/useFilaments';
 import { getFlatSwatchStyle } from '@/lib/swatchUtils';
 import FilamentDetailHeader from './FilamentDetailHeader.vue';
@@ -10,6 +10,7 @@ import FilamentDetailInfo from './FilamentDetailInfo.vue';
 import FilamentSpoolsList from './FilamentSpoolsList.vue';
 import FilamentColorWheel from './FilamentColorWheel.vue';
 import FilamentColorHarmonies from './FilamentColorHarmonies.vue';
+import SharedColorHarmonies from './SharedColorHarmonies.vue';
 
 const {t}=useI18n();
 const props = defineProps<{
@@ -43,6 +44,11 @@ const opacity = computed(()=>(normalizeColor(props.filament?.colorHex)?.alpha ??
 const colorStops = computed(() => props.filament?.colors.length
   ? props.filament.colors.map(color => color.hex)
   : [props.filament?.colorHex ?? '']);
+const selectedStop = ref<string>();
+watch(() => props.filament?.id, () => { selectedStop.value = undefined; });
+const referenceHex = computed(() => selectedStop.value && colorStops.value.includes(selectedStop.value)
+  ? selectedStop.value : colorStops.value[0]);
+const harmonyFilament = computed(() => props.filament && { ...props.filament, colorHex: referenceHex.value });
 const pattern = computed(() => props.filament?.nativeColorStyle === 'striped' ? 'striped' : 'gradient');
 const labelRows = computed(() => Math.ceil(colorStops.value.length / 4));
 const stopLabels = computed(() => colorStops.value.map((hex, index) => {
@@ -99,18 +105,22 @@ const showSpools = computed(() => {
           <div class="color-swatch-large" :class="{ 'color-swatch-gradient': pattern === 'gradient' }"
             :style="[swatchStyle, { minHeight: `${labelRows * 36 + 24}px` }]">
             <template v-if="colorStops.length > 1">
-              <div
+              <button
                 v-for="(stop, index) in stopLabels"
                 :key="index"
+                type="button"
                 class="color-stop"
                 :style="{ '--stop-position': stop.position, bottom: stop.bottom }"
+                :title="t('detail.useHarmonyReference', {hex: stop.hex})"
+                :aria-pressed="referenceHex === stop.hex"
+                @click="selectedStop = stop.hex"
               >
                 <span class="color-hex">{{ stop.hex }}</span>
                 <span v-if="stop.opacity < 100" class="color-stop-opacity"
                   :aria-label="`${t('discovery.opacity')}: ${formatNumber(stop.opacity, 1)}%`">
                   {{ formatNumber(stop.opacity, 1) }}%
                 </span>
-              </div>
+              </button>
             </template>
             <template v-else>
               <div class="color-info">
@@ -142,29 +152,33 @@ const showSpools = computed(() => {
           }"
         />
 
-        <!-- Color Wheel -->
-        <FilamentColorWheel
+        <SharedColorHarmonies
           :filament="filament"
           :all-filaments="allFilaments"
-          :labels="{
-            colorHarmonies: labels.colorHarmonies,
-            currentColor: labels.currentColor,
-            complementary: labels.complementary,
-            similar: labels.similar,
-          }"
+          :reference-hex="referenceHex"
           @select-filament="emit('selectFilament', $event)"
-        />
-
-        <!-- Color Harmonies -->
-        <FilamentColorHarmonies
-          :filament="filament"
-          :all-filaments="allFilaments"
-          :labels="{
-            similarColors: labels.similarColors,
-            complementaryColors: labels.complementaryColors,
-          }"
-          @select-filament="emit('selectFilament', $event)"
-        />
+        >
+          <FilamentColorWheel
+            :filament="harmonyFilament ?? filament"
+            :all-filaments="allFilaments"
+            :labels="{
+              colorHarmonies: labels.colorHarmonies,
+              currentColor: labels.currentColor,
+              complementary: labels.complementary,
+              similar: labels.similar,
+            }"
+            @select-filament="emit('selectFilament', $event)"
+          />
+          <FilamentColorHarmonies
+            :filament="harmonyFilament ?? filament"
+            :all-filaments="allFilaments"
+            :labels="{
+              similarColors: labels.similarColors,
+              complementaryColors: labels.complementaryColors,
+            }"
+            @select-filament="emit('selectFilament', $event)"
+          />
+        </SharedColorHarmonies>
       </div>
     </div>
   </Transition>
@@ -238,6 +252,11 @@ const showSpools = computed(() => {
   background: rgba(0, 0, 0, .72);
   color: white;
   line-height: 1.2;
+}
+
+.color-stop:focus-visible, .color-stop[aria-pressed='true'] {
+  outline: 1px solid #fff;
+  outline-offset: 2px;
 }
 
 .color-swatch-gradient .color-stop {

@@ -108,6 +108,9 @@
     "sourceExternal": "External"
   },
   "detail": {
+    "referenceRange": "Reference range",
+    "noHarmonyMatches": "No matching colors.",
+    "useHarmonyReference": "Use {hex} for color harmonies",
     "multicolorPattern": "Multicolor: {pattern}",
     "pattern": { "striped": "Striped", "gradient": "Gradient" },
     "fullSpoolRemaining": "{weight} g remaining each",

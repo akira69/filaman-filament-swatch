@@ -17,6 +17,11 @@ async function open(options={}){
   if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body style="margin:0">${options.mobileHost?'<button id="sidebar-toggle" style="position:fixed;left:7px;top:13px;width:40px;height:40px;z-index:50">Menu</button>':''}<iframe style="width:100%;height:100vh;border:0" src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
   if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
   if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
+  if(['/color-harmonies.js','/color-harmonies.css'].includes(u.pathname)){
+   if(!options.sharedHarmony)return respond({},404);
+   return request.respond({contentType:u.pathname.endsWith('.js')?'application/javascript':'text/css',
+    body:await readFile(process.env.SHARED_HARMONY_DIR+u.pathname,'utf8')});
+  }
   if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
   if(u.pathname==='/api/v1/me')return respond({id:options.userId??1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
   if(u.pathname==='/api/v1/app-settings/public-info'){
@@ -333,6 +338,31 @@ test('wheel separates clean RGB display from alpha preview without changing nati
  await page.waitForFunction(()=>Math.abs(document.querySelector('.detail-panel').getBoundingClientRect().right-innerWidth)<1);
  await page.click('.wheel-transparency input');assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF000000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),1);assert.equal(await page.$$('.wheel-svg circle[r="100"]').then(x=>x.length),0);
  assert.equal(await page.$eval('.color-hex',e=>e.textContent),'#FF000000');await page.click('.wheel-transparency input');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
+ }finally{await close();}
+});
+
+test('FilaMan wheel keeps all five modes, exact stop selection, and pinnable matches',
+ {skip:!process.env.SHARED_HARMONY_DIR},async()=>{
+ const {page,errors,requests,close}=await open({sharedHarmony:true,gradient:true});try{
+  assert.ok(!requests.some(url=>url.includes('/color-harmonies.')));
+  await page.$eval('[id="board-card-filament:17"] .card-name',e=>e.click());
+  const selector='.fm-plugin-color-harmonies select';
+  await page.waitForSelector(selector,{timeout:5000});
+  const modes=['similar','complementary','analogous','triadic','split-complementary'];
+  assert.deepEqual(await page.$eval(selector,e=>Array.from(e.options,option=>option.value)),modes);
+  assert.equal(await page.$eval(selector,e=>e.value),'similar');
+  await page.waitForSelector('.harmony-result');
+  assert.ok((await page.$$eval('.harmony-result',items=>items.map(item=>item.textContent))).some(name=>name.includes('Blue')));
+  for(const mode of modes)assert.deepEqual(await page.select(selector,mode),[mode]);
+  await page.$eval('.transparency-toggle input',e=>e.click());
+  await page.$eval('.color-stop:nth-child(2)',e=>e.click());
+  await page.waitForFunction(()=>document.querySelector('.is-reference')?.getAttribute('data-color-marker')==='#BB00B8AA');
+  assert.equal(await page.$eval(selector,e=>e.value),'split-complementary');
+  await page.select(selector,'similar');
+  await page.$eval('.harmony-pin',e=>e.click());
+  assert.equal(await page.$eval('.harmony-pin',e=>e.getAttribute('aria-pressed')),'true');
+  assert.equal(await page.$('.wheel-svg'),null);
+  assert.deepEqual(errors,[]);
  }finally{await close();}
 });
 

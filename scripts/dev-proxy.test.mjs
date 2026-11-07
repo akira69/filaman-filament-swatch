@@ -5,7 +5,8 @@ test('development proxies only native host routes and retains Vite SPA assets',a
  process.env.FILAMAN_DEV_URL=`http://127.0.0.1:${backend.address().port}`;process.env.VITE_BASE_PATH='/plugins/filament-swatch/';
  const vite=await createServer({configFile:fileURLToPath(new URL('../vite.config.ts',import.meta.url)),optimizeDeps:{noDiscovery:true,entries:[]},server:{port:0,host:'127.0.0.1',open:false}});
  try{await vite.listen();const origin=`http://127.0.0.1:${vite.httpServer.address().port}`;
- for(const path of ['/api/v1/me','/auth/me','/plugins/filament-swatch/hosted-config','/spool-reel.js','/reel-flange.webp','/plugin-fonts.css','/_astro/font.woff2'])assert.equal((await(await fetch(origin+path)).json()).path,path);
- const html=await(await fetch(origin+'/plugins/filament-swatch/app/swatch')).text();assert.match(html,/@vite\/client/);assert.equal(calls.length,7);
+ const hostPaths=['/api/v1/me','/auth/me','/plugins/filament-swatch/hosted-config','/spool-reel.js','/reel-flange.webp','/plugin-fonts.css','/color-harmonies.js','/color-harmonies.css','/_astro/font.woff2'];
+ for(const path of hostPaths)assert.equal((await(await fetch(origin+path)).json()).path,path);
+ const html=await(await fetch(origin+'/plugins/filament-swatch/app/swatch')).text();assert.match(html,/@vite\/client/);assert.deepEqual(calls,hostPaths);
  }finally{await vite.close();await new Promise(resolve=>backend.close(resolve));delete process.env.FILAMAN_DEV_URL;delete process.env.VITE_BASE_PATH;}
 });

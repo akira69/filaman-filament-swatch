@@ -8,6 +8,16 @@
     "retry": "Réessayer"
   },
   "detail": {
+    "referenceRange": "Plage de référence",
+    "noHarmonyMatches": "Aucune couleur correspondante.",
+    "useHarmonyReference": "Utiliser {hex} pour les harmonies",
+    "colorHarmonies": "Harmonies de couleurs",
+    "includeTransparency": "Inclure la transparence",
+    "similar": "Similaire",
+    "complementary": "Complémentaire",
+    "analogous": "Analogue",
+    "triadic": "Triadique",
+    "split": "Complémentaire adjacente",
     "multicolorPattern": "Multicolore : {pattern}",
     "color": "Couleur",
     "pattern": { "striped": "Rayé", "gradient": "Dégradé" },

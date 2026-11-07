@@ -1,10 +1,36 @@
 import { reactive } from 'vue';
 import { normalizeColor, hexToRgbString } from '../lib/colorUtils';
-import { loadNativeSettings } from '../api/filaman';
+import { loadNativeProfile, loadNativeCurrency } from '../api/filaman';
 export type HostContext = {language:'en'|'de'|'fr'; currency:string|null; theme:string;userId?:number|null;connected?:boolean};
 export const hostContext = reactive<HostContext>({language:'en',currency:null,theme:'brand',userId:null,connected:false});
+let identityChanging = false;
+let identityCheck: Promise<Awaited<ReturnType<typeof loadNativeProfile>> | null> | undefined;
+
+export function verifyHostIdentity() {
+  if (identityChanging) return Promise.resolve(null);
+  return identityCheck ??= loadNativeProfile().then(profile => {
+    if (hostContext.userId !== null && hostContext.userId !== profile.userId) {
+      identityChanging = true;
+      hostContext.connected = false;
+      hostContext.userId = null;
+      const query = new URLSearchParams({
+        filaman_hosted: '1',
+        filaman_hosted_config: '/plugins/filament-swatch/hosted-config',
+      });
+      window.location.replace(`/plugins/filament-swatch/?${query}`);
+      return null;
+    }
+    hostContext.userId = profile.userId;
+    hostContext.connected = true;
+    return profile;
+  }).catch(error => {
+    hostContext.connected = false;
+    throw error;
+  }).finally(() => { identityCheck = undefined; });
+}
+
 export function startHostContext() {
-  let stopped=false,identityChanging=false,sequence=0,languageRevision=0;
+  let stopped=false,sequence=0,languageRevision=0;
   const controller=new AbortController();
   const parentRoot=window.parent.document.documentElement;
   const syncTheme=()=>{
@@ -27,20 +53,16 @@ export function startHostContext() {
   const refresh=async()=>{
     if(identityChanging)return;
     const current=++sequence,revision=languageRevision;
-    const settings=await loadNativeSettings(controller.signal).catch(error=>{
-      if(!stopped&&current===sequence)hostContext.connected=false;
-      throw error;
-    });
-    if(stopped||identityChanging||current!==sequence)return;
-    if(hostContext.userId!==null && hostContext.userId!==settings.userId){
-      identityChanging=true;
-      hostContext.connected=false;hostContext.userId=null;
-      const query=new URLSearchParams({filaman_hosted:'1',filaman_hosted_config:'/plugins/filament-swatch/hosted-config'});
-      window.location.replace(`/plugins/filament-swatch/?${query}`);
-      return;
+    const profile = await verifyHostIdentity();
+    if (!profile || stopped || current !== sequence) return;
+    if (revision === languageRevision) {
+      hostContext.language = profile.language === 'de' || profile.language === 'fr' ? profile.language : 'en';
     }
-    if(revision===languageRevision)hostContext.language=settings.language==='de'||settings.language==='fr'?settings.language:'en';
-    hostContext.connected=true;hostContext.userId=settings.userId;hostContext.currency=settings.currency || null;syncTheme();
+    syncTheme();
+    const currency = await loadNativeCurrency(controller.signal).catch(() => null);
+    if (!stopped && !identityChanging && current === sequence && currency !== null) {
+      hostContext.currency = currency;
+    }
   };
   const background=()=>void refresh().catch(error=>{if(!stopped)console.error('Could not refresh FilaMan presentation',error);});
   const visible=()=>{if(document.visibilityState==='visible')background();};

@@ -46,6 +46,11 @@ class StaticBundleTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["api_base_path"], "/api/v1")
 
+    def test_missing_assets_return_404_instead_of_the_spa(self):
+        for path in ("assets/missing.js", "assets/missing", "plugin-font.woff2"):
+            with self.subTest(path=path):
+                self.assertEqual(self.get(path).status_code, 404)
+
     def test_rejects_encoded_traversal_and_absolute_paths(self):
         for path in (
             "..%2foutside.txt", "%2e%2e%2foutside.txt",

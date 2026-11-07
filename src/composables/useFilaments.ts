@@ -1,4 +1,5 @@
 import { computed, reactive, ref, watch } from 'vue';
+import {hostContext, verifyHostIdentity} from '../filaman/context';
 import {readDiscoveryState,saveDiscoveryState} from '../filaman/discovery-state';
 import type {Router} from 'vue-router';
 import { NativeApiError, loadInventory, loadCatalog } from '../api/filaman';
@@ -55,8 +56,10 @@ function createFilamentsComposable() {
     loadings[target]=true;errors[target]=null;
     const request=(async()=>{
       try {
+        const profile = await verifyHostIdentity();
+        if (!profile || controller.signal.aborted) return;
         const result=await (target==='inventory'?loadInventory:loadCatalog)(controller.signal);
-        if(current===generations[target]){snapshots[target]=result.items.map(project);stale[target]=false;}
+        if(current===generations[target] && hostContext.connected && hostContext.userId===profile.userId){snapshots[target]=result.items.map(project);stale[target]=false;}
       }catch(e){
         if(current===generations[target] && !(e instanceof Error && e.name==='AbortError')) {
           errors[target]=e instanceof Error?e.message:String(e);
@@ -104,9 +107,23 @@ function createFilamentsComposable() {
   watch(()=>({...filters}),()=>{if(!switching)void sync();},{flush:'sync'});
   window.addEventListener('popstate',()=>{if(!router)hydrate(new URLSearchParams(window.location.search));});
   const refresh=()=>loadMode(mode.value);
-  window.addEventListener('focus',()=>void refresh());
-  if(typeof document!=='undefined')document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void refresh();});
-  window.addEventListener('pageshow',event=>{if((event as PageTransitionEvent).persisted)void refresh();});
+  const refreshCachedModes = () => {
+    for (const target of ['inventory', 'catalog'] as const) {
+      if (target === mode.value || snapshots[target] || requests[target]) void loadMode(target);
+    }
+  };
+  window.addEventListener('focus', refreshCachedModes);
+  window.parent?.addEventListener('focus', refreshCachedModes);
+  if (typeof document !== 'undefined') {
+    const refreshVisible = () => {
+      if (document.visibilityState === 'visible') refreshCachedModes();
+    };
+    document.addEventListener('visibilitychange', refreshVisible);
+    window.parent?.document.addEventListener('visibilitychange', refreshVisible);
+  }
+  window.addEventListener('pageshow', event => {
+    if ((event as PageTransitionEvent).persisted) refreshCachedModes();
+  });
   const filtered=computed(()=>allFilaments.value.filter(item=>{
     if(filters.color!=='all' && item.colorHex.toLowerCase()!==filters.color.toLowerCase())return false;
     if(filters.colorType!=='all' && (filters.colorType==='multi') !== (item.colors.length>1))return false;

@@ -39,12 +39,15 @@ async def spa_static(path: str) -> FileResponse:
     """
     Serve the pre-built SPA bundle.
 
-    Exact file matches are served directly; anything else falls back to
-    index.html so that client-side routing works for all deep-link paths.
+    Exact files are served directly. Extensionless SPA paths outside the
+    asset directory fall back to index.html.
     """
     try:
         static_dir = STATIC_DIR.resolve()
-        for name in (path or "index.html", "index.html"):
+        paths = [path or "index.html"]
+        if path and path.split("/", 1)[0] != "assets" and not Path(path).suffix:
+            paths.append("index.html")
+        for name in paths:
             target = (static_dir / name).resolve()
             if not target.is_relative_to(static_dir):
                 raise HTTPException(status_code=404, detail="Not found")

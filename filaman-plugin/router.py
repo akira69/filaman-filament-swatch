@@ -1,0 +1,58 @@
+"""
+Filaman plugin router for spoolman-filament-swatch.
+
+Serves:
+  GET /hosted-config  -> JSON config consumed by the SPA bootstrap
+  GET /{path:path}    -> static SPA bundle with index.html fallback (SPA routing)
+
+mount_plugin_router_on_app mounts this router at /plugins/filament-swatch,
+so final paths are /plugins/filament-swatch/hosted-config and
+/plugins/filament-swatch/{asset-path}.
+"""
+
+from pathlib import Path
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
+
+router = APIRouter()
+
+STATIC_DIR = Path(__file__).parent / "static"
+
+HOSTED_CONFIG = {
+    "contract_version": 2,
+    "mode": "hosted",
+    "app_key": "filaman",
+    "api_base_path": "/api/v1",
+    "app_base_path": "/plugins/filament-swatch",
+}
+
+
+@router.get("/hosted-config")
+async def hosted_config() -> JSONResponse:
+    """Return the hosted-mode configuration consumed by the SPA bootstrap."""
+    return JSONResponse(HOSTED_CONFIG)
+
+
+@router.get("/{path:path}")
+async def spa_static(path: str) -> FileResponse:
+    """
+    Serve the pre-built SPA bundle.
+
+    Exact files are served directly. Extensionless SPA paths outside the
+    asset directory fall back to index.html.
+    """
+    try:
+        static_dir = STATIC_DIR.resolve()
+        paths = [path or "index.html"]
+        if path and path.split("/", 1)[0] != "assets" and not Path(path).suffix:
+            paths.append("index.html")
+        for name in paths:
+            target = (static_dir / name).resolve()
+            if not target.is_relative_to(static_dir):
+                raise HTTPException(status_code=404, detail="Not found")
+            if target.is_file():
+                return FileResponse(target)
+    except (OSError, RuntimeError, ValueError):
+        pass
+    raise HTTPException(status_code=404, detail="Not found")

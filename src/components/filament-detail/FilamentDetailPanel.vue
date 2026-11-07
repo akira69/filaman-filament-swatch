@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import {useI18n} from 'vue-i18n';
+import {formatNumber} from '@/filaman/format';
+import {normalizeColor} from '@/lib/colorUtils';
 import { computed } from 'vue';
 import type { FilamentCard } from '@/composables/useFilaments';
-import { hexToRgba } from '@/lib/colorUtils';
 import { getFlatSwatchStyle } from '@/lib/swatchUtils';
 import { ColorSwatch } from '@/components/ui/color-swatch';
 import FilamentDetailHeader from './FilamentDetailHeader.vue';
@@ -10,6 +12,7 @@ import FilamentSpoolsList from './FilamentSpoolsList.vue';
 import FilamentColorWheel from './FilamentColorWheel.vue';
 import FilamentColorHarmonies from './FilamentColorHarmonies.vue';
 
+const {t}=useI18n();
 const props = defineProps<{
   filament: FilamentCard | null;
   allFilaments: FilamentCard[];
@@ -39,26 +42,20 @@ const emit = defineEmits<{
   (e: 'selectFilament', filament: FilamentCard): void;
 }>();
 
-const panelBackgroundStyle = computed(() => {
-  if (!props.filament) return {};
-
-  const color = props.filament.colorHex;
-  return {
-    background: `linear-gradient(180deg, ${hexToRgba(color, 0.15)} 0%, ${hexToRgba(color, 0.30)} 100%)`,
-  };
-});
+const opacity = computed(()=>(normalizeColor(props.filament?.colorHex)?.alpha ?? 1)*100);
 
 const swatchStyle = computed(() => {
   if (!props.filament) return {};
   return getFlatSwatchStyle(
     props.filament.colorHex,
     props.filament.multiColorHexes,
-    props.filament.multiColorDirection
+    props.filament.multiColorDirection,
+    props.filament.nativeColorStyle
   );
 });
 
 const showSpools = computed(() => {
-  return props.filament?.source === 'spoolman' &&
+  return props.filament?.kind === 'inventory' &&
     props.filament?.spools &&
     props.filament.spools.length > 0;
 });
@@ -66,12 +63,14 @@ const showSpools = computed(() => {
 
 <template>
   <Transition name="slide-in">
-    <div v-if="filament" class="detail-panel" :style="panelBackgroundStyle">
+    <div v-if="filament" class="detail-panel">
       <FilamentDetailHeader
         :name="filament.name"
         :vendor="filament.vendor"
         :material="filament.material"
         :source="filament.source"
+        :logo-url="filament.logoUrl"
+        :filaman-href="filament.kind === 'inventory' ? `/filaments/${filament.nativeId}` : '/filaments/colors'"
         @close="emit('close')"
       />
 
@@ -83,11 +82,13 @@ const showSpools = computed(() => {
             <div class="color-info">
               <span class="color-hex">{{ filament.colorHex.toUpperCase() }}</span>
             </div>
+            <span v-if="opacity < 100" class="opacity-badge" :aria-label="`${t('discovery.opacity')}: ${formatNumber(opacity,1)}%`">{{ formatNumber(opacity,1) }}%</span>
           </div>
         </div>
 
         <!-- Filament Details -->
-        <FilamentDetailInfo
+        <p v-if="filament.kind === 'catalog'">{{ t('discovery.usage', {count:filament.usageCount}) }}</p>
+        <FilamentDetailInfo v-if="filament.kind === 'inventory'"
           :filament="filament"
           :labels="{ details: labels.details }"
         />
@@ -96,6 +97,8 @@ const showSpools = computed(() => {
         <FilamentSpoolsList
           v-if="showSpools"
           :spools="filament.spools!"
+          :colors="filament.colors.map(c => c.hex)"
+          :color-style="filament.nativeColorStyle ?? 'gradient'"
           :labels="{
             spools: labels.spools,
             archived: labels.archived,
@@ -142,8 +145,7 @@ const showSpools = computed(() => {
   max-width: 90vw;
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 32px -8px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(32px) saturate(150%);
-  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  background: var(--card);
   z-index: 1000;
   pointer-events: auto;
   display: flex;
@@ -176,12 +178,13 @@ const showSpools = computed(() => {
 }
 
 .color-swatch-large {
+  position:relative;
   height: 180px;
   border-radius: 16px;
   display: flex;
   align-items: flex-end;
   padding: 16px;
-  border: 1px solid rgba(var(--border), 0.5);
+  border: 1px solid var(--border);
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.3);
 }
 
@@ -197,8 +200,8 @@ const showSpools = computed(() => {
 
 .color-hex {
   font-family: 'Courier New', monospace;
-  font-size: 16px;
-  font-weight: 700;
+  font-size:12px;
+  font-weight:600;
   color: white;
 }
 
@@ -213,4 +216,8 @@ const showSpools = computed(() => {
   transform: translateX(100%);
   opacity: 0;
 }
+</style>
+
+<style scoped>
+.opacity-badge {position:absolute;right:16px;bottom:16px;padding:4px 7px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:600;line-height:1.2;}
 </style>

@@ -2,9 +2,7 @@ import { computed, type Ref } from 'vue';
 import { colorDistance, getHue, hueDifference } from '@/lib/colorUtils';
 import type { FilamentCard } from './useFilaments';
 
-export interface ColorHarmonyResult extends FilamentCard {
-  distance: number;
-}
+export type ColorHarmonyResult = FilamentCard & { distance: number };
 
 export function useColorHarmonies(
   filament: Ref<FilamentCard | null>,

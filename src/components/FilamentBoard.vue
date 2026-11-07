@@ -10,8 +10,8 @@
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">{{ sortLabels.name }}</SelectItem>
-            <SelectItem value="vendor">{{ sortLabels.vendor }}</SelectItem>
-            <SelectItem value="material">{{ sortLabels.material }}</SelectItem>
+            <SelectItem v-if="filaments[0]?.kind !== 'catalog'" value="vendor">{{ sortLabels.vendor }}</SelectItem>
+            <SelectItem v-if="filaments[0]?.kind !== 'catalog'" value="material">{{ sortLabels.material }}</SelectItem>
             <SelectItem value="source">{{ sortLabels.source }}</SelectItem>
             <SelectItem value="hue">{{ sortLabels.hue }}</SelectItem>
             <SelectItem value="luminance">{{ sortLabels.luminance }}</SelectItem>
@@ -75,9 +75,17 @@
           <div class="card-meta">
             <div class="card-top">
               <div>
-                <div class="card-name">{{ filament.name }}</div>
-                <div class="card-sub">{{ filament.vendor }} · {{ filament.material }}</div>
+                <button type="button" class="card-name w-full text-left" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
+                <div v-if="filament.kind === 'inventory'" class="card-sub"><VendorLogoBadge :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" /> {{ filament.material }}</div>
               </div>
+
+            </div>
+            <div class="card-bottom">
+              <div class="card-color-readout">
+                <span class="card-hex">{{ filament.colorHex.toUpperCase() }}</span>
+                <ColorRgbReadout class="card-rgb" :color-hex="filament.colorHex" />
+              </div>
+              <div class="card-actions">
               <button
                 type="button"
                 class="pin-btn"
@@ -87,12 +95,15 @@
               >
                 <Icon :icon="isPinned(filament.id) ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
               </button>
-            </div>
-            <div class="card-bottom">
-              <span class="card-hex">{{ filament.colorHex.toUpperCase() }}</span>
-              <span class="card-source" :data-kind="filament.source">
-                {{ filament.source === 'spoolman' ? labels.sourceSpoolman : labels.sourceExternal }}
-              </span>
+              <Badge
+                variant="outline"
+                class="text-[10px] sm:text-xs whitespace-nowrap"
+                :class="getSourceBadgeClass(filament.source)"
+              >
+                <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
+                {{ getSourceLabel(filament.source) }}
+              </Badge>
+              </div>
             </div>
           </div>
         </div>
@@ -102,10 +113,15 @@
 </template>
 
 <script setup lang="ts">
+import VendorLogoBadge from "./VendorLogoBadge.vue";
 import { ref, onMounted, onUnmounted } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import ColorRgbReadout from './ColorRgbReadout.vue';
+import { getSwatchStyle } from '@/lib/swatchUtils';
+import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import {
   Select,
   SelectContent,
@@ -164,10 +180,10 @@ const updateActiveCard = () => {
   const cards = gridRef.value.querySelectorAll('.board-card');
   let closestCard: { id: string; distance: number } | null = null;
   
-  cards.forEach((card) => {
+  for(const card of cards) {
     const rect = card.getBoundingClientRect();
     // Skip cards not in viewport
-    if (rect.bottom < gridRect.top || rect.top > gridRect.bottom) return;
+    if (rect.bottom < gridRect.top || rect.top > gridRect.bottom) continue;
     
     const cardCenterY = rect.top + rect.height / 2;
     const distance = Math.abs(cardCenterY - centerY);
@@ -175,7 +191,7 @@ const updateActiveCard = () => {
     if (!closestCard || distance < closestCard.distance) {
       closestCard = { id: card.id.replace('board-card-', ''), distance };
     }
-  });
+  }
   
   if (closestCard) {
     activeCardId.value = closestCard.id;
@@ -214,33 +230,7 @@ const isPinned = (id: string) => {
   return props.pinnedIds.has(id);
 };
 
-const swatchStyle = (filament: FilamentCardType) => {
-  // Multi-color support
-  if (filament.multiColorHexes && filament.multiColorHexes.length > 1) {
-    const colors = filament.multiColorHexes.map(ensureHex);
-    if (filament.multiColorDirection === 'coaxial') {
-      // Radial gradient with soft transitions
-      const stops = colors.map((c, i) => {
-        const center = (i / (colors.length - 1)) * 100;
-        const spread = 15;
-        if (i === 0) return `${c} 0%, ${c} ${center + spread}%`;
-        if (i === colors.length - 1) return `${c} ${center - spread}%, ${c} 100%`;
-        return `${c} ${center - spread}%, ${c} ${center + spread}%`;
-      }).join(', ');
-      return { background: `radial-gradient(circle, ${stops})` };
-    } else {
-      // Linear gradient (longitudinal)
-      return { background: `linear-gradient(90deg, ${colors.join(', ')})` };
-    }
-  }
-  // Single color with gradient effect
-  return { background: gradient(filament.colorHex) };
-};
-
-const gradient = (hex: string) => {
-  const safe = ensureHex(hex);
-  return `linear-gradient(145deg, ${safe} 0%, ${safe}80 50%, ${safe}00 100%)`;
-};
+const swatchStyle = (filament: FilamentCardType) => getSwatchStyle(filament.colorHex,filament.material ?? '',filament.multiColorHexes,filament.multiColorDirection,filament.nativeColorStyle);
 
 const cardId = (id: string) => `board-card-${id}`;
 
@@ -249,51 +239,31 @@ const scrollToCard = (id: string) => {
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
 };
-const minimapStyle = (filament: FilamentCardType) => {
-  // Multi-color support in minimap
-  if (filament.multiColorHexes && filament.multiColorHexes.length > 1) {
-    const colors = filament.multiColorHexes.map(ensureHex);
-    if (filament.multiColorDirection === 'coaxial') {
-      return { background: `radial-gradient(circle, ${colors.join(', ')})` };
-    } else {
-      return { background: `linear-gradient(90deg, ${colors.join(', ')})` };
-    }
-  }
-  return { background: filament.colorHex };
-};
-const ensureHex = (value: string | null | undefined): string => {
-  if (!value) return "#888888";
-  const trimmed = value.trim().replace(/^#/, "");
-  const short = /^[0-9a-fA-F]{3}$/;
-  const full = /^[0-9a-fA-F]{6}$/;
-  if (full.test(trimmed)) return `#${trimmed.toLowerCase()}`;
-  if (short.test(trimmed)) {
-    const [a, b, c] = trimmed;
-    return `#${a}${a}${b}${b}${c}${c}`.toLowerCase();
-  }
-  return "#888888";
-};
+const minimapStyle = swatchStyle;
 </script>
 
 <style scoped>
 .board-wrapper {
-  border: 1px solid rgba(var(--border), 0.6);
+  border: 1px solid var(--border);
   background: rgba(var(--surface), 0.8);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  gap:0;
+  border-radius:var(--radius-md);
+  flex:1;
+  min-height:0;
+  overflow:hidden;
 }
 
 @media (min-width: 640px) {
   .board-wrapper {
-    gap: 12px;
+    gap:0;
   }
 }
 
 .board-header {
+  padding:12px 16px;
+  border-bottom:1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -333,7 +303,7 @@ const ensureHex = (value: string | null | undefined): string => {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(var(--accent), 0.5), rgba(var(--accent-2), 0.7));
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.5), rgba(var(--accent-2), 0.7));
 }
 
 .board-body {
@@ -354,10 +324,15 @@ const ensureHex = (value: string | null | undefined): string => {
 .minimap {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
-  gap: 4px;
-  border: 1px solid rgba(var(--border), 0.6);
-  background: rgba(var(--surface-alt), 0.7);
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:6px;
+  min-height:32px;
+  gap:4px;
+  border-bottom:1px solid var(--border);
+  background:var(--muted);
+  scrollbar-width:thin;
   flex-shrink: 0;
 }
 
@@ -371,22 +346,21 @@ const ensureHex = (value: string | null | undefined): string => {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
-  justify-content: center;
-  gap: 8px;
-  overflow-y: auto;
+  justify-content:flex-start;
+  gap:12px;
+  overflow-y:auto;
   overflow-x: hidden;
-  padding-right: 2px;
-  padding-top: 4px;
+  padding:12px;
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--accent), 0.5) rgba(var(--surface-alt), 0.4);
+  scrollbar-color: rgba(var(--accent-rgb), 0.5) rgba(var(--surface-alt), 0.4);
 }
 
 @media (min-width: 640px) {
   .board-grid {
-    gap: 12px;
-    padding-right: 4px;
+    gap: 16px;
+    padding:16px;
   }
 }
 
@@ -402,14 +376,14 @@ const ensureHex = (value: string | null | undefined): string => {
 }
 
 .board-grid::-webkit-scrollbar-thumb {
-  background: rgba(var(--accent), 0.5);
+  background: rgba(var(--accent-rgb), 0.5);
   border-radius: 10px;
   border: 2px solid rgba(var(--surface), 0.8);
   transition: background 200ms ease;
 }
 
 .board-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--accent), 0.7);
+  background: rgba(var(--accent-rgb), 0.7);
 }
 
 .board-card {
@@ -422,43 +396,43 @@ const ensureHex = (value: string | null | undefined): string => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
   /* Fixed width based on viewport */
-  flex: 0 0 160px;
+  flex: 0 0 180px;
   /* Performance optimizations */
   content-visibility: auto;
-  contain-intrinsic-size: 160px 200px;
+  contain-intrinsic-size: 180px 220px;
   contain: layout style paint;
   will-change: transform;
 }
 
 @media (min-width: 641px) {
   .board-card {
-    flex: 0 0 180px;
+    flex: 0 0 200px;
     border-radius: 16px;
-    contain-intrinsic-size: 180px 220px;
+    contain-intrinsic-size: 200px 240px;
   }
 }
 
 @media (min-width: 1200px) {
   .board-card {
-    flex: 0 0 200px;
+    flex: 0 0 220px;
   }
 }
 
 .board-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(var(--accent), 0.6);
+  border-color: rgba(var(--accent-rgb), 0.6);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .swatch {
   width: 100%;
-  height: 90px;
+  height: 110px;
   flex-shrink: 0;
 }
 
 @media (min-width: 640px) {
   .swatch {
-    height: 110px;
+    height: 130px;
   }
 }
 
@@ -509,30 +483,38 @@ const ensureHex = (value: string | null | undefined): string => {
 }
 
 .card-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:6px;
+  margin-top:auto;
   font-size: 12px;
+}
+
+.card-top > div {width:100%;min-width:0;}
+
+.card-color-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .card-hex {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   color: rgb(var(--text));
+  font-size: 11px;
 }
 
-.card-source {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(var(--border), 0.6);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 700;
+.card-rgb {
+  white-space:nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: rgb(var(--text-muted));
+  font-size: 11px;
 }
 
-.card-source[data-kind="spoolman"] {
-  background: rgba(var(--accent), 0.16);
-  border-color: rgba(var(--accent), 0.6);
+.badge-spoolman {
+  background: rgba(100, 200, 100, 0.15);
+  color: rgb(80, 180, 80);
 }
 
 .card-source[data-kind="external"] {
@@ -546,7 +528,7 @@ const ensureHex = (value: string | null | undefined): string => {
   letter-spacing: 0.02em;
   padding: 6px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(var(--border), 0.7);
+  border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 120ms ease;
@@ -571,8 +553,8 @@ const ensureHex = (value: string | null | undefined): string => {
 }
 
 .pin-btn[aria-pressed="true"] {
-  border-color: rgba(var(--accent), 0.7);
-  background: rgba(var(--accent), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.18);
   color: rgb(var(--text));
 }
 
@@ -581,7 +563,7 @@ const ensureHex = (value: string | null | undefined): string => {
   height: 16px;
   flex-shrink: 0;
   border-radius: 5px;
-  border: 1px solid rgba(var(--border), 0.6);
+  border: 1px solid var(--border);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: transform 120ms ease, border-color 120ms ease;
@@ -597,7 +579,7 @@ const ensureHex = (value: string | null | undefined): string => {
 
 .minimap-dot:hover {
   transform: translateY(-2px) scale(1.03);
-  border-color: rgba(var(--accent), 0.7);
+  border-color: rgba(var(--accent-rgb), 0.7);
 }
 
 .minimap-dot.active {

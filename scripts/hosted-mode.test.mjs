@@ -1,0 +1,281 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {before,after,test} from 'node:test';
+import puppeteer from 'puppeteer';
+const origin='https://swatch.test',base='/plugins/filament-swatch/';
+const fixture=JSON.parse(await readFile(new URL('./fixtures/filaman/contracts.json',import.meta.url),'utf8'));
+const themes=await readFile(new URL('./fixtures/filaman/themes.css',import.meta.url),'utf8');
+let browser;before(async()=>{browser=await puppeteer.launch({headless:true,args:process.env.CI?['--no-sandbox']:[]});});after(async()=>await browser?.close());
+async function open(options={}){
+ const context=await browser.createBrowserContext();const page=await context.newPage();await page.setViewport(options.mobileHost?{width:390,height:844}:{width:1400,height:900});
+ const requests=[],errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.evaluateOnNewDocument(()=>{localStorage.setItem('spoolman-url','/old-server');localStorage.setItem('locale','de');});
+ await page.setRequestInterception(true);
+ page.on('request',async request=>{
+  const u=new URL(request.url());requests.push(u.href);const respond=(value,status=200)=>request.respond({status,contentType:'application/json',body:JSON.stringify(value)});
+  if(u.origin!==origin){if(process.env.CAPTURE_SWATCH && /(?:iconify\.design|googleapis\.com|gstatic\.com)$/.test(u.hostname))return request.continue();return respond([]);}
+  if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body style="margin:0">${options.mobileHost?'<button id="sidebar-toggle" style="position:fixed;left:7px;top:13px;width:40px;height:40px;z-index:50">Menu</button>':''}<iframe style="width:100%;height:100vh;border:0" src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
+  if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
+  if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
+  if(u.pathname==='/login')return request.respond({contentType:'text/html',body:'<h1>Sign in</h1>'});
+  if(u.pathname==='/api/v1/me')return respond({id:options.userId??1,language:options.language||'en'},options.expireSettings?401:options.failSettings?503:200);
+  if(u.pathname==='/api/v1/app-settings/public-info')return respond({currency:options.currency||'EUR'},options.currencyFailed?503:200);
+  if(u.pathname.startsWith('/api/v1/')){
+   if(options.denyInventory && u.pathname==='/api/v1/filaments')return respond({},403);
+   if(u.pathname.includes('/manufacturers/'))return request.respond({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20" fill="red"/></svg>'});
+   if(options.largeCatalog && u.pathname==='/api/v1/colors'){
+    const page=Number(u.searchParams.get('page')||1),size=Number(u.searchParams.get('page_size')||200),total=1392;
+    return respond({items:Array.from({length:Math.max(0,Math.min(size,total-(page-1)*size))},(_,i)=>({id:10000+(page-1)*size+i,name:`Catalog ${(page-1)*size+i}`,hex_code:'#00AE42',usage_count:0})),page,page_size:size,total});
+   }
+   const value=fixture[u.pathname];if(value){const page=structuredClone(Array.isArray(value)?value:value[u.searchParams.get('page')||'1']);if(options.detailMetrics&&u.pathname==='/api/v1/filaments')for(const item of page.items)if(item.id===17)Object.assign(item,{raw_material_weight_g:1000,price:8,density_g_cm3:1.06,diameter_mm:1.75});return respond(page);}
+   return respond({},404);
+  }
+  if(u.pathname==='/real-spool-reel.js'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'application/javascript',body:await readFile(process.env.SHARED_REEL_FILE,'utf8')});
+  if(u.pathname==='/spool-reel.js'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'application/javascript',body:"import{renderSpoolReel as real}from'/real-spool-reel.js';export function renderSpoolReel(...args){window.__reelCalls??=[];window.__reelCalls.push(args);return real(...args)}"});
+  if(u.pathname==='/spool-reel.js')return request.respond({contentType:'application/javascript',body:'export function renderSpoolReel(f,c,s,o){window.__reelCalls??=[];window.__reelCalls.push([f,c,s,o]);return `<svg id="reel" viewBox="0 0 100 100"><rect width="100" height="100" fill="red"/></svg>`}'});
+  const path=u.pathname.slice(base.length);let body;try{body=await readFile(new URL((process.env.SWATCH_DIST || '../dist/')+path,import.meta.url));}catch{body=await readFile(new URL((process.env.SWATCH_DIST || '../dist/')+'index.html',import.meta.url));}
+  await request.respond({contentType:({js:'application/javascript',css:'text/css',svg:'image/svg+xml'})[path.split('.').pop()]||'text/html',body});
+ });
+ await page.goto(options.parent?`${origin}/shell`:`${origin}${base}${options.path || 'app/swatch'}?filaman_hosted=1&filaman_hosted_config=${encodeURIComponent(base+'hosted-config')}${options.query||''}`,{waitUntil:'networkidle0'});
+ return {page,requests,errors,close:()=>context.close()};
+}
+async function click(page,label){await page.waitForFunction(label=>[...document.querySelectorAll('button')].some(e=>e.textContent.trim()===label),{timeout:5000},label);assert.ok(await page.evaluate(label=>{const e=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===label);e?.click();return !!e;},label),`missing button ${label}`);}
+test('native inventory, search, filter modal, catalog and navigation',async()=>{
+ const {page,requests,errors,close}=await open();try{
+ await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+ if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/inventory.png',fullPage:true});
+ await page.type('nav input[type=text]','Blue');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+ await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Blue');
+ await page.$eval('nav input[type=text]',e=>{e.value='';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+ await page.click('button[title="Filters"]');await page.waitForSelector('input[name=material][value=PETG]');await page.click('input[name=material][value=PETG]');await click(page,'Save');
+ await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+ await page.click('button[title="Filters"]');await click(page,'Reset');await click(page,'Save');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+ await click(page,'Color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));
+ if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/catalog.png',fullPage:true});
+ assert.equal(await page.$('.card-sub'),null);assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
+ await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$$eval('.card-name',x=>x.length),3);
+ assert.ok(requests.every(u=>!u.includes('/spoolman/')&&!u.includes('/old-server/')&&!u.includes('statistics.disane')));
+ assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+for(const language of ['en','de','fr'])test(`${language}: profile wins over launch preference; presentation has no selector`,async()=>{
+ const {page,errors,close}=await open({language});try{
+ assert.equal(await page.$eval('html',e=>e.lang),language);assert.equal(await page.$$('nav [role=combobox]').then(x=>x.length),0);
+ assert.equal(await page.$('button[aria-label="Spoolman URL"]'),null);
+ await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+test('inventory forbidden still permits catalog discovery',async()=>{
+ const {page,close}=await open({denyInventory:true});try{assert.match(await page.$eval('body',e=>e.innerText),/403/);await click(page,'Color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));}finally{await close();}
+});
+test('native logo and linked spool use shared reel without losing alpha zero',async()=>{
+ const {page,errors,close}=await open();try{
+ await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel',{timeout:3000}).catch(e=>{throw new Error(`${e.message}: ${errors.join('; ')}`)});
+ assert.equal(await page.$eval('.detail-panel img',e=>new URL(e.src).pathname),'/api/v1/manufacturers/1/logo');
+ assert.equal(await page.$eval('.spool-id',e=>e.getAttribute('href')),'/spools/17');assert.equal(await page.$eval('.spool-id',e=>e.target),'_top');
+ await page.waitForFunction(()=>window.__reelCalls?.length>0);const calls=await page.evaluate(()=>window.__reelCalls);assert.deepEqual(calls[0],[0,['#FF000000','#FF000088'],'striped',{view:'quarter'}]);
+ if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/detail.png',fullPage:true});
+ const layout=await page.evaluate(()=>{const item=document.querySelector('.spool-item').getBoundingClientRect(),reel=document.querySelector('.corner-reel')?.getBoundingClientRect(),logo=document.querySelector('.detail-header img').getBoundingClientRect();return {item:{right:item.right,bottom:item.bottom,height:item.height},reel:reel&&{right:reel.right,bottom:reel.bottom,width:reel.width},logoWidth:logo.width,sourceHeight:document.querySelector('.detail-header .source-badge').getBoundingClientRect().height};});
+ assert.ok(layout.reel,'native corner reel');assert.ok(Math.abs(layout.item.right-layout.reel.right-1)<1);assert.ok(Math.abs(layout.item.bottom-layout.reel.bottom-1)<1);assert.ok(layout.reel.width>=110);assert.ok(layout.item.height<=120);assert.ok(layout.logoWidth>=90);assert.ok(layout.sourceHeight<=24);
+ assert.match(await page.$eval('.detail-panel',e=>e.innerText),/0 g/);assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+test('invalid config fails closed without inventory requests',async()=>{
+ const {page,requests,close}=await open({badConfig:true});try{assert.ok(await page.$('[role=alert]'));assert.equal(requests.some(u=>u.includes('/api/v1/filaments')),false);}finally{await close();}
+});
+
+test('router history restores destination filters and catalog survives reload',async()=>{
+ const {page,close}=await open();try{
+ await click(page,'Color catalog');await page.type('nav input[type=text]','Transparent');
+ await click(page,'Inventory');await page.type('nav input[type=text]','Blue');
+ await page.goBack();await page.waitForFunction(()=>document.querySelector('nav input[type=text]').value==='Transparent');
+ await page.goBack();await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'');
+ await click(page,'Color catalog');await page.reload({waitUntil:'networkidle0'});assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.ok(await page.evaluate(()=>document.body.innerText.includes('Transparent')));
+ }finally{await close();}
+});
+test('revoked inventory clears open details and cached projections',async()=>{
+ const options={};const {page,close}=await open(options);try{
+ await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');options.denyInventory=true;
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>document.body.innerText.includes('403'));await page.waitForFunction(()=>!document.querySelector('.detail-panel'));
+ }finally{await close();}
+});
+test('catalog details expose assignment usage and native management, with no inventory-only filters',async()=>{
+ const {page,close}=await open({query:'&mode=catalog'});try{
+ await page.$eval('[id="board-card-color:17"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.match(await page.$eval('.detail-panel',e=>e.innerText),/0.*assignment/i);assert.equal(await page.$eval('.detail-panel a',e=>e.getAttribute('href')),'/filaments/colors');
+ }finally{await close();}
+});
+
+test('parent language/theme and bfcache return keep discovery and synchronize currency',async()=>{
+ const options={parent:true};const {page,close}=await open(options);try{
+ const frame=page.frames().find(f=>f.url().includes('/plugins/'));assert.ok(frame);await frame.waitForSelector('.card-name');
+ await frame.type('nav input[type=text]','Transparent');const before=frame.url();
+ await page.evaluate(()=>{document.documentElement.dataset.theme='light';document.documentElement.lang='fr';});
+ await frame.waitForFunction(()=>document.documentElement.lang==='fr'&&document.documentElement.dataset.theme==='light');assert.equal(frame.url(),before);assert.equal(await frame.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ await frame.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));await page.evaluate(()=>document.documentElement.dataset.theme='dark');await frame.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
+ await page.reload({waitUntil:'networkidle0'});const restored=page.frames().find(f=>f.url().includes('/plugins/'));await restored.waitForSelector('.card-name');assert.equal(await restored.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ }finally{await close();}
+});
+test('semantic dialog backgrounds are valid in each host theme',async()=>{
+ for(const theme of ['brand','light','dark']){const {page,close}=await open();try{
+ await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await page.click('button[aria-label="What\'s New"]');await page.waitForSelector('[role=dialog]');
+ const color=await page.$eval('[role=dialog]',e=>getComputedStyle(e).backgroundColor);assert.notEqual(color,'rgba(0, 0, 0, 0)');assert.notEqual(color,'transparent');
+ }finally{await close();}}
+});
+test('expired native bootstrap returns to top-level FilaMan login',async()=>{
+ const {page,close}=await open({expireSettings:true});try{await page.waitForFunction(()=>location.pathname==='/login');assert.match(new URL(page.url()).searchParams.get('next'),/app\/swatch/);}finally{await close();}
+});
+test('obsolete project URLs return to discovery and preserve launch parameters',async()=>{
+ const {page,errors,close}=await open({path:'app/projects/demo-project',query:'&mode=catalog&q=Transparent'});try{
+ await page.waitForFunction(()=>location.pathname.endsWith('/app/swatch'),{timeout:5000});
+ assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
+ assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ assert.equal(await page.$eval('.card-name',e=>e.textContent.trim()),'Transparent');
+ assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+test('French host startup failures use French retry text before profile loading',async()=>{
+ const {page,close}=await open({badConfig:true,query:'&spoolman_locale=fr'});try{
+ assert.match(await page.$eval('[role=alert]',e=>e.textContent),/Impossible/);assert.ok(await page.evaluate(()=>[...document.querySelectorAll('button')].some(e=>e.textContent==='Réessayer')));
+ }finally{await close();}
+});
+
+test('native surfaces follow all three FilaMan themes without tinting filament colors',async()=>{
+ const {page,close}=await open({parent:true});try{
+ const frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');
+ await frame.$eval('[id="board-card-color:17"]',e=>e.click());await frame.waitForSelector('.detail-panel');
+ const swatch=await frame.$eval('.color-swatch-large',e=>getComputedStyle(e).backgroundImage);
+ for(const theme of ['brand','light','dark']){
+  await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+  await frame.waitForFunction(theme=>document.documentElement.dataset.theme===theme,{},theme);
+  const expected=await page.$eval('html',e=>{const s=getComputedStyle(e);return {background:s.backgroundColor,text:s.color,border:s.borderColor,card:s.getPropertyValue('--bg-elevated').trim(),accent:s.getPropertyValue('--accent').trim()};});
+  await frame.waitForFunction(border=>getComputedStyle(document.querySelector('.board-card')).borderColor===border,{},expected.border);
+  const actual=await frame.evaluate(()=>{const s=getComputedStyle(document.body),card=getComputedStyle(document.querySelector('.board-card')),detail=getComputedStyle(document.querySelector('.detail-panel'));return {background:s.backgroundColor,image:s.backgroundImage,text:s.color,card:card.backgroundColor,detail:detail.backgroundColor,border:card.borderColor,accent:getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim()};});
+  assert.equal(actual.background,expected.background,theme+' background');assert.equal(actual.image,'none',theme+' decorative wash');assert.equal(actual.text,expected.text,theme+' text');assert.equal(actual.border,expected.border,theme+' border');
+  const rgb=hex=>'rgb('+hex.match(/\w\w/g).map(v=>parseInt(v,16)).join(', ')+')';
+  assert.equal(actual.card,rgb(expected.card),theme+' card');assert.equal(actual.detail,rgb(expected.card),theme+' details');assert.equal('rgb('+actual.accent+')',rgb(expected.accent),theme+' accent');
+  assert.equal(await frame.$eval('.color-swatch-large',e=>getComputedStyle(e).backgroundImage),swatch,'theme must preserve RGBA');
+ }
+ // The host owns its palette, including future changes to the same theme.
+ await page.evaluate(()=>{document.documentElement.style.setProperty('--accent','#123456');document.documentElement.dataset.theme='brand';});
+ await frame.waitForFunction(()=>getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim()==='18, 52, 86');
+ }finally{await close();}
+});
+
+test('opaque shaded swatches render identically over every theme surface',async()=>{
+ const {page,close}=await open();try{
+ const swatch=await page.waitForSelector('[id="board-card-filament:19"] .swatch');
+ await page.evaluate(()=>document.fonts.ready);let reference;
+ for(const theme of ['brand','light','dark']){
+  await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const box=await swatch.boundingBox(),clip={x:box.x+20,y:box.y+20,width:50,height:50};
+  const pixels=await page.screenshot({clip});if(reference)assert.deepEqual(pixels,reference,theme+' must not recolor opaque filament');else reference=pixels;
+ }
+ }finally{await close();}
+});
+
+test('discovery mode controls use compact native typography and bundled icons',async()=>{
+ const {page,requests,close}=await open();try{
+ assert.equal(await page.$eval('.discovery-modes',e=>e.getAttribute('role')),'tablist');
+ const controls=await page.$$eval('.discovery-modes button',buttons=>buttons.map(e=>{const s=getComputedStyle(e),icon=e.querySelector('svg');return {name:e.textContent.trim(),family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,icon:!!icon,iconWidth:icon?.getBoundingClientRect().width,hidden:icon?.getAttribute('aria-hidden')};}));
+ assert.equal(controls.length,2);for(const c of controls){assert.match(c.family,/Space Grotesk/);assert.equal(c.size,'14px');assert.equal(c.weight,'600');assert.ok(c.icon);assert.ok(c.iconWidth>=18);assert.equal(c.hidden,'true');}
+ assert.ok(requests.includes(origin+'/plugin-fonts.css'));assert.ok(!requests.some(u=>u.includes('fonts.googleapis.com')));
+ await page.focus('.discovery-modes button:first-child');await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));assert.equal(await page.$eval('.discovery-modes button:last-child',e=>e.getAttribute('aria-selected')),'true');await page.keyboard.press('Home');await page.waitForFunction(()=>document.querySelector('[id="board-card-filament:17"]'));assert.equal(await page.$eval('.discovery-modes button:first-child',e=>e.getAttribute('aria-selected')),'true');
+ }finally{await close();}
+});
+
+test('a full 1392-color catalog leaves cards and detail content scrollable',async()=>{
+ const {page,errors,close}=await open({query:'&mode=catalog',largeCatalog:true});try{
+ await page.waitForFunction(()=>document.querySelectorAll('.board-card').length===1392);
+ const size=await page.evaluate(()=>({map:document.querySelector('.minimap').getBoundingClientRect().height,grid:document.querySelector('.board-grid').getBoundingClientRect().height}));assert.ok(size.map<=56,'minimap must remain a compact strip');assert.ok(size.grid>=200,'cards need a usable viewport');
+ await page.$eval('.board-grid',e=>{e.scrollTop=e.scrollHeight;});await page.waitForFunction(()=>document.querySelector('.board-grid').scrollTop>0);
+ const last=await page.$eval('.board-card:last-child',e=>{const card=e.getBoundingClientRect(),grid=e.parentElement.getBoundingClientRect();return {name:e.querySelector('.card-name').textContent.trim(),visible:card.bottom<=grid.bottom+1&&card.top>=grid.top};});assert.ok(last.visible,'last card is reachable by scrolling');await page.click('.board-card:last-child .card-name');await page.waitForSelector('.detail-panel',{timeout:5000});assert.equal(await page.$eval('.detail-title',e=>e.textContent),last.name);
+ await page.$eval('.detail-body',e=>{e.scrollTop=e.scrollHeight;});assert.ok(await page.$eval('.detail-body',e=>e.scrollTop>0));
+ await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.ok(await page.$eval('.detail-body',e=>e.clientHeight>100));
+ }finally{await close();}
+});
+
+test('wheel separates clean RGB display from alpha preview without changing native colors',async()=>{
+ const {page,close}=await open();try{
+ await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
+ assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF0000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
+ await page.waitForFunction(()=>Math.abs(document.querySelector('.detail-panel').getBoundingClientRect().right-innerWidth)<1);
+ await page.click('.wheel-transparency input');assert.equal(await page.$eval('.wheel-center',e=>e.getAttribute('fill')),'#FF000000');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),1);assert.equal(await page.$$('.wheel-svg circle[r="100"]').then(x=>x.length),0);
+ assert.equal(await page.$eval('.color-hex',e=>e.textContent),'#FF000000');await page.click('.wheel-transparency input');assert.equal(await page.$$('.wheel-svg pattern').then(x=>x.length),0);
+ }finally{await close();}
+});
+
+test('native detail links and opacity badges stay compact; RGB and four metrics fit',async()=>{
+ const options={detailMetrics:true};const {page,close}=await open(options);try{
+ const rows=await page.$$eval('.board-card',cards=>cards.map(card=>{const rgb=card.querySelector('.card-rgb').getBoundingClientRect(),source=card.querySelector('.card-actions').getBoundingClientRect();return {rgbHeight:rgb.height,sourceTop:source.top,rgbBottom:rgb.bottom};}));
+ const pin=await page.$eval('.board-card:first-child',e=>{const title=e.querySelector('.card-name').getBoundingClientRect(),pin=e.querySelector('.pin-btn').getBoundingClientRect(),rgb=e.querySelector('.card-rgb').getBoundingClientRect();return {titleWidth:title.width,metaWidth:e.querySelector('.card-meta').clientWidth,pinBelow:pin.top>=rgb.bottom};});assert.ok(pin.pinBelow);assert.ok(pin.titleWidth>pin.metaWidth*.75);
+ const labels=await page.$$eval('.board-card:first-child .rgb-label',x=>x.map(e=>e.textContent.trim()));assert.deepEqual(labels,['R:','G:','B:']);
+ for(const row of rows){assert.ok(row.rgbHeight<20,'RGB stays on one line');assert.ok(row.sourceTop>=row.rgbBottom,'source badge sits below RGB');}
+ await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');
+ assert.equal(await page.$eval('.detail-filaman-link',e=>e.getAttribute('href')),'/filaments/17');assert.equal(await page.$eval('.detail-filaman-link',e=>e.target),'_top');assert.ok(await page.$eval('.detail-filaman-link',e=>e.classList.contains('connected')));
+ assert.equal(await page.$eval('.opacity-badge',e=>e.textContent.trim()),'0%');
+ const tops=await page.$$eval('.info-badges .info-badge',items=>items.map(e=>Math.round(e.getBoundingClientRect().top)));assert.equal(tops.length,4);assert.equal(new Set(tops).size,1,'four metrics occupy one desktop row');
+ options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>!document.querySelector('.detail-filaman-link').classList.contains('connected'));
+ options.failSettings=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.waitForSelector('[id="board-card-filament:19"]');await page.$eval('[id="board-card-filament:19"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.equal(await page.$('.opacity-badge'),null,'opaque colors need no opacity badge');
+ }finally{await close();}
+});
+
+test('card titles open details by keyboard and pin actions leave full title width',async()=>{
+ const {page,close}=await open();try{
+
+ await page.focus('.board-card:first-child .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel',{timeout:4000});await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.click('button[title="Carousel"]');await page.waitForSelector('.card-container .card-name');await page.focus('.card-container .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel');
+ }finally{await close();}
+});
+
+test('embedded mobile toolbar stays clear of the FilaMan hamburger',async()=>{
+ const {page,close}=await open({parent:true,mobileHost:true});try{
+ const frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');const host=await page.$eval('#sidebar-toggle',e=>e.getBoundingClientRect().right);
+ const buttons=await frame.$$eval('nav button',items=>items.map(e=>e.getBoundingClientRect()).filter(r=>r.width>0).map(r=>({left:r.left,right:r.right})));assert.ok(buttons.length>0);assert.ok(buttons.every(b=>b.left>=host&&b.right<=390),'header actions must be visible beside host navigation');
+ }finally{await close();}
+});
+
+test('a mounted account change discards old query and pins before restoring the new owner',async()=>{
+ const options={parent:true};const {page,close}=await open(options);try{
+ let frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');
+ await frame.type('nav input[type=text]','Transparent');
+ await frame.waitForFunction(()=>document.querySelectorAll('.board-card').length===1);
+ await frame.click('.pin-btn');
+ await frame.evaluate(()=>{
+  sessionStorage.setItem('filaman-swatch:discovery:2',JSON.stringify({mode:'inventory',filters:{inventory:{search:'Blue'}},pins:[]}));
+ });
+ options.userId=2;options.currencyFailed=true;await frame.evaluate(()=>window.dispatchEvent(new Event('focus')));
+ await page.waitForFunction(()=>{const f=document.querySelector('iframe');return f?.contentDocument?.querySelector('nav input')?.value==='Blue';},{timeout:5000});
+ frame=page.frames().find(f=>f.url().includes('/plugins/'));
+ assert.equal(await frame.$eval('nav input[type=text]',e=>e.value),'Blue');
+ assert.notEqual(new URL(frame.url()).searchParams.get('q'),'Transparent');
+ assert.deepEqual(await frame.evaluate(()=>JSON.parse(sessionStorage.getItem('filaman-swatch:discovery:2')).pins),[]);
+ assert.equal(await frame.$('.detail-panel'),null);
+ }finally{await close();}
+});
+
+test('resetting native filters restores a valid inventory scope',async()=>{
+ const {page,close}=await open();try{
+ await page.click('button[title="Filters"]');await page.waitForSelector('select');
+ await page.select('select','on_hand_spools');await click(page,'Reset');
+ assert.equal(await page.$eval('select',e=>e.value),'filaments');
+ await click(page,'Save');assert.equal(new URL(page.url()).searchParams.has('i'),false);
+ }finally{await close();}
+});
+
+test('focus removes revoked inventory pins while catalog stays open',async()=>{
+ const options={};const {page,close}=await open(options);try{
+  await page.$eval('[id="board-card-filament:17"] .pin-btn',button=>button.click());
+  await page.waitForSelector('.palette-panel.active .chip-name');
+  await page.$eval('.palette-header button',button=>button.click());
+  await click(page,'Color catalog');
+  await page.waitForSelector('[id="board-card-color:17"]');
+  options.denyInventory=true;
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(()=>!document.querySelector('.chip-name'),{timeout:5000});
+  assert.ok(await page.$('[id="board-card-color:17"]'));
+ }finally{await close();}
+});

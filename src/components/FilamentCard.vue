@@ -1,34 +1,18 @@
 <template>
   <div
-    class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[rgb(var(--border))] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent),0.6)]"
+    class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent-rgb),0.6)]"
     @click="$emit('selectFilament', filament)"
   >
     <div class="flex items-start justify-between gap-2 sm:gap-3">
       <div>
-        <p class="text-base sm:text-lg font-semibold">{{ filament.name }}</p>
-        <p class="text-xs sm:text-sm text-[rgb(var(--text-muted))]">
-          {{ filament.vendor }} · {{ filament.material }}
-        </p>
+        <button type="button" class="card-name text-base sm:text-lg font-semibold text-left w-full" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
+        <div class="flex items-center gap-2 text-xs sm:text-sm">
+          <VendorLogoBadge v-if="filament.kind === 'inventory'" :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" />
+          <span class="text-[rgb(var(--text-muted))]">·</span>
+          <span class="text-[rgb(var(--text-muted))]">{{ filament.material }}</span>
+        </div>
       </div>
-      <div class="flex flex-col items-end gap-1.5 sm:gap-2">
-        <Badge 
-          :variant="filament.source === 'spoolman' ? 'accent' : 'neutral'" 
-          class="text-[10px] sm:text-xs whitespace-nowrap"
-          :class="getSourceBadgeClass(filament.source)"
-        >
-          <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
-          {{ getSourceLabel(filament.source) }}
-        </Badge>
-        <button
-          type="button"
-          class="pin-btn h-8 w-8 sm:h-9 sm:w-9"
-          :aria-pressed="pinned"
-          @click.stop="$emit('togglePin', filament)"
-          :title="pinned ? labels.unpin : labels.pin"
-        >
-          <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
-        </button>
-      </div>
+
     </div>
 
     <div class="flex flex-1 items-center justify-center">
@@ -40,7 +24,7 @@
       />
     </div>
 
-    <div class="flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm text-[rgb(var(--text-muted))]">
+    <div v-if="filament.kind === 'inventory'" class="flex flex-col gap-1.5 sm:gap-2 text-xs sm:text-sm text-[rgb(var(--text-muted))]">
       <div class="flex items-center justify-between">
         <span class="uppercase tracking-wide">{{ labels.vendor }}</span>
         <span class="text-[rgb(var(--text))]">{{ filament.vendor }}</span>
@@ -49,25 +33,46 @@
         <span class="uppercase tracking-wide">{{ labels.material }}</span>
         <span class="text-[rgb(var(--text))]">{{ filament.material }}</span>
       </div>
-      <div v-if="filament.spoolId" class="flex items-center justify-between">
-        <span class="uppercase tracking-wide">{{ labels.spool }}</span>
-        <span class="text-[rgb(var(--text))]">#{{ filament.spoolId }}</span>
-      </div>
-      <div v-if="filament.remainingWeight" class="flex items-center justify-between">
+      <div v-if="filament.totalRemainingWeight != null" class="flex items-center justify-between">
         <span class="uppercase tracking-wide">{{ labels.weight }}</span>
         <span class="text-[rgb(var(--text))]">
-          {{ filament.remainingWeight }} g
+          {{ formatNumber(filament.totalRemainingWeight) }} g
         </span>
       </div>
     </div>
 
-    <div class="flex items-center justify-between">
-      <div class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
-        {{ filament.colorHex.toUpperCase() }}
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex min-w-0 flex-col gap-0.5 text-left">
+        <span class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
+          HEX: {{ filament.colorHex.toUpperCase() }}
+        </span>
+        <span class="mono text-[10px] sm:text-xs text-[rgb(var(--text-muted))]">
+          <ColorRgbReadout :color-hex="filament.colorHex" />
+        </span>
       </div>
-      <Button size="sm" variant="secondary" @click.stop="copyHex" class="h-8 w-8 sm:h-9 sm:w-9 p-0">
+
+    </div>
+    <div class="card-actions">
+        <button
+          type="button"
+          class="pin-btn h-8 w-8 sm:h-9 sm:w-9"
+          :aria-pressed="pinned"
+          @click.stop="$emit('togglePin', filament)"
+          :title="pinned ? labels.unpin : labels.pin"
+        >
+          <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
+        </button>
+      <Button size="sm" variant="secondary" :title="labels.copy" @click.stop="copyHex" class="h-8 w-8 sm:h-9 sm:w-9 p-0">
         <Icon :icon="copied ? 'lucide:check' : 'lucide:copy'" class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
       </Button>
+        <Badge
+          variant="outline"
+          class="text-[10px] sm:text-xs whitespace-nowrap"
+          :class="getSourceBadgeClass(filament.source)"
+        >
+          <Icon :icon="getSourceIcon(filament.source)" class="w-3 h-3 mr-1" />
+          {{ getSourceLabel(filament.source) }}
+        </Badge>
     </div>
   </div>
 </template>
@@ -80,6 +85,9 @@ import { Button } from "@/components/ui/button";
 import { Icon } from '@iconify/vue';
 import { getSourceIcon, getSourceLabel, getSourceBadgeClass } from '@/lib/sourceUtils';
 import { getSwatchStyle } from '@/lib/swatchUtils';
+import { formatNumber } from '@/filaman/format';
+import ColorRgbReadout from './ColorRgbReadout.vue';
+import VendorLogoBadge from './VendorLogoBadge.vue';
 
 const props = defineProps<{
   filament: FilamentCardType;
@@ -109,9 +117,10 @@ const swatchStyle = computed(() => {
   const filament = props.filament;
   return getSwatchStyle(
     filament.colorHex,
-    filament.material,
+    filament.material ?? '',
     filament.multiColorHexes,
-    filament.multiColorDirection
+    filament.multiColorDirection,
+    filament.nativeColorStyle
   );
 });
 
@@ -143,7 +152,7 @@ const copyHex = async () => {
   letter-spacing: 0.02em;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(var(--border), 0.7);
+  border: 1px solid var(--border);
   background: rgba(var(--surface-alt), 0.8);
   color: rgb(var(--text));
   transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -155,8 +164,8 @@ const copyHex = async () => {
   transform: scale(1.05) translateZ(0);
 }
 .pin-btn[aria-pressed="true"] {
-  border-color: rgba(var(--accent), 0.7);
-  background: rgba(var(--accent), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 
 .badge-spoolman {

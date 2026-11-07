@@ -8,6 +8,8 @@
     "retry": "Réessayer"
   },
   "detail": {
+    "harmonyReference": "Couleur de référence",
+    "averageReference": "Moyenne",
     "referenceRange": "Plage de référence",
     "noHarmonyMatches": "Aucune couleur correspondante.",
     "useHarmonyReference": "Utiliser {hex} pour les harmonies",

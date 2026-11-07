@@ -108,6 +108,8 @@
     "sourceExternal": "External"
   },
   "detail": {
+    "harmonyReference": "Harmony reference",
+    "averageReference": "Average",
     "referenceRange": "Reference range",
     "noHarmonyMatches": "No matching colors.",
     "useHarmonyReference": "Use {hex} for color harmonies",

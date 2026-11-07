@@ -27,6 +27,21 @@ export function hexToRgb(hex: string): RGB {
   return {r:parseInt(cleaned.slice(0,2),16),g:parseInt(cleaned.slice(2,4),16),b:parseInt(cleaned.slice(4,6),16)};
 }
 
+export function averageColor(hexes: readonly string[]): string | null {
+  const colors = hexes.map(normalizeColor).filter(color => color !== null);
+  if (!colors.length) return null;
+
+  let red = 0, green = 0, blue = 0, alpha = 0;
+  for (const color of colors) {
+    red += parseInt(color.hex.slice(1, 3), 16);
+    green += parseInt(color.hex.slice(3, 5), 16);
+    blue += parseInt(color.hex.slice(5, 7), 16);
+    alpha += Math.round(color.alpha * 255);
+  }
+  const channels = alpha === colors.length * 255 ? [red, green, blue] : [red, green, blue, alpha];
+  return '#' + channels.map(sum => Math.round(sum / colors.length).toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
 /**
  * Converts a hex color to RGB string (e.g., "255, 128, 64")
  */

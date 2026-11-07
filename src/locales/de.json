@@ -108,6 +108,7 @@
     "sourceExternal": "Extern"
   },
   "detail": {
+    "pattern": { "striped": "Gestreift", "gradient": "Verlauf" },
     "includeTransparency": "Transparenz einbeziehen",
     "color": "Farbe",
     "details": "Details",

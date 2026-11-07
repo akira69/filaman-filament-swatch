@@ -50,24 +50,29 @@
     <div class="board-body">
       <div class="minimap" aria-label="Color minimap" @click.stop>
         <button
-          v-for="filament in filaments"
+          v-for="(filament, index) in filaments"
           :key="filament.id"
           class="minimap-dot"
           :class="{ active: activeCardId === filament.id }"
-          v-memo="[filament, activeCardId === filament.id]"
+          v-memo="[filament, index, activeCardId === filament.id]"
           :title="filament.name"
           :style="minimapStyle(filament)"
-          @click.stop.prevent="scrollToCard(filament.id)"
+          @click.stop.prevent="scrollToCard(index, $event.detail === 0)"
         />
       </div>
 
-      <div class="board-grid" ref="gridRef">
+      <div class="board-grid" :class="{ 'catalog-grid': isCatalog }" ref="gridRef"
+        @scroll.passive="onScroll" @keydown="onCardKeydown">
+        <div v-if="isCatalog" aria-hidden="true" :style="{height: `${catalogHeight}px`}" />
+        <div class="board-cards" ref="cardsRef"
+          :style="isCatalog ? {top: `${geometry.padding + firstRow * geometry.step}px`} : undefined">
         <div
-          v-for="filament in filaments"
+          v-for="(filament, index) in renderedCards"
           :key="filament.id"
-          v-memo="[filament, isPinned(filament.id), labels.pin, labels.unpin]"
+          v-memo="[filament, startIndex + index, isPinned(filament.id), labels.pin, labels.unpin]"
           class="board-card"
           :id="cardId(filament.id)"
+          :data-card-index="isCatalog ? startIndex + index : undefined"
           :style="{
             '--swatch': filament.colorHex
           }"
@@ -77,7 +82,7 @@
           <div class="card-meta">
             <div class="card-top">
               <div>
-                <button type="button" class="card-name w-full text-left" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
+                <button type="button" class="card-name w-full text-left" :title="isCatalog ? filament.name : undefined" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
                 <div v-if="filament.kind === 'inventory'" class="card-sub">
                   <VendorLogoBadge v-if="filament.vendor || filament.logoUrl" :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" />
                   <span class="card-material">{{ filament.material }}</span>
@@ -102,6 +107,7 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
     </div>
   </div>
@@ -109,7 +115,7 @@
 
 <script setup lang="ts">
 import VendorLogoBadge from "./VendorLogoBadge.vue";
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { computed, nextTick, ref, watch, onMounted, onUnmounted } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
@@ -156,16 +162,40 @@ defineEmits<{
 }>();
 
 const gridRef = ref<HTMLElement | null>(null);
+const cardsRef = ref<HTMLElement | null>(null);
 const activeCardId = ref<string | null>(null);
-let scrollTimeout: number | null = null;
+const isCatalog = computed(() => props.filaments[0]?.kind === 'catalog');
+const geometry = ref({columns: 1, step: 236, gap: 12, padding: 12, viewport: 0});
+const scrollTop = ref(0);
+const rowCount = computed(() => Math.ceil(props.filaments.length / geometry.value.columns));
+const catalogHeight = computed(() => Math.max(0, rowCount.value * geometry.value.step - geometry.value.gap));
+const viewportRow = computed(() => Math.floor(scrollTop.value / geometry.value.step));
+const viewportRows = computed(() => Math.ceil(geometry.value.viewport / geometry.value.step));
+const firstRow = computed(() => Math.max(0, viewportRow.value - viewportRows.value));
+const lastRow = computed(() => Math.min(rowCount.value, viewportRow.value + 2 * viewportRows.value + 1));
+const startIndex = computed(() => firstRow.value * geometry.value.columns);
+const endIndex = computed(() => lastRow.value * geometry.value.columns);
+const renderedCards = computed(() => isCatalog.value
+  ? props.filaments.slice(startIndex.value, endIndex.value)
+  : props.filaments);
+let scrollFrame = 0;
+let resizeObserver: ResizeObserver | undefined;
 
 const updateActiveCard = () => {
   const grid = gridRef.value;
   if (!grid) return;
+  if (isCatalog.value) {
+    scrollTop.value = grid.scrollTop;
+    const {columns, step, viewport, padding} = geometry.value;
+    const row = Math.min(rowCount.value - 1, Math.max(0, Math.floor((grid.scrollTop + viewport / 2 - padding) / step)));
+    activeCardId.value = props.filaments[row * columns]?.id ?? null;
+    return;
+  }
   const top = grid.scrollTop;
   const bottom = top + grid.clientHeight;
   const center = (top + bottom) / 2;
-  const cards = grid.children as HTMLCollectionOf<HTMLElement>;
+  const cards = cardsRef.value?.children as HTMLCollectionOf<HTMLElement> | undefined;
+  if (!cards) return;
 
   // Flex rows stretch to a common height, so card bottoms are ordered by row.
   let first = 0;
@@ -192,30 +222,42 @@ const updateActiveCard = () => {
   activeCardId.value = closest;
 };
 
-watch(() => props.filaments, updateActiveCard, { flush: 'post' });
+watch(() => props.filaments, () => {
+  if (isCatalog.value && gridRef.value) gridRef.value.scrollTop = 0;
+  updateActiveCard();
+}, { flush: 'post' });
 
 const onScroll = () => {
-  // Debounce active card update
-  if (scrollTimeout) {
-    window.clearTimeout(scrollTimeout);
-  }
-  scrollTimeout = window.setTimeout(updateActiveCard, 100);
+  if (!scrollFrame) scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = 0;
+    updateActiveCard();
+  });
+};
+
+const measureGrid = () => {
+  const grid = gridRef.value;
+  if (!grid) return;
+  const styles = getComputedStyle(grid);
+  const padding = parseFloat(styles.paddingLeft);
+  const gap = parseFloat(styles.getPropertyValue('--board-gap'));
+  const width = parseFloat(styles.getPropertyValue('--board-card-width'));
+  const height = parseFloat(styles.getPropertyValue('--catalog-card-height'));
+  const columns = Math.max(1, Math.floor((grid.clientWidth - 2 * padding + gap) / (width + gap)));
+  geometry.value = {columns, step: height + gap, gap, padding, viewport: grid.clientHeight};
+  updateActiveCard();
 };
 
 onMounted(() => {
   if (gridRef.value) {
-    gridRef.value.addEventListener('scroll', onScroll, { passive: true });
-    updateActiveCard();
+    measureGrid();
+    resizeObserver = new ResizeObserver(measureGrid);
+    resizeObserver.observe(gridRef.value);
   }
 });
 
 onUnmounted(() => {
-  if (gridRef.value) {
-    gridRef.value.removeEventListener('scroll', onScroll);
-  }
-  if (scrollTimeout) {
-    window.clearTimeout(scrollTimeout);
-  }
+  resizeObserver?.disconnect();
+  if (scrollFrame) cancelAnimationFrame(scrollFrame);
 });
 
 const isPinned = (id: string) => {
@@ -223,14 +265,56 @@ const isPinned = (id: string) => {
   return props.pinnedIds.has(id);
 };
 
-const swatchStyle = (filament: FilamentCardType) => getSwatchStyle(filament.colorHex,filament.material ?? '',filament.multiColorHexes,filament.multiColorDirection,filament.nativeColorStyle);
+const swatchStyles = new WeakMap<FilamentCardType, ReturnType<typeof getSwatchStyle>>();
+const swatchStyle = (filament: FilamentCardType) => {
+  let style = swatchStyles.get(filament);
+  if (!style) {
+    style = getSwatchStyle(filament.colorHex,filament.material ?? '',filament.multiColorHexes,filament.multiColorDirection,filament.nativeColorStyle);
+    swatchStyles.set(filament, style);
+  }
+  return style;
+};
 
 const cardId = (id: string) => `board-card-${id}`;
 
-const scrollToCard = (id: string) => {
-  const el = document.getElementById(cardId(id));
-  if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+const scrollToCard = async (index: number, focus = false, target = '.card-name') => {
+  const item = props.filaments[index];
+  const grid = gridRef.value;
+  if (!item || !grid) return;
+  const id = cardId(item.id);
+  if (isCatalog.value) {
+    const {columns, step, viewport, padding} = geometry.value;
+    const top = Math.floor(index / columns) * step + padding;
+    if (!focus || top < grid.scrollTop || top + step > grid.scrollTop + viewport) {
+      grid.scrollTop = top - (viewport - step) / 2;
+      updateActiveCard();
+      await nextTick();
+    }
+  } else {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  }
+  if (focus) document.getElementById(id)?.querySelector<HTMLElement>(target)?.focus({preventScroll: true});
+};
+
+const onCardKeydown = (event: KeyboardEvent) => {
+  if (!isCatalog.value || !(event.target instanceof Element)) return;
+  const card = event.target.closest<HTMLElement>('[data-card-index]');
+  if (!card) return;
+  const index = Number(card.dataset.cardIndex);
+  const {columns} = geometry.value;
+  const adjacent = {ArrowLeft: index - 1, ArrowRight: index + 1, ArrowUp: index - columns,
+    ArrowDown: index + columns, Home: 0, End: props.filaments.length - 1};
+  let next = adjacent[event.key as keyof typeof adjacent];
+  let target = '.card-name';
+  if (event.key === 'Tab' && !event.shiftKey && index === endIndex.value - 1 && event.target.matches('.pin-btn')) {
+    next = index + 1;
+  } else if (event.key === 'Tab' && event.shiftKey && index === startIndex.value && event.target.matches('.card-name')) {
+    next = index - 1;
+    target = '.pin-btn';
+  }
+  if (next === undefined || next < 0 || next >= props.filaments.length) return;
+  event.preventDefault();
+  void scrollToCard(next, true, target);
 };
 const minimapStyle = swatchStyle;
 </script>
@@ -336,15 +420,14 @@ const minimapStyle = swatchStyle;
 }
 
 .board-grid {
+  --board-gap: 12px;
+  --board-padding: 12px;
+  --board-card-width: 180px;
+  --catalog-card-height: 224px;
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  justify-content:flex-start;
-  gap:12px;
   overflow-y:auto;
   overflow-x: hidden;
-  padding:12px;
+  padding:var(--board-padding);
   flex: 1;
   min-height: 0;
   scrollbar-width: thin;
@@ -353,9 +436,46 @@ const minimapStyle = swatchStyle;
 
 @media (min-width: 640px) {
   .board-grid {
-    gap: 16px;
-    padding:16px;
+    --board-gap: 16px;
+    --board-padding: 16px;
+    --board-card-width: 200px;
+    --catalog-card-height: 254px;
   }
+}
+
+@media (min-width: 1200px) {
+  .board-grid {
+    --board-card-width: 220px;
+  }
+}
+
+.board-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--board-gap);
+}
+
+.catalog-grid {
+  overflow-anchor: none;
+}
+
+.catalog-grid .board-cards {
+  position: absolute;
+  left: var(--board-padding);
+  right: var(--board-padding);
+}
+
+.catalog-grid .board-card {
+  height: var(--catalog-card-height);
+  content-visibility: visible;
+}
+
+.catalog-grid .card-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 /* Custom Scrollbar - WebKit (Chrome, Edge, Safari) */
@@ -390,7 +510,7 @@ const minimapStyle = swatchStyle;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
   /* Fixed width based on viewport */
-  flex: 0 0 180px;
+  flex: 0 0 var(--board-card-width);
   /* Performance optimizations */
   content-visibility: auto;
   contain-intrinsic-size: 180px 220px;
@@ -399,15 +519,8 @@ const minimapStyle = swatchStyle;
 
 @media (min-width: 641px) {
   .board-card {
-    flex: 0 0 200px;
     border-radius: 16px;
     contain-intrinsic-size: 200px 240px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .board-card {
-    flex: 0 0 220px;
   }
 }
 

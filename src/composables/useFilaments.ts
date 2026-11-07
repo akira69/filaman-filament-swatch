@@ -1,4 +1,4 @@
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, shallowReactive, watch } from 'vue';
 import {confirmHostIdentity, verifyHostIdentity} from '../filaman/context';
 import {readDiscoveryState,saveDiscoveryState} from '../filaman/discovery-state';
 import type {Router} from 'vue-router';
@@ -16,6 +16,7 @@ const defaults=()=>({search:'',vendor:'all',material:'all',source:'filaman',inve
   sortField:'name',sortDir:'asc',color:'all',colorType:'all',location:'all'});
 export type DiscoveryFilters=ReturnType<typeof defaults>;
 let instance: ReturnType<typeof createFilamentsComposable> | null = null;
+const nameCollator = new Intl.Collator(undefined, {sensitivity:'base'});
 export const useFilaments=()=>instance ??= createFilamentsComposable();
 function createFilamentsComposable() {
   const params=new URLSearchParams(window.location.search);
@@ -29,7 +30,8 @@ function createFilamentsComposable() {
   for(const choice of ['inventory','catalog'] as const)for(const key of Object.keys(defaults()))if(typeof saved.filters?.[choice]?.[key]==='string')(states[choice] as any)[key]=saved.filters[choice][key];
   Object.assign(filters,states[mode.value]);
   if(explicitFilters){Object.assign(filters,defaults());for(const [key,param] of Object.entries(keys))if(params.has(param))(filters as any)[key]=params.get(param);}
-  const snapshots=reactive<Record<DiscoveryMode,FilamentCard[]|null>>({inventory:null,catalog:null});
+  const snapshots=shallowReactive<Record<DiscoveryMode,FilamentCard[]|null>>({inventory:null,catalog:null});
+  let catalogEtag: string | undefined;
   const stale={inventory:false,catalog:false};
   const errors=reactive<Record<DiscoveryMode,string|null>>({inventory:null,catalog:null});
   const loadings=reactive({inventory:false,catalog:false});
@@ -58,7 +60,9 @@ function createFilamentsComposable() {
       try {
         const profile = await verifyHostIdentity();
         if (!profile || controller.signal.aborted) return;
-        const outcome = await (target === 'inventory' ? loadInventory : loadCatalog)(controller.signal)
+        const outcome = await (target === 'inventory'
+          ? loadInventory(controller.signal)
+          : loadCatalog(controller.signal, snapshots.catalog ? catalogEtag : undefined))
           .then(result => ({result}), error => ({error}));
         if (controller.signal.aborted) return;
         if ('error' in outcome && outcome.error instanceof NativeApiError) {
@@ -69,7 +73,10 @@ function createFilamentsComposable() {
         const confirmed = await confirmHostIdentity();
         if (current !== generations[target] || confirmed?.userId !== profile.userId) return;
         if ('error' in outcome) throw outcome.error;
-        snapshots[target] = outcome.result.items.map(project);
+        if (outcome.result) {
+          snapshots[target] = outcome.result.items.map(project);
+          if (target === 'catalog') catalogEtag = 'etag' in outcome.result ? outcome.result.etag : undefined;
+        }
         stale[target] = false;
       }catch(e){
         if(current===generations[target] && !(e instanceof Error && e.name==='AbortError')) {
@@ -107,8 +114,9 @@ function createFilamentsComposable() {
   function hydrate(query:URLSearchParams) {
     const next=query.get('mode')==='catalog'?'catalog':'inventory';
     if(next!==mode.value)stale[next]=true;
-    switching=true;mode.value=next;Object.assign(filters,defaults());
-    for(const [key,param] of Object.entries(keys))if(query.has(param))(filters as any)[key]=query.get(param);
+    const nextFilters = defaults();
+    for(const [key,param] of Object.entries(keys))if(query.has(param))(nextFilters as any)[key]=query.get(param);
+    switching=true;mode.value=next;Object.assign(filters,nextFilters);
     Object.assign(states[next],filters);
     saveDiscoveryState({mode:next,filters:states});
     switching=false;void loadMode(next,false);
@@ -146,9 +154,19 @@ function createFilamentsComposable() {
       parent.document.removeEventListener('visibilitychange', refreshVisible);
     });
   }
+  const sorted=computed(()=>{
+    const direction = filters.sortDir === 'desc' ? -1 : 1;
+    const field = filters.sortField;
+    const items = allFilaments.value;
+    if (field === 'hue' || field === 'luminance' || field === 'lightness') {
+      return items.map(item => ({item, value:getColorMetrics(item.colorHex)[field]}))
+        .sort((a,b) => direction*(a.value-b.value)).map(entry => entry.item);
+    }
+    return [...items].sort((a,b)=>direction*nameCollator.compare(String((a as any)[field]??''),String((b as any)[field]??'')));
+  });
   const filtered=computed(()=>{
     const search = filters.search.toLowerCase();
-    const results = allFilaments.value.filter(item=>{
+    return sorted.value.filter(item=>{
     if(filters.color!=='all' && item.colorHex.toLowerCase()!==filters.color.toLowerCase())return false;
     if(filters.colorType!=='all' && (filters.colorType==='multi') !== (item.colors.length>1))return false;
     if(item.kind==='inventory') {
@@ -160,13 +178,6 @@ function createFilamentsComposable() {
     }
       return !search || [item.name,item.colorName,item.colorHex,item.vendor,item.material].some(value=>value?.toLowerCase().includes(search));
     });
-    const direction = filters.sortDir === 'desc' ? -1 : 1;
-    const field = filters.sortField;
-    if (field === 'hue' || field === 'luminance' || field === 'lightness') {
-      return results.map(item => ({item, value:getColorMetrics(item.colorHex)[field]}))
-        .sort((a,b) => direction*(a.value-b.value)).map(entry => entry.item);
-    }
-    return results.sort((a,b)=>direction*String((a as any)[field]??'').localeCompare(String((b as any)[field]??''),undefined,{sensitivity:'base'}));
   });
   const options=(key:'vendor'|'material')=>computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.kind==='inventory' && i[key]?[i[key]!]:[]))].sort());
   return {connectRouter,loadMode,inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),

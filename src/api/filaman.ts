@@ -16,13 +16,17 @@ const id = (value: unknown): number => {
 const text = (value: unknown): string => typeof value === 'string' ? value : '';
 const number = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) ? value : null;
 const currency = (value: unknown): string | null => typeof value === 'string' && /^[A-Z]{3}$/.test(value) ? value : null;
-async function get(path: string, signal?: AbortSignal): Promise<unknown> {
+async function request(path: string, signal?: AbortSignal, headers?: HeadersInit): Promise<Response> {
   signal?.throwIfAborted();
-  const response = await fetch(`/api/v1${path}`, {credentials:'same-origin', cache:'no-store', signal});
+  const response = await fetch(`/api/v1${path}`, {credentials:'same-origin', cache:'no-store', signal, headers});
   if(response.status === 401 && typeof window !== 'undefined' && window.parent?.location) {
     const host=window.parent.location;
     window.top?.location.assign(`/login?next=${encodeURIComponent(host.pathname+host.search+host.hash)}`);
   }
+  return response;
+}
+async function get(path: string, signal?: AbortSignal): Promise<unknown> {
+  const response = await request(path, signal);
   if (!response.ok) throw new NativeApiError(response.status, path);
   return response.json();
 }
@@ -53,9 +57,20 @@ function base(value: Row, kind: 'inventory' | 'catalog', colors: DiscoveryColor[
     colorHex:colors[0]?.hex ?? '#888888', colorName:colors.map(c=>c.name).filter(Boolean).join(', '),
     multiColorHexes:colors.length > 1 ? colors.map(c=>c.hex) : undefined};
 }
-export async function loadCatalog(signal?: AbortSignal): Promise<CatalogSnapshot> {
-  return {items:(await pages('/colors', signal)).map(value=>{
-    const c = color(value, 1, id(value.id));
+export async function loadCatalog(signal?: AbortSignal, etag?: string): Promise<CatalogSnapshot | null> {
+  const path = '/colors/discovery/snapshot';
+  const response = await request(path, signal, etag ? {'If-None-Match': etag} : undefined);
+  if (response.status === 304 && etag) return null;
+  if (!response.ok && response.status !== 404) throw new NativeApiError(response.status, path);
+  const items = response.status === 404 ? await pages('/colors', signal) : record(await response.json()).items;
+  if (!Array.isArray(items)) throw new Error('Invalid FilaMan catalog');
+  const seen = new Set<number>();
+  return {etag: response.ok ? response.headers.get('ETag') ?? undefined : undefined, items:items.map(entry=>{
+    const value = record(entry);
+    const nativeId = id(value.id);
+    if (seen.has(nativeId)) throw new Error('Duplicate FilaMan catalog ID');
+    seen.add(nativeId);
+    const c = color(value, 1, nativeId);
     return {...base(value,'catalog',c ? [c] : []),kind:'catalog',usageCount:number(value.usage_count) ?? 0};
   })};
 }

@@ -8,6 +8,7 @@
     "retry": "Réessayer"
   },
   "detail": {
+    "multicolorPattern": "Multicolore : {pattern}",
     "color": "Couleur",
     "pattern": { "striped": "Rayé", "gradient": "Dégradé" },
     "fullSpoolRemaining": "{weight} g restants par bobine"

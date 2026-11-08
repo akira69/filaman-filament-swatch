@@ -7,7 +7,7 @@ const published = import.meta.env.VITE_FILAMAN_RELEASE_TAG === releaseTag;
 export const releaseStorageKey=`filaman-swatch:${repository}:${notes.version}:seen`;
 export const getInstalledReleaseNotes=()=>({
   ...notes, repository, upstream, published,
-  url: `${manifest.homepage}/${published ? `releases/tag/${releaseTag}` : 'pull/16'}`,
+  url: published ? `${manifest.homepage}/releases/tag/${releaseTag}` : manifest.homepage,
   projectUrl: manifest.homepage,
   upstreamUrl: `https://github.com/${upstream.repository}`,
   license: manifest.license,

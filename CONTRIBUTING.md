@@ -62,19 +62,18 @@ python -m unittest discover -s tests
 - Use `feat/`, `fix/`, `docs/`, or `chore/` prefixes.
 - Do not use `codex/` or assistant-branded names.
 - Native PRs target this repository's `main`, not Disane87's repository.
-- Follow-up fixes to open native PR16 target `feat/filaman-discovery`.
 
 ## Release Process
 
 Releases are explicitly created by maintainers using `filaman-vX.Y.Z` tags. Commit types do not publish releases. Package metadata and bundled release notes must match the tag; the packager rejects stale bundles. Update PRs never release automatically. The release process includes:
 
-1. Building with `VITE_HOSTED_MODE=1` and `VITE_BASE_PATH=/plugins/filament-swatch/`.
+1. Building from the release commit with `VITE_HOSTED_MODE=1`, `VITE_BASE_PATH=/plugins/filament-swatch/`, and `VITE_FILAMAN_RELEASE_TAG` set to the release tag.
 2. Running all tests.
 3. Packaging with:
    ```bash
    python scripts/package-filaman-plugin.py filaman-v1.1.0
    ```
-4. Publishing to GitHub releases.
+4. Publishing the ZIP to GitHub Releases with the required FilaMan build documented. With Actions disabled, upload the locally verified ZIP when creating the release.
 
 ## Upstream Updates
 
@@ -91,7 +90,6 @@ Test themes (Default/Light/Dark), locales/currency, alpha zero and striped/gradi
 
 - **Origin**: `akira69/filaman-filament-swatch`
 - **Contributions Target**: `main` branch
-- **Native PRs**: Target `feat/filaman-discovery` for follow-ups to open PR16
 - **Upstream Changes**: Arrive through reviewed bot update PRs
 
 ## PR Checklist

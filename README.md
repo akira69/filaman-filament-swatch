@@ -13,8 +13,11 @@ FilaMan Swatch is a native FilaMan integration plugin for visual filament discov
 
 ## Installation
 
-1. Download the plugin ZIP from [releases](https://github.com/akira69/filaman-filament-swatch/releases).
-2. Install via Admin → Plugins → Upload Plugin.
+**FilaMan Swatch 1.1.0 requires a FilaMan build that includes the integration shell and installer from [FilaMan PR204](https://github.com/Fire-Devils/filaman-system/pull/204).** While PR204 is pending, use a build from its branch.
+
+1. Download `filament-swatch-1.1.0.zip` from the [1.1.0 release](https://github.com/akira69/filaman-filament-swatch/releases/tag/filaman-v1.1.0).
+2. In FilaMan, open **Admin → Plugins** and upload the ZIP.
+3. Open **FilaMan Swatch** from the sidebar.
 
 > No SpoolmanAPI plugin or external services required.
 
@@ -24,8 +27,6 @@ FilaMan Swatch is a native FilaMan integration plugin for visual filament discov
   - `/api/v1/filaments`, `/colors`, `/spools`, `/locations`, `/spools/statuses`, `/me`, `/app-settings/public-info`
 - All pages must load correctly; duplicate IDs and auth failures are errors.
 - Catalog availability is independent of inventory.
-
-The integration shell/installer currently requires [core PR204](https://github.com/Fire-Devils/filaman-system/pull/204) or the isolated patched preview. No stock released core is claimed compatible yet.
 
 See [compatibility docs](docs/filaman-compatibility.md) for full API details.
 

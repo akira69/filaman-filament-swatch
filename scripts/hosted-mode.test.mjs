@@ -91,8 +91,11 @@ test('About and What’s New link the FilaMan fork and credit the original proje
   await page.waitForSelector('[role=dialog]',{hidden:true});
   await page.click('button[aria-label="What\'s New"]');
   await page.waitForSelector('[role=dialog]');
-  assert.match(await page.$eval('[role=dialog]',e=>e.textContent),/Preview build · Nov 6, 2026/);
-  assert.equal(await page.$eval('[role=dialog] a',a=>a.href),'https://github.com/akira69/filaman-filament-swatch/pull/16');
+  const whatsNew=await page.$eval('[role=dialog]',e=>e.textContent);
+  const published=whatsNew.includes('Released Nov 8, 2026');
+  if(!published)assert.match(whatsNew,/Preview build · Nov 8, 2026/);
+  const project='https://github.com/akira69/filaman-filament-swatch';
+  assert.equal(await page.$eval('[role=dialog] a',a=>a.href),published?`${project}/releases/tag/filaman-v1.1.0`:project);
   await page.keyboard.press('Escape');
   await page.waitForSelector('[role=dialog]',{hidden:true});
   await page.setViewport({width:320,height:680});

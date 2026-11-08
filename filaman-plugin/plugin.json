@@ -3,7 +3,7 @@
   "plugin_type": "integration",
   "name": "FilaMan Swatch",
   "version": "1.1.0",
-  "description": "Browse FilaMan inventory and its color catalog, compare color harmonies, pin palettes, and open spools in FilaMan. Based on Disane87's Spoolman Filament Swatch.",
+  "description": "Browse FilaMan inventory and its color catalog, compare color harmonies, pin palettes, and open spools in FilaMan. Requires FilaMan integration support from core PR204. Based on Disane87's Spoolman Filament Swatch.",
   "author": "akira69 (FilaMan edition), Disane87 (original project)",
   "homepage": "https://github.com/akira69/filaman-filament-swatch",
   "license": "MIT",

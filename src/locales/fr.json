@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "FilaMan Swatch",
+    "hostedTitle": "FilaMan Swatch",
+    "subtitle": "Explorez vos filaments et votre catalogue de couleurs",
+    "tagline": "Parcourez les couleurs, trouvez les matériaux et conservez vos favoris.",
+    "hostedConfigError": "Impossible de charger FilaMan Swatch. Vérifiez la configuration et réessayez.",
+    "retry": "Réessayer"
+  },
+  "detail": {
+    "harmonyReference": "Couleur de référence",
+    "averageReference": "Moyenne",
+    "referenceRange": "Plage de référence",
+    "noHarmonyMatches": "Aucune couleur correspondante.",
+    "useHarmonyReference": "Utiliser {hex} pour les harmonies",
+    "colorHarmonies": "Harmonies de couleurs",
+    "includeTransparency": "Inclure la transparence",
+    "similar": "Similaire",
+    "complementary": "Complémentaire",
+    "analogous": "Analogue",
+    "triadic": "Triadique",
+    "split": "Complémentaire adjacente",
+    "multicolorPattern": "Multicolore : {pattern}",
+    "color": "Couleur",
+    "pattern": { "striped": "Rayé", "gradient": "Dégradé" },
+    "fullSpoolRemaining": "{weight} g restants par bobine"
+  },
+  "pluginInfo": {
+    "title": "À propos de FilaMan Swatch",
+    "description": "Parcourez l’inventaire et le catalogue de couleurs FilaMan, comparez les harmonies et épinglez des palettes. Les liens des filaments et des bobines s’ouvrent dans FilaMan.",
+    "preview": "Version de prévisualisation · {date}",
+    "edition": "Édition FilaMan par akira69",
+    "original": "Conception originale par Disane87",
+    "license": "Licence",
+    "issues": "Signaler un problème",
+    "close": "Fermer"
+  },
+  "discovery": {
+    "mode": "Mode de découverte",
+    "inventory": "Inventaire",
+    "catalog": "Catalogue de couleurs",
+    "unknown": "Quantité restante inconnue",
+    "connected": "Connecté à FilaMan",
+    "disconnected": "FilaMan indisponible",
+    "opacity": "Opacité",
+    "edit": "Ouvrir dans FilaMan",
+    "usage": "{count} affectations de couleur"
+  }
+}

@@ -1,15 +1,37 @@
 # FilaMan Swatch
 
-FilaMan Swatch is a native FilaMan integration plugin for visual filament discovery, providing discovery-only inventory and catalog views.
+![FilaMan Filament Swatch banner with an illustrated reel and three color swatch cards](docs/filaman-swatch-banner.png)
+
+FilaMan Swatch is a visual filament browser built into FilaMan. Browse the colors in your inventory, see which spools are on hand, and put together a palette for your next print. Open the matching filament, spool, or color management page in FilaMan to make changes.
 
 ## Features
 
-- **Discovery-only modes**: View native FilaMan inventory and color catalog.
-- **Native editing**: All edits remain within FilaMan.
-- **Host sync**: Language, currency, theme, follow FilaMan.
-- **RGBA support**: Full transparency handling.
-- **Logos**: Manufacturer logos included where available.
-- **Optional reel visuals**: Shared `/spool-reel.js` renderer and `/reel-flange.webp` asset are supported but not required.
+- **Inventory and Color Catalog.** Browse your FilaMan filaments or explore the FilaMan color catalog independently of your stock. Switch between a grid for an overview and a carousel for one swatch at a time.
+- **Search and filters.** Search by name, manufacturer, material, or hex code. In Inventory, narrow the results by manufacturer, material, spool location, single or multicolor filament, and on-hand stock. The Swatch URL preserves the active search and filters.
+- **Spool details.** See each spool's location and remaining weight when available, then open the spool in FilaMan. Manufacturer logos and reel fill previews appear where available.
+- **Color matching.** Read hex and RGB values, see transparency and striped or gradient patterns, and use the interactive Color Harmonies wheel to compare related colors. Swatch uses FilaMan's shared wheel on supported hosts.
+- **Pinned palettes.** Pin filaments and catalog colors as you browse, then revisit them together in the palette drawer. Pins are saved for your browser session.
+- **FilaMan appearance and language.** The layout adapts to desktop and mobile. Swatch follows FilaMan's theme, language, and currency, with English, German, and French translations.
+
+## Screenshots
+
+All screenshots use sample inventory in FilaMan's dark theme.
+
+### Inventory board
+
+![Inventory board with filament cards, material labels, hex and RGB values, and a color minimap](docs/screenshots/inventory-board.webp)
+
+### Inventory carousel
+
+![Inventory carousel with large swatches, remaining spool weights, and a row of color shortcuts](docs/screenshots/inventory-carousel.webp)
+
+### Color catalog
+
+![Color catalog grid with named swatches, including a translucent color shown over a checkerboard](docs/screenshots/color-catalog.webp)
+
+### Spool details and color selector
+
+![Ocean Shift filament detail with a violet gradient stop selected, a spool showing 684 g remaining, and the Color Harmonies wheel](docs/screenshots/spool-color-selector.webp)
 
 ## Installation
 
@@ -61,8 +83,6 @@ npm test
 # Python environment needs FastAPI and httpx
 python -m unittest discover -s tests
 ```
-
-Color Harmonies uses the shared FilaMan wheel when the host provides it. Pinned palettes are stored in the browser. Use FilaMan to edit filaments and colors.
 
 ## Packaging
 

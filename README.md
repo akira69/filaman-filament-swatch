@@ -35,7 +35,7 @@ All screenshots use sample inventory in FilaMan's dark theme.
 
 ## Installation
 
-**FilaMan Swatch 1.1.0 requires a FilaMan build that includes the integration shell and installer from [FilaMan PR204](https://github.com/Fire-Devils/filaman-system/pull/204).** While PR204 is pending, use a build from its branch.
+**FilaMan Swatch 1.1.0 requires a FilaMan build with the hosted SVG installer fix from [PR217](https://github.com/Fire-Devils/filaman-system/pull/217).** FilaMan v2.0.5 includes integration hosting from PR204 but rejects the Swatch ZIP during SVG validation.
 
 1. Download `filament-swatch-1.1.0.zip` from the [1.1.0 release](https://github.com/akira69/filaman-filament-swatch/releases/tag/filaman-v1.1.0).
 2. In FilaMan, open **Admin → Plugins** and upload the ZIP.

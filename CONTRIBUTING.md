@@ -9,7 +9,7 @@ FilaMan Swatch is a discovery-only plugin that integrates with FilaMan's native 
 ## Development Setup
 
 Use Node.js24, npm and Git. Python3.12 is needed for wrapper/package tests.
-Use an authenticated, isolated FilaMan instance with the integration shell from [core PR204](https://github.com/Fire-Devils/filaman-system/pull/204); stock released-core compatibility is not yet claimed.
+Use an authenticated, isolated FilaMan instance with integration hosting and the hosted SVG installer fix from [PR217](https://github.com/Fire-Devils/filaman-system/pull/217).
 
 1. Clone your fork of `akira69/filaman-filament-swatch`.
 2. Install dependencies:

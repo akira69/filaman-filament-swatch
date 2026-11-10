@@ -28,8 +28,9 @@ catalog service or analytics is required by this edition.
 
 ## FilaMan Swatch 1.1.0 requirement
 
-Use a FilaMan build that includes [PR204](https://github.com/Fire-Devils/filaman-system/pull/204).
-It supplies the integration shell, asset installer and proxy, and the compact
-color catalog endpoint. While PR204 is pending, use a build from its branch.
+Use a FilaMan build with the integration shell and compact catalog endpoint from
+[PR204](https://github.com/Fire-Devils/filaman-system/pull/204) and the hosted SVG
+installer fix from [PR217](https://github.com/Fire-Devils/filaman-system/pull/217).
+FilaMan v2.0.5 includes PR204 and rejects the Swatch ZIP during SVG validation.
 The existing shared renderer was merged in core commit
 `4d5eabb5142b6a891d78ba7ad9df227d485e43e6`; it is not duplicated here.

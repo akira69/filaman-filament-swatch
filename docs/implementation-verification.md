@@ -27,8 +27,8 @@ Edition: 1.1.0. Upstream source: 935d3496df98faaec18e38aa4eba18c43d246c2f.
 - Core PR204 is based on upstream devel c8c76c4f97d28c3ea9165f000edcdc756d3228ed:
   19 frontend tests, 24 backend installer tests and static build pass. The existing
   shared renderer is reused; stock released-core compatibility is not claimed.
-- Fresh read-only source snapshot: 33 filaments, 38 spools, 1,392 colors. Isolated
-  HTTP ZIP installation and upgrade each converged over 16 fresh connections.
+- Isolated HTTP ZIP installation and upgrade each converged over 16 fresh
+  connections against a read-only inventory snapshot.
   Native inventory/catalog load with SpoolmanAPI inactive. Every photo/profile
   link and spool-event count matches the snapshot; the source instance is unchanged.
 - Scoped Ruff passes with N999 excluded only because the source packaging
@@ -49,7 +49,7 @@ exercise a real new-source update. Upstream PR53 remains draft/rework, with its
 standalone URL regression squash-fixed and all 13 original regressions passing.
 Real Spoolman/external-service submission evidence remains outstanding there.
 
-Public PR screenshots show the isolated copy of the actual FilaMan data.
+Public PR screenshots now use sample data.
 Database files and credentials remain outside source commits. Qwen drafted the
 README usage guide and contributor prose. Codex verified the commands and
 policies. Token savings unmeasured.
@@ -70,8 +70,8 @@ swatches preserve their striped or gradient rendering and alpha.
 The follow-up independent review found no blocking issues. The carousel's
 remaining weight now uses the host locale for decimal formatting.
 
-The final ZIP upgraded the isolated preview on port 8087. Sixteen fresh
-requests served the new bundle. The copied database still exposed 33 filaments,
-38 spools and 1,392 colors. Chromium verified host fonts and theme tokens in
+The final ZIP upgraded the isolated preview. Sixteen fresh requests served
+the new bundle. Inventory and catalog counts matched the source snapshot.
+Chromium verified host fonts and theme tokens in
 Default, Light and Dark, plus native detail links and scrollable catalog details
 at desktop and mobile widths.

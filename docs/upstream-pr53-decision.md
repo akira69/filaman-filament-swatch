@@ -16,7 +16,6 @@ PR53 has useful generic hosted-app and standalone search behavior. Do not close 
 | Head repository / branch | `akira69/filaman-filament-swatch`, `fix/pr26-upstream-aligned` |
 | Exact head | `b864db5c03d7d0a7d02476b49467ba1bc47970db` |
 | Exact live base / upstream main | `935d3496df98faaec18e38aa4eba18c43d246c2f` |
-| Source worktree | `/Users/dfinch/Code/filaman-system/worktrees/swatch-hosted-fixes`; HEAD matches PR head; clean before and after review |
 | Diff | 14 files, 563 insertions, 107 deletions; nine commits |
 | Contribution guide | `CONTRIBUTING.md` at live base, Git blob `268cbbbd84bfb69a70d8847ddc64c704f5e620da` |
 | Package manifest at base | `package.json` Git blob `979312542d0c39d560b2d15b5c14a697d7c0a6ea` |

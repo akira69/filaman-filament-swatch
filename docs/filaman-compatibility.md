@@ -26,7 +26,7 @@ to run the shared-wheel browser test with `npm test`.
 No FilaMan database migrations, native editing, SpoolmanAPI plugin, external
 catalog service or analytics is required by this edition.
 
-## FilaMan Swatch 1.1.0 requirement
+## FilaMan Swatch 1.1.1 requirement
 
 Use a FilaMan build with the integration shell and compact catalog endpoint from
 [PR204](https://github.com/Fire-Devils/filaman-system/pull/204) and the hosted SVG

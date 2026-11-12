@@ -1,9 +1,9 @@
 {
-  "version": "1.1.0",
-  "date": "2026-11-08",
+  "version": "1.1.1",
+  "date": "2026-11-12",
   "body": {
-    "en": "Native FilaMan inventory and color catalog discovery. Host language, currency and theme, with transparency, manufacturer logos and linked spool fill previews. Color harmonies use the shared FilaMan wheel on supported hosts. Editing stays in FilaMan.",
-    "de": "Native FilaMan-Ansichten für Bestand und Farbkatalog. Sprache, Währung und Design folgen FilaMan. Dazu kommen Transparenz, Herstellerlogos und verlinkte Spulenvorschauen. Auf unterstützten Systemen nutzt die Farbharmonie das gemeinsame FilaMan-Farbrad. Die Bearbeitung erfolgt in FilaMan.",
-    "fr": "Découverte native de l’inventaire et du catalogue de couleurs FilaMan. Langue, devise et thème synchronisés, avec transparence, logos et liens vers les bobines. Sur les versions compatibles, les harmonies utilisent la roue commune de FilaMan. Les modifications se font dans FilaMan."
+    "en": "Swatch cards use more of the screen on mobile, and the view controls sit beside the results. Filters, filament details, and the palette support keyboard dismissal and restore focus. Harmony controls sit beside the wheel, and empty results offer to clear the search or reset filters.",
+    "de": "Swatch-Karten nutzen auf Mobilgeräten mehr Platz. Die Ansichtssteuerung steht neben den Ergebnissen. Filter, Filamentdetails und Palette lassen sich per Tastatur schließen und geben den Fokus zurück. Die Harmonie-Einstellungen stehen neben dem Farbrad. Bei leeren Ergebnissen lassen sich Suche und Filter zurücksetzen.",
+    "fr": "Sur mobile, les cartes Swatch occupent davantage d’espace. Les commandes d’affichage sont près des résultats. Les filtres, les détails et la palette se ferment au clavier et rétablissent le focus. Les réglages d’harmonie sont près de la roue. En l’absence de résultats, vous pouvez effacer la recherche ou réinitialiser les filtres."
   }
 }

@@ -15,6 +15,9 @@
     }
   },
   "actions": {
+    "clearSearch": "Clear search",
+    "resetFilters": "Reset filters",
+    "browseCatalog": "Browse color catalog",
     "close": "Close",
     "refresh": "Refresh",
     "copy": "Copy hex",
@@ -34,11 +37,12 @@
     "sponsor": "Sponsor"
   },
   "search": {
-    "placeholder": "Search by name, vendor, material, color..."
+    "label": "Search"
   },
   "filters": {
+    "apply": "Apply filters",
     "filter": "Filters",
-    "vendor": "Vendor",
+    "vendor": "Manufacturer",
     "material": "Material",
     "source": "Source",
     "all": "All",
@@ -68,7 +72,18 @@
   "status": {
     "loading": "Loading filaments...",
     "error": "Failed to load data.",
-    "empty": "No filaments found."
+    "empty": {
+      "inventory": "No filaments in inventory.",
+      "catalog": "The color catalog is empty."
+    },
+    "noMatches": {
+      "inventory": "No filaments match your search or filters.",
+      "catalog": "No colors match your search or filters."
+    },
+    "denied": {
+      "inventory": "You don’t have permission to view inventory.",
+      "catalog": "You don’t have permission to view the color catalog."
+    }
   },
   "info": {
     "sourcing": "Data source",

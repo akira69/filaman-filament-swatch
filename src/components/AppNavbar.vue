@@ -8,14 +8,12 @@ import { Button } from '@/components/ui/button';
 defineProps<{
   pinnedCount: number;
   searchQuery: string;
-  viewMode?: 'board' | 'carousel';
 }>();
 
 const emit = defineEmits<{
   (e: 'openPalette'): void;
   (e: 'openChangelog'): void;
   (e: 'openAbout'): void;
-  (e: 'changeView', mode: 'board' | 'carousel'): void;
   (e: 'openFilterModal'): void;
   (e: 'search', query: string): void;
 }>();
@@ -24,6 +22,13 @@ const { t } = useI18n();
 const inFilamanShell=window.parent!==window && !!window.parent.document.getElementById('sidebar-toggle');
 
 const mobileMenuOpen = ref(false);
+const mobileMenu = ref<InstanceType<typeof Button> | null>(null);
+
+function openMobilePalette() {
+  mobileMenu.value?.$el.focus();
+  mobileMenuOpen.value = false;
+  emit('openPalette');
+}
 const appTitle = computed(() => t('app.hostedTitle'));
 
 
@@ -55,7 +60,8 @@ const handleSearch = (e: Event) => {
           <input
             type="text"
             :value="searchQuery"
-            :placeholder="t('search.placeholder')"
+            :aria-label="t('search.label')"
+            :placeholder="t('search.label')"
             class="w-full bg-[rgb(var(--bg))] border border-[var(--border)] rounded-lg pl-9 pr-4 py-1.5 sm:py-2 text-sm text-[rgb(var(--text))] placeholder-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb))]"
             @input="handleSearch"
           />
@@ -69,38 +75,12 @@ const handleSearch = (e: Event) => {
           @click="$emit('openFilterModal')"
           class="p-2 rounded-lg hover:bg-[var(--border)] transition text-[rgb(var(--text))] flex items-center gap-1.5"
           :title="t('filters.filter')"
+          :aria-label="t('filters.filter')"
+          aria-haspopup="dialog"
         >
           <Icon icon="lucide:sliders-horizontal" class="w-5 h-5" />
           <span class="hidden sm:inline text-sm">{{ t('filters.filter') || 'Filters' }}</span>
         </button>
-
-        <!-- View Toggle -->
-        <div class="flex items-center gap-1 bg-[rgb(var(--bg))] rounded-lg p-1">
-          <button
-            :class="[
-              'p-1.5 rounded transition',
-              viewMode === 'board'
-                ? 'bg-[rgb(var(--accent-rgb))] text-white'
-                : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]'
-            ]"
-            @click="$emit('changeView', 'board')"
-            :title="t('actions.viewBoard')"
-          >
-            <Icon icon="lucide:layout-grid" class="w-4 h-4" />
-          </button>
-          <button
-            :class="[
-              'p-1.5 rounded transition',
-              viewMode === 'carousel'
-                ? 'bg-[rgb(var(--accent-rgb))] text-white'
-                : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]'
-            ]"
-            @click="$emit('changeView', 'carousel')"
-            :title="t('actions.viewCarousel')"
-          >
-            <Icon icon="lucide:gallery-horizontal" class="w-4 h-4" />
-          </button>
-        </div>
 
         <!-- Desktop: Palette button -->
         <Button
@@ -108,12 +88,13 @@ const handleSearch = (e: Event) => {
           variant="outline"
           @click="emit('openPalette')"
           class="relative h-8 sm:h-9 w-8 sm:w-9 p-0 hidden sm:flex"
+          aria-haspopup="dialog"
           :aria-label="t('actions.openPalette')"
         >
           <Icon icon="lucide:bookmark" class="w-4 h-4" />
           <span
             v-if="pinnedCount > 0"
-            class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent-rgb))] text-white text-[10px] font-bold shadow-lg border-2 border-[rgb(var(--surface))]"
+            class="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-lg border-2 border-[rgb(var(--surface))]"
           >
             {{ pinnedCount }}
           </span>
@@ -135,6 +116,8 @@ const handleSearch = (e: Event) => {
           <Button
             size="sm"
             variant="outline"
+            ref="mobileMenu"
+            :aria-expanded="mobileMenuOpen"
             @click="mobileMenuOpen = !mobileMenuOpen"
             class="h-8 w-8 p-0"
             :aria-label="'Menu'"
@@ -172,21 +155,15 @@ const handleSearch = (e: Event) => {
                   </a>
                   <hr class="border-[var(--border)]/50 my-1" />
                   <button
-                    class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors w-full"
-                    @click="$emit('openFilterModal'); mobileMenuOpen = false"
-                  >
-                    <Icon icon="lucide:sliders-horizontal" class="w-4 h-4" />
-                    {{ t('filters.filter') || 'Filters' }}
-                  </button>
-                  <button
                     class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--border)] rounded-md transition-colors w-full relative"
-                    @click="$emit('openPalette'); mobileMenuOpen = false"
+                    aria-haspopup="dialog"
+                    @click="openMobilePalette"
                   >
                     <Icon icon="lucide:bookmark" class="w-4 h-4" />
                     {{ t('info.palette') || 'Palette' }}
                     <span
                       v-if="pinnedCount > 0"
-                      class="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-[rgb(var(--accent-rgb))] text-white text-[10px] font-bold"
+                      class="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold"
                     >
                       {{ pinnedCount }}
                     </span>

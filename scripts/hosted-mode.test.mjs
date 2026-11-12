@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {dirname,join} from 'node:path';
 import {before,after,test} from 'node:test';
 import puppeteer from 'puppeteer';
 const origin='https://swatch.test',base='/plugins/filament-swatch/';
@@ -64,6 +65,7 @@ async function open(options={}){
    }return respond(page);}
    return respond({},404);
   }
+  if(u.pathname==='/reel-flange.webp'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'image/webp',body:await readFile(join(dirname(process.env.SHARED_REEL_FILE),'reel-flange.webp'))});
   if(u.pathname==='/real-spool-reel.js'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'application/javascript',body:await readFile(process.env.SHARED_REEL_FILE,'utf8')});
   if(u.pathname==='/spool-reel.js'&&process.env.SHARED_REEL_FILE)return request.respond({contentType:'application/javascript',body:"import{renderSpoolReel as real}from'/real-spool-reel.js';export function renderSpoolReel(...args){window.__reelCalls??=[];window.__reelCalls.push(args);return real(...args)}"});
   if(u.pathname==='/spool-reel.js')return request.respond({contentType:'application/javascript',body:'export function renderSpoolReel(f,c,s,o){window.__reelCalls??=[];window.__reelCalls.push([f,c,s,o]);return `<svg id="reel" viewBox="0 0 100 100"><rect width="100" height="100" fill="red"/></svg>`}'});
@@ -112,9 +114,9 @@ test('native inventory, search, filter modal, catalog and navigation',async()=>{
  await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Blue');
  await page.$eval('nav input[type=text]',e=>{e.value='';e.dispatchEvent(new Event('input',{bubbles:true}));});
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
- await page.click('button[title="Filters"]');await page.waitForSelector('input[name=material][value=PETG]');await page.click('input[name=material][value=PETG]');await click(page,'Save');
+ await page.click('button[title="Filters"]');await page.waitForSelector('input[name=material][value=PETG]');await page.click('input[name=material][value=PETG]');await click(page,'Apply filters');
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
- await page.click('button[title="Filters"]');await click(page,'Reset');await click(page,'Save');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+ await page.click('button[title="Filters"]');await click(page,'Reset');await click(page,'Apply filters');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
  await click(page,'Color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));
  if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/catalog.png',fullPage:true});
  assert.equal(await page.$('.card-sub'),null);assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
@@ -131,7 +133,7 @@ for(const language of ['en','de','fr'])test(`${language}: profile wins over laun
  }finally{await close();}
 });
 test('inventory forbidden still permits catalog discovery',async()=>{
- const {page,close}=await open({denyInventory:true});try{assert.match(await page.$eval('body',e=>e.innerText),/403/);await click(page,'Color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));}finally{await close();}
+ const {page,close}=await open({denyInventory:true});try{assert.match(await page.$eval('#discovery-panel',e=>e.innerText),/permission to view inventory/);await click(page,'Browse color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));}finally{await close();}
 });
 test('native logo and linked spool use shared reel without losing alpha zero',async()=>{
  const {page,errors,close}=await open();try{
@@ -181,7 +183,7 @@ test('router history restores destination filters and catalog survives reload',a
 test('revoked inventory clears open details and cached projections',async()=>{
  const options={};const {page,close}=await open(options);try{
  await page.$eval('[id="board-card-filament:17"]',e=>e.click());await page.waitForSelector('.detail-panel');options.denyInventory=true;
- await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>document.body.innerText.includes('403'));await page.waitForFunction(()=>!document.querySelector('.detail-panel'));
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>document.body.innerText.includes('permission to view inventory'));await page.waitForFunction(()=>!document.querySelector('.detail-panel'));
  }finally{await close();}
 });
 test('catalog details expose assignment usage and native management, with no inventory-only filters',async()=>{
@@ -316,7 +318,7 @@ test('a full 1392-color catalog leaves cards and detail content scrollable',asyn
  await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.ok(await page.$eval('.detail-body',e=>e.clientHeight>100));
  await page.$eval('.detail-header button',e=>e.click());
  await page.waitForSelector('.detail-panel',{hidden:true});
- await page.$eval('nav button[title="Carousel"]',e=>e.click());
+ await page.$eval('button[title="Carousel"]',e=>e.click());
  await page.waitForSelector('.carousel-track');
  const reads=await page.$eval('.carousel-track',track=>{
   const property=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'offsetLeft');
@@ -377,6 +379,8 @@ test('FilaMan wheel keeps all five modes, exact stop selection, and pinnable mat
   assert.ok(!requests.some(url=>url.includes('/color-harmonies.')));
   await page.$eval('[id="board-card-filament:17"] .card-name',e=>e.click());
   await page.waitForSelector('.harmony-mode',{timeout:5000});
+  assert.ok(await page.$eval('.harmony-reference',reference=>Boolean(reference.compareDocumentPosition(document.querySelector('.harmony-modes')) & Node.DOCUMENT_POSITION_FOLLOWING)));
+  assert.ok(await page.$eval('.harmony-modes',modes=>Boolean(modes.compareDocumentPosition(document.querySelector('.spools-list')) & Node.DOCUMENT_POSITION_FOLLOWING)));
   const modes=['similar','complementary','analogous','triadic','split-complementary'];
   assert.deepEqual(await page.$$eval('.harmony-mode',nodes=>nodes.map(e=>e.dataset.harmonyMode)),modes);
   const selectedMode=()=>page.$eval('.harmony-mode[aria-pressed=true]',e=>e.dataset.harmonyMode);
@@ -434,7 +438,7 @@ test('native detail links and opacity badges stay compact; RGB and four metrics 
  const tops=await page.$$eval('.info-badges .info-badge',items=>items.map(e=>Math.round(e.getBoundingClientRect().top)));assert.equal(tops.length,4);assert.equal(new Set(tops).size,1,'four metrics occupy one desktop row');
  options.failSettings=true;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.waitForFunction(()=>document.body.innerText.includes('503'));
  options.failSettings=false;await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
- await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.mouse.click(8,8);await page.waitForSelector('.detail-panel',{hidden:true});
  await page.waitForSelector('[id="board-card-filament:19"]');await page.$eval('[id="board-card-filament:19"]',e=>e.click());await page.waitForSelector('.detail-panel');assert.equal(await page.$('.opacity-badge'),null,'opaque colors need no opacity badge');
  }finally{await close();}
 });
@@ -442,7 +446,11 @@ test('native detail links and opacity badges stay compact; RGB and four metrics 
 test('keyboard opens card details and carousel pin shares the RGB row',async()=>{
  const {page,close}=await open();try{
 
- await page.focus('.board-card:first-child .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel',{timeout:4000});await page.$eval('.detail-overlay',e=>e.click());await page.waitForSelector('.detail-panel',{hidden:true});
+ await page.focus('.board-card:first-child .card-name');
+ await page.keyboard.press('Enter');
+ await page.waitForFunction(()=>document.activeElement?.closest('.detail-panel'),{timeout:5000});
+ await page.keyboard.press('Escape');
+ await page.waitForSelector('.detail-panel',{hidden:true,timeout:5000});
  await page.click('button[title="Carousel"]');await page.waitForSelector('.card-container .card-name');
  assert.deepEqual(await page.$eval('.card-container',card=>[...card.querySelectorAll('.card-actions button')].map(e=>e.offsetHeight)),[28,28]);
  assert.ok(await page.$eval('.card-container',card=>{
@@ -486,14 +494,14 @@ test('resetting native filters restores a valid inventory scope',async()=>{
  await page.click('button[title="Filters"]');await page.waitForSelector('select');
  await page.select('select','on_hand_spools');await click(page,'Reset');
  assert.equal(await page.$eval('select',e=>e.value),'filaments');
- await click(page,'Save');assert.equal(new URL(page.url()).searchParams.has('i'),false);
+ await click(page,'Apply filters');assert.equal(new URL(page.url()).searchParams.has('i'),false);
  }finally{await close();}
 });
 
 for(const failProfileAfterDenial of [false,true])test(`focus removes revoked inventory pins (postflight failure: ${failProfileAfterDenial})`,async()=>{
  const options={};const {page,close}=await open(options);try{
   await page.$eval('[id="board-card-filament:17"] .pin-btn',button=>button.click());
-  await page.waitForSelector('.palette-panel.active .chip-name');
+  await page.waitForSelector('.palette-panel .chip-name');
   await page.$eval('.palette-header button',button=>button.click());
   await click(page,'Color catalog');
   await page.waitForSelector('[id="board-card-color:17"]');
@@ -518,7 +526,7 @@ for(const denyCatalog of [false,true])test(`a session change during catalog pagi
 test('a saved inventory pin can open its details after reloading in catalog',async()=>{
  const {page,close}=await open();try{
   await page.$eval('[id="board-card-filament:17"] .pin-btn',e=>e.click());
-  await page.waitForSelector('.palette-panel.active .chip-name');
+  await page.waitForSelector('.palette-panel .chip-name');
   await page.$eval('.palette-header button',e=>e.click());
   await click(page,'Color catalog');
   await page.reload({waitUntil:'networkidle0'});
@@ -593,4 +601,103 @@ for(const gradient of [false,true])test(`detail swatch labels ordered colors and
       label.left>=(labels[i-1]?.right ?? bounds.left) && label.right<=bounds.right));
   }
  }finally{await close();}
+});
+
+test('mobile cards fill their tracks and results own the view controls', async () => {
+ const {page,close}=await open();
+ try {
+  for (const width of [320,390,440]) {
+   await page.setViewport({width,height:844});
+   const layout=await page.$eval('.board-cards',grid=>{
+    const [first,second]=[...grid.children].map(card=>card.getBoundingClientRect());
+    return {width:grid.clientWidth,first:first.width,columns:second.top===first.top?2:1,
+      right:second.right-grid.getBoundingClientRect().right};
+   });
+   assert.equal(layout.columns,width===440?2:1);
+   assert.ok(layout.columns===1?Math.abs(layout.first-layout.width)<1:Math.abs(layout.right)<1);
+   assert.ok(await page.$eval('body',element=>element.scrollWidth<=innerWidth));
+  }
+  assert.equal(await page.$$eval('button[title="Carousel"]',buttons=>buttons.length),1);
+  await page.focus('button[title="Carousel"]');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>document.activeElement?.matches('button[title="Carousel"][aria-pressed=true]'));
+ } finally { await close(); }
+});
+
+test('discovery dialogs contain focus, close on Escape, and restore focus', async () => {
+ const {page,close}=await open();
+ try {
+  const verifyDialog=async (trigger,panel)=>{
+   await page.focus(trigger);
+   await page.keyboard.press('Enter');
+   await page.waitForSelector(panel,{timeout:5000});
+   await page.waitForFunction(panel=>document.activeElement?.closest(panel),{timeout:5000},panel);
+   assert.ok(await page.$eval(panel,element=>element.matches('[role=dialog]') &&
+     document.getElementById(element.getAttribute('aria-labelledby'))?.textContent.trim()));
+   await page.keyboard.down('Shift');
+   await page.keyboard.press('Tab');
+   await page.keyboard.up('Shift');
+   assert.ok(await page.evaluate(panel=>document.activeElement?.closest(panel)!==null,panel));
+   await page.keyboard.press('Escape');
+   await page.waitForSelector(panel,{hidden:true});
+   await page.waitForFunction(trigger=>document.activeElement?.matches(trigger),{timeout:5000},trigger);
+  };
+  await verifyDialog('button[title="Filters"]','.filter-dialog');
+  await verifyDialog('.board-card:first-child .card-name','.detail-panel');
+  await verifyDialog('button[aria-label="Open palette"]','.palette-panel');
+ } finally { await close(); }
+});
+
+test('catalog search can be cleared from empty results', async () => {
+ const {page,close}=await open({query:'&mode=catalog&q=zzz-unknown'});
+ try {
+  assert.match(await page.$eval('#discovery-panel',element=>element.innerText),/No colors match/);
+  await click(page,'Clear search');
+  await page.waitForSelector('.board-card');
+  assert.equal(await page.$eval('nav input[type=text]',input=>input.value),'');
+  assert.equal(new URL(page.url()).searchParams.has('q'),false);
+  assert.ok(await page.evaluate(()=>document.activeElement?.matches('nav input')));
+ } finally { await close(); }
+});
+
+test('resetting empty inventory filters keeps the current search and sort', async () => {
+ const {page,close}=await open({query:'&m=Unknown&q=Blue&dir=desc'});
+ try {
+  assert.match(await page.$eval('#discovery-panel',element=>element.innerText),/No filaments match/);
+  await click(page,'Reset filters');
+  await page.waitForSelector('.board-card');
+  assert.match(await page.$eval('.card-name',element=>element.textContent),/Blue/);
+  const query=new URL(page.url()).searchParams;
+  assert.equal(query.get('q'),'Blue');
+  assert.equal(query.get('dir'),'desc');
+  assert.equal(query.has('m'),false);
+ } finally { await close(); }
+});
+
+test('filter action uses readable contrast in all three FilaMan themes', async () => {
+ const {page,close}=await open({parent:true});
+ try {
+  const frame=page.frames().find(frame=>frame.url().includes('/plugins/'));
+  await frame.click('button[title="Filters"]');
+  for (const theme of ['brand','light','dark']) {
+   await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
+   await frame.waitForFunction(theme=>document.documentElement.dataset.theme===theme,{},theme);
+   const contrast=await frame.$eval('.apply-filters',button=>{
+    const canvas=document.createElement('canvas').getContext('2d');
+    const luminance=value=>{
+     canvas.clearRect(0,0,1,1);
+     canvas.fillStyle=value;
+     canvas.fillRect(0,0,1,1);
+     return [...canvas.getImageData(0,0,1,1).data].slice(0,3).reduce((total,channel,index)=>{
+      const component=channel/255;
+      return total+[.2126,.7152,.0722][index]*(component<=.04045?component/12.92:((component+.055)/1.055)**2.4);
+     },0);
+    };
+    const {color,backgroundColor}=getComputedStyle(button);
+    const values=[luminance(color),luminance(backgroundColor)].sort((a,b)=>b-a);
+    return (values[0]+.05)/(values[1]+.05);
+   });
+   assert.ok(contrast>=4.5,`${theme}: ${contrast.toFixed(2)}:1`);
+  }
+ } finally { await close(); }
 });

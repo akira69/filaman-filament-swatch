@@ -1,25 +1,18 @@
 <template>
-  <div class="palette-drawer-wrapper" :class="{ open: isOpen }">
-    <!-- Overlay (Mobile & Desktop) -->
-    <div
-      class="palette-overlay"
-      :class="{ active: isOpen }"
-      @click="$emit('close')"
-    />
-
-    <!-- Drawer Panel -->
-    <div class="palette-panel" :class="{ active: isOpen }" :inert="!isOpen">
-      <!-- Header -->
+  <Dialog :open="isOpen" @update:open="!$event && emit('close')">
+    <DialogContent placement="side" class="palette-panel" :show-close-button="false" :aria-describedby="undefined">
       <div class="palette-header">
         <div class="palette-title">
           <Icon icon="lucide:palette" class="w-4 h-4 text-[rgb(var(--accent-rgb))]" />
-          <span class="font-semibold">{{ t('info.palette') }}</span>
+          <DialogTitle class="text-sm">{{ t('info.palette') }}</DialogTitle>
           <span class="ml-auto text-xs text-[rgb(var(--text-muted))]">
             {{ pinnedItems.length }}
           </span>
         </div>
         <button
-          @click="$emit('close')"
+          type="button"
+          :aria-label="t('actions.close')"
+          @click="emit('close')"
           class="p-1.5 hover:bg-[var(--border)] rounded transition text-[rgb(var(--text-muted))]"
         >
           <Icon icon="lucide:x" class="w-5 h-5" />
@@ -69,14 +62,15 @@
           {{ t('actions.clearPalette') }}
         </button>
       </div>
-    </div>
-  </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import {getFlatSwatchStyle} from "@/lib/swatchUtils";
 import { useI18n } from 'vue-i18n';
 import { Icon } from '@iconify/vue';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { FilamentCard } from '@/composables/useFilaments';
 
 defineProps<{
@@ -84,7 +78,7 @@ defineProps<{
   pinnedItems: FilamentCard[];
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'removePin', id: string): void;
   (e: 'clearPalette'): void;
@@ -95,41 +89,11 @@ const { t } = useI18n();
 </script>
 
 <style scoped>
-.palette-drawer-wrapper {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 50;
-  overflow: hidden;
-}
-
-.palette-drawer-wrapper.open {
-  pointer-events: auto;
-}
-
-.palette-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0);
-  transition: background-color 200ms ease;
-  pointer-events: none;
-}
-
-.palette-drawer-wrapper.open .palette-overlay.active {
-  background: rgba(0, 0, 0, 0.5);
-  pointer-events: auto;
-  @media (min-width: 768px) {
-    background: transparent;
-    pointer-events: none;
-  }
-}
-
-.palette-panel {
+:global(.palette-panel) {
   position: fixed;
   top: 0;
   right: 0;
   width: min(360px, 100vw);
-  height: 100vh;
   background: rgb(var(--surface));
   border-left: 1px solid var(--border);
   box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
@@ -137,29 +101,22 @@ const { t } = useI18n();
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  transform: translateX(100%);
-  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
   contain: layout style paint;
   overflow: hidden;
 }
 
 @media (prefers-color-scheme: dark) {
-  .palette-panel {
+  :global(.palette-panel) {
     box-shadow: -2px 0 12px rgba(0, 0, 0, 0.3);
   }
 }
 
 @media (min-width: 640px) {
-  .palette-panel {
+  :global(.palette-panel) {
     width: min(320px, 85vw);
     padding: 16px;
     gap: 16px;
   }
-}
-
-.palette-drawer-wrapper.open .palette-panel.active {
-  transform: translateX(0);
 }
 
 .palette-header {

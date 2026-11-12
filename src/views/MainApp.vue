@@ -1,16 +1,13 @@
 <template>
   <div class="mx-auto flex h-screen flex-col overflow-hidden">
-    <!-- Main Content Wrapper (gets blurred when panels are open) -->
-    <div class="main-content-wrapper flex min-h-0 flex-1 flex-col" :class="{ blurred: paletteOpen || selectedFilament }">
+    <div class="flex min-h-0 flex-1 flex-col">
       <!-- Top Navigation Bar -->
       <AppNavbar
         :pinned-count="pinnedItems.length"
-        :view-mode="viewMode"
         :search-query="filters.search"
         @open-palette="paletteOpen = true"
         @open-changelog="pluginInfo?.open('changes')"
         @open-about="pluginInfo?.open('about')"
-        @changeView="viewMode = $event"
         @openFilterModal="filterModalOpen = true"
         @search="filters.search = $event"
       />
@@ -35,9 +32,6 @@
     />
 
     <PluginInfoDialog ref="pluginInfo" />
-
-    <!-- Detail Panel Overlay -->
-    <div v-if="selectedFilament" class="detail-overlay" @click="selectedFilament = null" />
 
     <!-- Detail Panel -->
     <FilamentDetailPanel
@@ -150,7 +144,7 @@ watch(
   (items, prev) => {
     if (!items.length) {
       paletteOpen.value = false;
-    } else if ((prev?.length ?? 0) === 0 && items.length > 0) {
+    } else if ((prev?.length ?? 0) === 0 && !selectedFilament.value && !filterModalOpen.value) {
       paletteOpen.value = true;
     }
   },

@@ -12,8 +12,11 @@ export type FilamentCard = DiscoveryItem & Partial<Omit<InventoryItem, keyof Dis
   totalRemainingWeight?: number | null; spoolCount?: number; multiColorDirection?: 'coaxial'|'longitudinal';
 };
 export type InventoryScope = 'filaments'|'all_spools'|'on_hand_spools'|'everything';
-const defaults=()=>({search:'',vendor:'all',material:'all',source:'filaman',inventoryScope:'filaments' as InventoryScope,
-  sortField:'name',sortDir:'asc',color:'all',colorType:'all',location:'all'});
+export const defaultDiscoveryFacets = () => ({
+  vendor: 'all', material: 'all', source: 'filaman', inventoryScope: 'filaments' as InventoryScope,
+  color: 'all', colorType: 'all', location: 'all',
+});
+const defaults = () => ({search: '', sortField: 'name', sortDir: 'asc', ...defaultDiscoveryFacets()});
 export type DiscoveryFilters=ReturnType<typeof defaults>;
 let instance: ReturnType<typeof createFilamentsComposable> | null = null;
 const nameCollator = new Intl.Collator(undefined, {sensitivity:'base'});
@@ -33,11 +36,13 @@ function createFilamentsComposable() {
   const snapshots=shallowReactive<Record<DiscoveryMode,FilamentCard[]|null>>({inventory:null,catalog:null});
   let catalogEtag: string | undefined;
   const stale={inventory:false,catalog:false};
-  const errors=reactive<Record<DiscoveryMode,string|null>>({inventory:null,catalog:null});
+  const errors=shallowReactive<Record<DiscoveryMode,Error|null>>({inventory:null,catalog:null});
   const loadings=reactive({inventory:false,catalog:false});
   const loading=computed(()=>loadings[mode.value]);
   const allFilaments=computed(()=>snapshots[mode.value] ?? []);
-  const error=computed(()=>errors[mode.value]);
+  const currentError = computed(() => errors[mode.value]);
+  const error = computed(() => currentError.value?.message ?? null);
+  const errorStatus = computed(() => currentError.value instanceof NativeApiError ? currentError.value.status : undefined);
   const controllers:Partial<Record<DiscoveryMode,AbortController>>={};
   const generations={inventory:0,catalog:0};
   const requests:Partial<Record<DiscoveryMode,Promise<void>>>={};
@@ -80,7 +85,7 @@ function createFilamentsComposable() {
         stale[target] = false;
       }catch(e){
         if(current===generations[target] && !(e instanceof Error && e.name==='AbortError')) {
-          errors[target]=e instanceof Error?e.message:String(e);
+          errors[target]=e instanceof Error?e:new Error(String(e));
           if(e instanceof NativeApiError && (e.status===401 || e.status===403))snapshots[target]=null;
         }
       }finally{if(current===generations[target]){loadings[target]=false;delete requests[target];}}
@@ -180,7 +185,7 @@ function createFilamentsComposable() {
     });
   });
   const options=(key:'vendor'|'material')=>computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.kind==='inventory' && i[key]?[i[key]!]:[]))].sort());
-  return {connectRouter,loadMode,inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
+  return {connectRouter,loadMode,inventoryItems:computed(()=>snapshots.inventory ?? []),cachedItems:computed(()=>[...(snapshots.inventory??[]),...(snapshots.catalog??[])]),mode,setDiscoveryMode,loading,error,errorStatus,allFilaments,filtered,filters,vendorOptions:options('vendor'),materialOptions:options('material'),
     colorOptions:computed(()=>[...new Set(allFilaments.value.map(i=>i.colorHex))]),
     locationOptions:computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.locations??[]))].sort()),refresh};
 }

@@ -15,6 +15,9 @@
     }
   },
   "actions": {
+    "clearSearch": "Suche löschen",
+    "resetFilters": "Filter zurücksetzen",
+    "browseCatalog": "Farbkatalog durchsuchen",
     "close": "Schließen",
     "refresh": "Neu laden",
     "copy": "Hex kopieren",
@@ -34,9 +37,10 @@
     "sponsor": "Sponsor"
   },
   "search": {
-    "placeholder": "Suche nach Name, Hersteller, Material, Farbe..."
+    "label": "Suchen"
   },
   "filters": {
+    "apply": "Filter anwenden",
     "filter": "Filter",
     "vendor": "Hersteller",
     "material": "Material",
@@ -68,7 +72,18 @@
   "status": {
     "loading": "Lade Filamente...",
     "error": "Fehler beim Laden der Daten.",
-    "empty": "Keine Filamente gefunden."
+    "empty": {
+      "inventory": "Keine Filamente im Bestand.",
+      "catalog": "Der Farbkatalog ist leer."
+    },
+    "noMatches": {
+      "inventory": "Keine Filamente entsprechen der Suche oder den Filtern.",
+      "catalog": "Keine Farben entsprechen der Suche oder den Filtern."
+    },
+    "denied": {
+      "inventory": "Du hast keine Berechtigung, den Bestand anzusehen.",
+      "catalog": "Du hast keine Berechtigung, den Farbkatalog anzusehen."
+    }
   },
   "info": {
     "sourcing": "Datenquelle",

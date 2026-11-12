@@ -578,22 +578,6 @@ a {
 }
 
 /* Wrapper Blur Effects */
-.main-content-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  transition: filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 1;
-}
-
-.main-content-wrapper.blurred {
-  filter: blur(4px);
-  pointer-events: none;
-  z-index: 1;
-}
-
 .router-content {
   display: flex;
   flex-direction: column;
@@ -636,12 +620,4 @@ a {
   flex: 1;
   min-height: 0;
   position: relative;
-}
-
-/* Detail Panel Overlay */
-.detail-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.24);
-  z-index: 999;
 }

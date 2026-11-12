@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {formatNumber} from '@/filaman/format';
 import {averageColor, normalizeColor} from '@/lib/colorUtils';
 import { computed, ref, watch } from 'vue';
@@ -83,8 +84,8 @@ const showSpools = computed(() => {
 </script>
 
 <template>
-  <Transition name="slide-in">
-    <div v-if="filament" class="detail-panel">
+  <Dialog :open="!!filament" @update:open="!$event && emit('close')">
+    <DialogContent v-if="filament" placement="side" class="detail-panel" :show-close-button="false" :aria-describedby="undefined">
       <FilamentDetailHeader
         :name="filament.name"
         :vendor="filament.vendor"
@@ -140,27 +141,6 @@ const showSpools = computed(() => {
           </div>
         </div>
 
-        <!-- Filament Details -->
-        <p v-if="filament.kind === 'catalog'">{{ t('discovery.usage', {count:filament.usageCount}) }}</p>
-        <FilamentDetailInfo v-if="filament.kind === 'inventory'"
-          :filament="filament"
-          :labels="{ details: labels.details }"
-        />
-
-        <!-- Spools List -->
-        <FilamentSpoolsList
-          v-if="showSpools"
-          :spools="filament.spools!"
-          :colors="filament.colors.map(c => c.hex)"
-          :color-style="filament.nativeColorStyle ?? 'gradient'"
-          :labels="{
-            spools: labels.spools,
-            archived: labels.archived,
-            remaining: labels.remaining,
-            used: labels.used,
-          }"
-        />
-
         <SharedColorHarmonies
           :filament="filament"
           :all-filaments="allFilaments"
@@ -188,24 +168,42 @@ const showSpools = computed(() => {
             @select-filament="emit('selectFilament', $event)"
           />
         </SharedColorHarmonies>
+
+        <!-- Filament Details -->
+        <p v-if="filament.kind === 'catalog'">{{ t('discovery.usage', {count:filament.usageCount}) }}</p>
+        <FilamentDetailInfo v-if="filament.kind === 'inventory'"
+          :filament="filament"
+          :labels="{ details: labels.details }"
+        />
+
+        <!-- Spools List -->
+        <FilamentSpoolsList
+          v-if="showSpools"
+          :spools="filament.spools!"
+          :colors="filament.colors.map(c => c.hex)"
+          :color-style="filament.nativeColorStyle ?? 'gradient'"
+          :labels="{
+            spools: labels.spools,
+            archived: labels.archived,
+            remaining: labels.remaining,
+            used: labels.used,
+          }"
+        />
       </div>
-    </div>
-  </Transition>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <style scoped>
-.detail-panel {
+:global(.detail-panel) {
   position: fixed;
   right: 0;
   top: 0;
   bottom: 0;
-  width: 400px;
-  max-width: 90vw;
+  width: min(400px, 100%);
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 32px -8px rgba(0, 0, 0, 0.5);
   background: var(--card);
-  z-index: 1000;
-  pointer-events: auto;
   display: flex;
   flex-direction: column;
 }
@@ -217,6 +215,7 @@ const showSpools = computed(() => {
   flex-direction: column;
   gap: 24px;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -328,17 +327,6 @@ const showSpools = computed(() => {
   color: white;
 }
 
-/* Transition */
-.slide-in-enter-active,
-.slide-in-leave-active {
-  transition: transform 300ms ease, opacity 300ms ease;
-}
-
-.slide-in-enter-from,
-.slide-in-leave-to {
-  transform: translateX(100%);
-  opacity: 0;
-}
 </style>
 
 <style scoped>

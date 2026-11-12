@@ -7,6 +7,55 @@
     "hostedConfigError": "Impossible de charger FilaMan Swatch. Vérifiez la configuration et réessayez.",
     "retry": "Réessayer"
   },
+  "actions": {
+    "clearSearch": "Effacer la recherche",
+    "resetFilters": "Réinitialiser les filtres",
+    "browseCatalog": "Parcourir le catalogue de couleurs",
+    "close": "Fermer",
+    "reset": "Réinitialiser",
+    "viewBoard": "Grille",
+    "viewCarousel": "Carrousel",
+    "openPalette": "Ouvrir la palette"
+  },
+  "search": {
+    "label": "Rechercher"
+  },
+  "filters": {
+    "filter": "Filtres",
+    "apply": "Appliquer les filtres",
+    "vendor": "Fabricant",
+    "material": "Matériau",
+    "location": "Emplacement",
+    "inventoryScope": "Afficher dans l’inventaire",
+    "filamentsOnly": "Filaments",
+    "allSpoolsOnly": "Toutes les bobines",
+    "onHandSpoolsOnly": "Bobines en stock",
+    "colorType": "Type de couleur",
+    "all": "Tous",
+    "singleColor": "Couleur unique",
+    "multiColor": "Multicolore"
+  },
+  "status": {
+    "loading": "Chargement…",
+    "error": "Impossible de charger les données.",
+    "empty": {
+      "inventory": "Aucun filament dans l’inventaire.",
+      "catalog": "Le catalogue de couleurs est vide."
+    },
+    "noMatches": {
+      "inventory": "Aucun filament ne correspond à la recherche ou aux filtres.",
+      "catalog": "Aucune couleur ne correspond à la recherche ou aux filtres."
+    },
+    "denied": {
+      "inventory": "Vous n’avez pas accès à l’inventaire.",
+      "catalog": "Vous n’avez pas accès au catalogue de couleurs."
+    }
+  },
+  "info": {
+    "palette": "Palette",
+    "paletteEmpty": "Aucune couleur épinglée",
+    "paletteHint": "Épinglez une couleur pour la retrouver ici."
+  },
   "detail": {
     "harmonyReference": "Couleur de référence",
     "averageReference": "Moyenne",

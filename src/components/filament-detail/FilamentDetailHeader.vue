@@ -3,6 +3,7 @@ import VendorLogoBadge from '../VendorLogoBadge.vue';
 import { X } from 'lucide-vue-next';
 import {useI18n} from 'vue-i18n';
 import { Button } from '@/components/ui/button';
+import { DialogTitle } from '@/components/ui/dialog';
 
 const {t}=useI18n();
 defineProps<{
@@ -21,7 +22,7 @@ defineEmits<{
 <template>
   <div class="detail-header">
     <div class="detail-title-row">
-      <h2 class="detail-title"><a class="detail-filaman-link" :href="filamanHref" target="_top" :title="t('discovery.edit')">{{ name }}</a></h2>
+      <DialogTitle class="detail-title"><a class="detail-filaman-link" :href="filamanHref" target="_top" :title="t('discovery.edit')">{{ name }}</a></DialogTitle>
       <Button variant="ghost" size="icon-sm" :aria-label="t('actions.close')" @click="$emit('close')"><X :size="18" aria-hidden="true" /></Button>
     </div>
     <div v-if="vendor || material" class="detail-identity-row">

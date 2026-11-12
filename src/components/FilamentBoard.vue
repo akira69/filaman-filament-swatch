@@ -29,6 +29,10 @@
         <div class="flex gap-1">
           <Button
             :variant="viewMode === 'carousel' ? 'default' : 'ghost'"
+            data-view="carousel"
+            :aria-pressed="viewMode === 'carousel'"
+            :aria-label="labels.viewCarousel"
+            :title="labels.viewCarousel"
             size="sm"
             @click="$emit('changeView', 'carousel')"
             class="h-9 w-9 sm:h-10 sm:w-10 p-0"
@@ -37,6 +41,10 @@
           </Button>
           <Button
             :variant="viewMode === 'board' ? 'default' : 'ghost'"
+            data-view="board"
+            :aria-pressed="viewMode === 'board'"
+            :aria-label="labels.viewBoard"
+            :title="labels.viewBoard"
             size="sm"
             @click="$emit('changeView', 'board')"
             class="h-9 w-9 sm:h-10 sm:w-10 p-0"
@@ -76,7 +84,7 @@
           :style="{
             '--swatch': filament.colorHex
           }"
-          @click="$emit('selectFilament', filament)"
+          @click="selectCard($event, filament)"
         >
           <div class="swatch" :style="swatchStyle(filament)" />
           <div class="card-meta">
@@ -135,6 +143,8 @@ const props = defineProps<{
   pinnedIds: Set<string> | string[];
   labels: {
     pin: string;
+    viewBoard: string;
+    viewCarousel: string;
     unpin: string;
     legend: string;
   };
@@ -155,7 +165,7 @@ const props = defineProps<{
   title?: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: "togglePin", filament: FilamentCardType): void;
   (e: "selectFilament", filament: FilamentCardType): void;
   (e: "changeView", view: "carousel" | "board"): void;
@@ -274,6 +284,11 @@ const swatchStyle = (filament: FilamentCardType) => {
   }
   return style;
 };
+
+function selectCard(event: MouseEvent, filament: FilamentCardType) {
+  (event.currentTarget as HTMLElement).querySelector<HTMLElement>('.card-name')?.focus({preventScroll: true});
+  emit('selectFilament', filament);
+}
 
 const cardId = (id: string) => `board-card-${id}`;
 
@@ -450,8 +465,8 @@ const minimapStyle = swatchStyle;
 }
 
 .board-cards {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--board-card-width)), 1fr));
   gap: var(--board-gap);
 }
 
@@ -509,8 +524,7 @@ const minimapStyle = swatchStyle;
   background: rgba(var(--surface-alt), 0.9);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
-  /* Fixed width based on viewport */
-  flex: 0 0 var(--board-card-width);
+  min-width: 0;
   /* Performance optimizations */
   content-visibility: auto;
   contain-intrinsic-size: 180px 220px;

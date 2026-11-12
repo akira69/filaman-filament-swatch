@@ -31,6 +31,10 @@
         <div class="flex gap-1">
           <Button
             :variant="viewMode === 'carousel' ? 'default' : 'ghost'"
+            data-view="carousel"
+            :aria-pressed="viewMode === 'carousel'"
+            :aria-label="labels.viewCarousel"
+            :title="labels.viewCarousel"
             size="sm"
             @click="$emit('changeView', 'carousel')"
             class="h-9 w-9 sm:h-10 sm:w-10 p-0"
@@ -39,6 +43,10 @@
           </Button>
           <Button
             :variant="viewMode === 'board' ? 'default' : 'ghost'"
+            data-view="board"
+            :aria-pressed="viewMode === 'board'"
+            :aria-label="labels.viewBoard"
+            :title="labels.viewBoard"
             size="sm"
             @click="$emit('changeView', 'board')"
             class="h-9 w-9 sm:h-10 sm:w-10 p-0"
@@ -125,6 +133,8 @@ const props = defineProps<{
     copy: string;
     copied: string;
     pin:string;
+    viewBoard: string;
+    viewCarousel: string;
     unpin:string;
   };
   sortLabels: {

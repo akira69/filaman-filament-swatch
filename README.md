@@ -35,9 +35,9 @@ All screenshots use sample inventory in FilaMan's dark theme.
 
 ## Installation
 
-**FilaMan Swatch 1.1.1 requires a FilaMan build with the hosted SVG installer fix from [PR217](https://github.com/Fire-Devils/filaman-system/pull/217).** FilaMan v2.0.5 includes integration hosting from PR204 but rejects the Swatch ZIP during SVG validation.
+**FilaMan Swatch 1.1.2 requires FilaMan 2.0.6 or later.** FilaMan v2.0.5 includes integration hosting from PR204 but rejects the Swatch ZIP during SVG validation.
 
-1. Download `filament-swatch-1.1.1.zip` from the [1.1.1 release](https://github.com/akira69/filaman-filament-swatch/releases/tag/filaman-v1.1.1).
+1. Download `filament-swatch-1.1.2.zip` from the [1.1.2 release](https://github.com/akira69/filaman-filament-swatch/releases/tag/filaman-v1.1.2).
 2. In FilaMan, open **Admin → Plugins** and upload the ZIP.
 3. Open **FilaMan Swatch** from the sidebar.
 
@@ -89,7 +89,7 @@ python -m unittest discover -s tests
 Release tag must match bundled notes:
 
 ```bash
-python scripts/package-filaman-plugin.py filaman-v1.1.1
+python scripts/package-filaman-plugin.py filaman-v1.1.2
 ```
 
 ## Upstream Updates

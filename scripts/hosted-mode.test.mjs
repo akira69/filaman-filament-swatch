@@ -390,9 +390,25 @@ test('FilaMan wheel keeps all five modes, exact stop selection, and pinnable mat
   assert.equal(await page.$eval('.fm-plugin-color-harmonies select',e=>getComputedStyle(e).display),'none');
   await page.waitForSelector('.harmony-result');
   assert.ok((await page.$$eval('.harmony-result',items=>items.map(item=>item.textContent))).some(name=>name.includes('Blue')));
-  for(const mode of modes){
-   await page.$eval(`[data-harmony-mode="${mode}"]`,e=>e.click());
-   assert.equal(await selectedMode(),mode);
+  const geometry = () => page.$eval('.detail-body', body => {
+   const panel = body.closest('.detail-panel').getBoundingClientRect();
+   const wheel = body.querySelector('.shared-harmony-wheel').getBoundingClientRect();
+   return {
+    panelWidth: panel.width,
+    contentWidth: body.clientWidth,
+    wheelLeft: wheel.left,
+    wheelTop: wheel.top - body.getBoundingClientRect().top + body.scrollTop,
+   };
+  });
+  for (const width of [1440, 320]) {
+   await page.setViewport({width, height: 1150});
+   await page.$eval('[data-harmony-mode="similar"]', button => button.click());
+   const similar = await geometry();
+   for (const mode of modes) {
+    await page.$eval(`[data-harmony-mode="${mode}"]`, button => button.click());
+    assert.equal(await selectedMode(), mode);
+    assert.deepEqual(await geometry(), similar, `${mode} at ${width}px`);
+   }
   }
   await page.setViewport({width:320,height:680});
   const layout=await page.$eval('.harmony-modes',group=>{
@@ -461,6 +477,15 @@ test('keyboard opens card details and carousel pin shares the RGB row',async()=>
   return Math.abs(rgb.y+rgb.height/2-pin.y-pin.height/2)<1 && pin.left>rgb.right;
  }));
  assert.doesNotMatch(await page.$eval('.card-container .card-actions',e=>e.textContent),/FilaMan/);
+ for (const width of [390, 1400]) {
+  await page.setViewport({width, height: 900});
+  assert.ok(await page.$eval('.card-container .pin-btn', button => {
+   const bounds = button.getBoundingClientRect();
+   const icon = button.querySelector('svg')?.getBoundingClientRect();
+   return icon && Math.abs(icon.x + icon.width / 2 - bounds.x - bounds.width / 2) < 1 &&
+    Math.abs(icon.y + icon.height / 2 - bounds.y - bounds.height / 2) < 1;
+  }), `pin icon is centered at ${width}px`);
+ }
  await page.focus('.card-container .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel');
  }finally{await close();}
 });

@@ -89,6 +89,17 @@ class PackageTests(unittest.TestCase):
             self.assertEqual(json.loads(archive.read("plugin.json"))["icon"], icon)
             self.assertEqual(archive.read(icon), icon_source.read_bytes())
 
+    def test_missing_declared_icon_requires_a_rebuild(self):
+        manifest = Path(__file__).resolve().parents[1] / "filaman-plugin/plugin.json"
+        shutil.copy(manifest, self.root / "filaman-plugin/plugin.json")
+
+        result = self.package("filaman-v1.0.1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Missing plugin icon", result.stderr)
+        self.assertIn("rebuild before packaging", result.stderr)
+        self.assertFalse(list(self.root.glob("*.zip")))
+
     def test_root_asset_base_is_rejected(self):
         (self.root / "dist/filaman-release.json").write_text(
             '{"version":"1.0.1","base":"/"}'

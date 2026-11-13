@@ -28,6 +28,14 @@ if built.get("version") != version or built.get("upstream") != provenance.get("c
     raise SystemExit("Stale bundle metadata; rebuild before packaging")
 if built.get("base") != manifest["mount_prefix"].rstrip("/") + "/":
     raise SystemExit("Bundle asset base must match the plugin mount prefix; rebuild before packaging")
+files = {
+    "static/" + path.relative_to(bundle).as_posix(): path
+    for path in sorted(bundle.rglob("*"))
+    if path.is_file() and path.name != ".gitkeep"
+}
+icon = manifest.get("icon")
+if icon is not None and (not isinstance(icon, str) or icon not in files):
+    raise SystemExit(f"Missing plugin icon {icon!r} in the bundle; rebuild before packaging")
 manifest["version"] = version
 archive_path = root / f"filament-swatch-{version}.zip"
 with ZipFile(archive_path, "w", ZIP_DEFLATED) as archive:
@@ -36,7 +44,6 @@ with ZipFile(archive_path, "w", ZIP_DEFLATED) as archive:
     archive.write(root / "upstream-source.json", "upstream-source.json")
     for name in ("__init__.py", "router.py"):
         archive.write(plugin / name, name)
-    for path in sorted(bundle.rglob("*")):
-        if path.is_file() and path.name != ".gitkeep":
-            archive.write(path, "static/" + path.relative_to(bundle).as_posix())
+    for name, path in files.items():
+        archive.write(path, name)
 print(archive_path.name)

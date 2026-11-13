@@ -71,7 +71,7 @@ Releases are explicitly created by maintainers using `filaman-vX.Y.Z` tags. Comm
 2. Running all tests.
 3. Packaging with:
    ```bash
-   python scripts/package-filaman-plugin.py filaman-v1.1.1
+   python scripts/package-filaman-plugin.py filaman-vX.Y.Z
    ```
 4. Publishing the ZIP to GitHub Releases with the required FilaMan build documented. With Actions disabled, upload the locally verified ZIP when creating the release.
 

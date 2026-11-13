@@ -8,7 +8,7 @@ const releaseDate=new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeZone:'
 const origin='https://swatch.test',base='/plugins/filament-swatch/';
 const fixture=JSON.parse(await readFile(new URL('./fixtures/filaman/contracts.json',import.meta.url),'utf8'));
 const themes=await readFile(new URL('./fixtures/filaman/themes.css',import.meta.url),'utf8');
-let browser;before(async()=>{browser=await puppeteer.launch({headless:true,args:process.env.CI?['--no-sandbox']:[]});});after(async()=>await browser?.close());
+let browser;before(async()=>{browser=await puppeteer.launch({headless:true,ignoreDefaultArgs:['--hide-scrollbars'],args:process.env.CI?['--no-sandbox']:[]});});after(async()=>await browser?.close());
 async function open(options={}){
  const context=await browser.createBrowserContext();const page=await context.newPage();await page.setViewport(options.mobileHost?{width:390,height:844}:{width:1400,height:900});
  const requests=[],errors=[];page.on('pageerror',error=>errors.push(error.message));
@@ -390,9 +390,44 @@ test('FilaMan wheel keeps all five modes, exact stop selection, and pinnable mat
   assert.equal(await page.$eval('.fm-plugin-color-harmonies select',e=>getComputedStyle(e).display),'none');
   await page.waitForSelector('.harmony-result');
   assert.ok((await page.$$eval('.harmony-result',items=>items.map(item=>item.textContent))).some(name=>name.includes('Blue')));
-  for(const mode of modes){
-   await page.$eval(`[data-harmony-mode="${mode}"]`,e=>e.click());
-   assert.equal(await selectedMode(),mode);
+  // Force a layout scrollbar even when the OS normally overlays it.
+  await page.addStyleTag({content: `
+   .detail-body { scrollbar-width: auto !important; }
+   .detail-body::-webkit-scrollbar { width: 14px; }
+  `});
+  const geometry = () => page.$eval('.detail-body', body => {
+   const panel = body.closest('.detail-panel').getBoundingClientRect();
+   const wheel = body.querySelector('.fm-header-color-wheel').getBoundingClientRect();
+   return {
+    overflow: body.scrollHeight - body.clientHeight,
+    gutter: body.offsetWidth - body.clientWidth,
+    position: {
+     panelWidth: panel.width,
+     contentWidth: body.clientWidth,
+     wheelLeft: wheel.left,
+     wheelTop: wheel.top - body.getBoundingClientRect().top + body.scrollTop,
+    },
+   };
+  });
+  for (const width of [1440, 320]) {
+   const shortHeight = 800;
+   await page.setViewport({width, height: shortHeight});
+   await page.$eval('[data-harmony-mode="similar"]', button => button.click());
+   const {overflow} = await geometry();
+   assert.ok(overflow > 0, `Similar overflows in the short drawer at ${width}px`);
+   await page.setViewport({width, height: shortHeight + overflow + 2});
+   const similar = await geometry();
+   assert.equal(similar.overflow, 0, `Similar fits at ${width}px`);
+   for (const mode of modes) {
+    await page.$eval(`[data-harmony-mode="${mode}"]`, button => button.click());
+    assert.equal(await selectedMode(), mode);
+    const current = await geometry();
+    if (mode === 'triadic') {
+     assert.ok(current.overflow > 0, `Triadic overflows at ${width}px`);
+     assert.ok(current.gutter > 0, `Triadic has a layout scrollbar at ${width}px`);
+    }
+    assert.deepEqual(current.position, similar.position, `${mode} at ${width}px`);
+   }
   }
   await page.setViewport({width:320,height:680});
   const layout=await page.$eval('.harmony-modes',group=>{
@@ -461,6 +496,20 @@ test('keyboard opens card details and carousel pin shares the RGB row',async()=>
   return Math.abs(rgb.y+rgb.height/2-pin.y-pin.height/2)<1 && pin.left>rgb.right;
  }));
  assert.doesNotMatch(await page.$eval('.card-container .card-actions',e=>e.textContent),/FilaMan/);
+ const details = await page.$$eval('.card-container', cards => {
+  const card = cards.find(card => card.querySelector('.card-name')?.textContent.trim() === 'Red pair');
+  return card?.innerText.split(/\s+/).filter(word => word === 'Example' || word === 'PLA');
+ });
+ assert.deepEqual(details, ['Example', 'PLA'], 'Carousel lists the manufacturer and material once');
+ for (const width of [390, 1400]) {
+  await page.setViewport({width, height: 900});
+  assert.ok(await page.$eval('.card-container .pin-btn', button => {
+   const bounds = button.getBoundingClientRect();
+   const icon = button.querySelector('svg')?.getBoundingClientRect();
+   return icon && Math.abs(icon.x + icon.width / 2 - bounds.x - bounds.width / 2) < 1 &&
+    Math.abs(icon.y + icon.height / 2 - bounds.y - bounds.height / 2) < 1;
+  }), `pin icon is centered at ${width}px`);
+ }
  await page.focus('.card-container .card-name');await page.keyboard.press('Enter');await page.waitForSelector('.detail-panel');
  }finally{await close();}
 });

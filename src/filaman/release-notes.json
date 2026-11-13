@@ -1,9 +1,9 @@
 {
-  "version": "1.1.1",
-  "date": "2026-11-12",
+  "version": "1.1.2",
+  "date": "2026-11-13",
   "body": {
-    "en": "Swatch cards use more of the screen on mobile, and the view controls sit beside the results. Filters, filament details, and the palette support keyboard dismissal and restore focus. Harmony controls sit beside the wheel, and empty results offer to clear the search or reset filters.",
-    "de": "Swatch-Karten nutzen auf Mobilgeräten mehr Platz. Die Ansichtssteuerung steht neben den Ergebnissen. Filter, Filamentdetails und Palette lassen sich per Tastatur schließen und geben den Fokus zurück. Die Harmonie-Einstellungen stehen neben dem Farbrad. Bei leeren Ergebnissen lassen sich Suche und Filter zurücksetzen.",
-    "fr": "Sur mobile, les cartes Swatch occupent davantage d’espace. Les commandes d’affichage sont près des résultats. Les filtres, les détails et la palette se ferment au clavier et rétablissent le focus. Les réglages d’harmonie sont près de la roue. En l’absence de résultats, vous pouvez effacer la recherche ou réinitialiser les filtres."
+    "en": "Swatch now has a palette icon in the FilaMan sidebar and installed plugins list. In Carousel view, the filament name has more room, the manufacturer and material appear once, and the pin is centered beside the RGB values. The Color Harmonies wheel stays in place when switching between all five modes, even when the detail panel starts to scroll.",
+    "de": "Swatch hat jetzt ein Palettensymbol in der FilaMan-Seitenleiste und in der Liste der installierten Plugins. Im Karussell hat der Filamentname mehr Platz, Hersteller und Material erscheinen einmal, und die Pinnadel ist neben den RGB-Werten zentriert. Das Farbrad bleibt beim Wechsel zwischen allen fünf Farbharmonie-Modi an seiner Position, auch wenn der Detailbereich scrollbar wird.",
+    "fr": "Swatch affiche désormais une icône de palette dans la barre latérale de FilaMan et dans la liste des extensions installées. Dans le carrousel, le nom du filament a plus de place, le fabricant et le matériau ne sont affichés qu’une fois, et l’épingle est centrée à côté des valeurs RVB. La roue chromatique reste en place quand on change de mode parmi les cinq harmonies, même si le panneau de détails devient défilable."
   }
 }

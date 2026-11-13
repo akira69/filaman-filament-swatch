@@ -99,7 +99,9 @@ onBeforeUnmount(() => wheel?.destroy());
           <component :is="modeIcons[mode]" :size="18" aria-hidden="true" />
         </Button>
       </div>
-      <p v-if="result && result.mode !== 'similar'" class="mode-label">{{ t(`detail.${modeLabels[result.mode]}`) }}</p>
+      <p v-if="result" class="mode-label" :class="{ invisible: result.mode === 'similar' }">
+        {{ t(`detail.${modeLabels[result.mode]}`) }}
+      </p>
     </div>
     <div ref="host" class="shared-harmony-wheel" />
     <template v-if="available">

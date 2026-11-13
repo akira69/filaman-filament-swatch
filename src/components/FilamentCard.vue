@@ -3,17 +3,10 @@
     class="card-container group relative flex h-full flex-col gap-3 sm:gap-4 rounded-2xl sm:rounded-3xl border border-[var(--border)] bg-[rgba(var(--surface),0.95)] p-4 sm:p-5 shadow-2xl shadow-black/10 cursor-pointer transition-all hover:border-[rgba(var(--accent-rgb),0.6)]"
     @click="$emit('selectFilament', filament)"
   >
-    <div class="flex items-start justify-between gap-2 sm:gap-3">
-      <div>
-        <button type="button" class="card-name text-base sm:text-lg font-semibold text-left w-full" @click.stop="$emit('selectFilament', filament)">{{ filament.name }}</button>
-        <div class="flex items-center gap-2 text-xs sm:text-sm">
-          <VendorLogoBadge v-if="filament.kind === 'inventory'" :vendor-name="filament.vendor ?? ''" :logo-url="filament.logoUrl" />
-          <span class="text-[rgb(var(--text-muted))]">·</span>
-          <span class="text-[rgb(var(--text-muted))]">{{ filament.material }}</span>
-        </div>
-      </div>
-
-    </div>
+    <button type="button" class="card-name w-full text-left text-base font-semibold sm:text-lg"
+      @click.stop="$emit('selectFilament', filament)">
+      {{ filament.name }}
+    </button>
 
     <div class="flex flex-1 items-center justify-center">
       <div
@@ -53,12 +46,12 @@
           </Button>
           <button
             type="button"
-            class="pin-btn size-7"
+            class="pin-btn grid size-7 place-items-center"
             :aria-pressed="pinned"
             @click.stop="$emit('togglePin', filament)"
             :title="pinned ? labels.unpin : labels.pin"
           >
-            <Icon :icon="pinned ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
+            <component :is="pinned ? PinOff : Pin" class="size-4" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -71,10 +64,10 @@ import { computed, ref } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Button } from "@/components/ui/button";
 import { Icon } from '@iconify/vue';
+import { Pin, PinOff } from 'lucide-vue-next';
 import { getSwatchStyle } from '@/lib/swatchUtils';
 import { formatNumber } from '@/filaman/format';
 import ColorRgbReadout from './ColorRgbReadout.vue';
-import VendorLogoBadge from './VendorLogoBadge.vue';
 
 const props = defineProps<{
   filament: FilamentCardType;

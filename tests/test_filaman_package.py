@@ -74,6 +74,32 @@ class PackageTests(unittest.TestCase):
             "1.0.0",
         )
 
+    def test_package_includes_the_declared_host_icon(self):
+        repo = Path(__file__).resolve().parents[1]
+        manifest_path = repo / "filaman-plugin/plugin.json"
+        manifest = json.loads(manifest_path.read_text())
+        icon = manifest.get("icon")
+        self.assertIsNotNone(icon, "FilaMan needs a declared plugin icon")
+        icon_source = repo / "public" / Path(icon).relative_to("static")
+        shutil.copy(manifest_path, self.root / "filaman-plugin/plugin.json")
+        shutil.copy(icon_source, self.root / "dist" / Path(icon).relative_to("static"))
+        result = self.package("filaman-v1.0.1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with ZipFile(self.root / "filament-swatch-1.0.1.zip") as archive:
+            self.assertEqual(json.loads(archive.read("plugin.json"))["icon"], icon)
+            self.assertEqual(archive.read(icon), icon_source.read_bytes())
+
+    def test_missing_declared_icon_requires_a_rebuild(self):
+        manifest = Path(__file__).resolve().parents[1] / "filaman-plugin/plugin.json"
+        shutil.copy(manifest, self.root / "filaman-plugin/plugin.json")
+
+        result = self.package("filaman-v1.0.1")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Missing plugin icon", result.stderr)
+        self.assertIn("rebuild before packaging", result.stderr)
+        self.assertFalse(list(self.root.glob("*.zip")))
+
     def test_root_asset_base_is_rejected(self):
         (self.root / "dist/filaman-release.json").write_text(
             '{"version":"1.0.1","base":"/"}'

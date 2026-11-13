@@ -7,6 +7,7 @@
   "author": "akira69 (FilaMan edition), Disane87 (original project)",
   "homepage": "https://github.com/akira69/filaman-filament-swatch",
   "license": "MIT",
+  "icon": "static/plugin-icon.svg",
   "mount_prefix": "/plugins/filament-swatch",
   "show_in_nav": true,
   "page_url": "/plugin-view/filament-swatch"

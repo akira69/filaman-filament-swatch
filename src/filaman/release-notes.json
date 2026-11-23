@@ -1,9 +1,9 @@
 {
-  "version": "1.1.2",
-  "date": "2026-11-13",
+  "version": "1.2.0",
+  "date": "2026-11-23",
   "body": {
-    "en": "Swatch now has a palette icon in the FilaMan sidebar and installed plugins list. In Carousel view, the filament name has more room, the manufacturer and material appear once, and the pin is centered beside the RGB values. The Color Harmonies wheel stays in place when switching between all five modes, even when the detail panel starts to scroll.",
-    "de": "Swatch hat jetzt ein Palettensymbol in der FilaMan-Seitenleiste und in der Liste der installierten Plugins. Im Karussell hat der Filamentname mehr Platz, Hersteller und Material erscheinen einmal, und die Pinnadel ist neben den RGB-Werten zentriert. Das Farbrad bleibt beim Wechsel zwischen allen fünf Farbharmonie-Modi an seiner Position, auch wenn der Detailbereich scrollbar wird.",
-    "fr": "Swatch affiche désormais une icône de palette dans la barre latérale de FilaMan et dans la liste des extensions installées. Dans le carrousel, le nom du filament a plus de place, le fabricant et le matériau ne sont affichés qu’une fois, et l’épingle est centrée à côté des valeurs RVB. La roue chromatique reste en place quand on change de mode parmi les cinq harmonies, même si le panneau de détails devient défilable."
+    "en": "Inventory and the color library now share column filters and sorting. Open Color search for a docked sidebar on desktop or a dialog on mobile, with hue, harmony, and opacity controls. Add color opens FilaMan’s existing editor without leaving Swatch. The new illustrated guide explains the buttons and color harmonies. Swatch follows FilaMan’s language setting, the pinned palette opens correctly, and trash buttons clearly remove pinned items.",
+    "de": "Inventar und Farbbibliothek verwenden jetzt dieselben Spaltenfilter und Sortierfunktionen. Die Farbsuche öffnet auf dem Desktop eine Seitenleiste und auf Mobilgeräten einen Dialog mit Farbton-, Harmonie- und Deckkraftreglern. Farben lassen sich mit dem vorhandenen FilaMan-Editor hinzufügen, ohne Swatch zu verlassen. Die neue Anleitung mit Symbolen erklärt die Schaltflächen und Farbharmonien. Swatch übernimmt die Spracheinstellung von FilaMan, die angeheftete Palette öffnet sich korrekt und Papierkorbschaltflächen entfernen angeheftete Einträge.",
+    "fr": "L’inventaire et la bibliothèque de couleurs partagent désormais les filtres de colonnes et le tri. La recherche de couleurs ouvre un panneau latéral sur ordinateur et une boîte de dialogue sur mobile, avec des réglages de teinte, d’harmonie et d’opacité. Ajoutez une couleur avec l’éditeur existant de FilaMan sans quitter Swatch. Le nouveau guide illustré explique les boutons et les harmonies de couleurs. Swatch suit la langue de FilaMan, la palette épinglée s’ouvre correctement et les boutons de corbeille retirent les éléments épinglés."
   }
 }

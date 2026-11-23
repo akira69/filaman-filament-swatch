@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/Fire-Devils/filaman-system",
+  "commit": "83215a0ac562a517966b5f563365b035a3f9c1ba",
+  "source": "frontend/src/lib/table-column-filters.ts",
+  "sha256": "13e6ef081f09cb469de06a56bd7cec20ef69469e4ca37ae4a72d9fabfb90a322",
+  "adaptations": [
+    "Subset native translations; locale setter does not change the host document.",
+    "Expose existing harmony controls and markers for the inline color panel.",
+    "Scope native styles to Swatch controls."
+  ],
+  "refresh": "node scripts/vendor-filaman-color-search.mjs /path/to/filaman-system"
+}

@@ -58,10 +58,11 @@ export function startHostContext() {
   };
   const refresh=async()=>{
     if(identityChanging)return;
-    const current=++sequence,revision=languageRevision;
+    const current=++sequence;
     const profile = await verifyHostIdentity();
     if (!profile || stopped || current !== sequence) return;
-    if (revision === languageRevision) {
+    // Once FilaMan changes its rendered language, a profile refresh must not undo it.
+    if (languageRevision === 0) {
       hostContext.language = profile.language === 'de' || profile.language === 'fr' ? profile.language : 'en';
     }
     syncTheme();

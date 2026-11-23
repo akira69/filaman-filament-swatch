@@ -2,20 +2,20 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Icon } from '@iconify/vue';
+import ColorLibraryIcon from './ColorLibraryIcon.vue';
+import { BookOpen } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 
 
 defineProps<{
   pinnedCount: number;
-  searchQuery: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'openPalette'): void;
+  (e: 'openGuide', trigger: HTMLElement): void;
   (e: 'openChangelog'): void;
   (e: 'openAbout'): void;
-  (e: 'openFilterModal'): void;
-  (e: 'search', query: string): void;
 }>();
 
 const { t } = useI18n();
@@ -37,11 +37,6 @@ const handleOpenChangelog = () => {
   mobileMenuOpen.value = false;
 };
 
-const handleSearch = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  emit('search', target.value);
-};
-
 </script>
 
 <template>
@@ -49,39 +44,16 @@ const handleSearch = (e: Event) => {
     <div class="app-navbar-inner px-3 sm:px-6 py-2 sm:py-3 flex items-center justify-between gap-3 sm:gap-4">
       <button type="button" class="app-brand flex shrink-0 items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
         :aria-label="t('pluginInfo.title')" :title="t('pluginInfo.title')" aria-haspopup="dialog" @click="emit('openAbout')">
-        <Icon icon="lucide:palette" class="w-5 h-5 text-[rgb(var(--accent-rgb))]" aria-hidden="true" />
+        <ColorLibraryIcon :size="20" aria-hidden="true" />
         <span class="hidden sm:inline font-semibold text-[rgb(var(--text))] text-base">{{ appTitle }}</span>
-        <Icon icon="lucide:info" class="hidden sm:block w-3.5 h-3.5 text-[rgb(var(--text-muted))]" aria-hidden="true" />
       </button>
 
-      <div class="flex-1 min-w-0 max-w-md">
-        <div class="relative">
-          <Icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--text-muted))]" />
-          <input
-            type="text"
-            :value="searchQuery"
-            :aria-label="t('search.label')"
-            :placeholder="t('search.label')"
-            class="w-full bg-[rgb(var(--bg))] border border-[var(--border)] rounded-lg pl-9 pr-4 py-1.5 sm:py-2 text-sm text-[rgb(var(--text))] placeholder-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-rgb))]"
-            @input="handleSearch"
-          />
-        </div>
-      </div>
-
       <!-- Right: Controls -->
-      <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-        <!-- Filter Button -->
-        <button
-          @click="$emit('openFilterModal')"
-          class="p-2 rounded-lg hover:bg-[var(--border)] transition text-[rgb(var(--text))] flex items-center gap-1.5"
-          :title="t('filters.filter')"
-          :aria-label="t('filters.filter')"
-          aria-haspopup="dialog"
-        >
-          <Icon icon="lucide:sliders-horizontal" class="w-5 h-5" />
-          <span class="hidden sm:inline text-sm">{{ t('filters.filter') || 'Filters' }}</span>
+      <div class="ml-auto flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        <button type="button" data-guide class="flex items-center gap-1 rounded-lg p-2 text-sm text-[rgb(var(--text))] hover:bg-[var(--border)]"
+          :title="t('help.guide')" :aria-label="t('guide.title')" aria-haspopup="dialog" @click="emit('openGuide', $event.currentTarget as HTMLElement)">
+          <BookOpen class="w-4 h-4" aria-hidden="true" />
         </button>
-
         <!-- Desktop: Palette button -->
         <Button
           size="sm"
@@ -90,6 +62,7 @@ const handleSearch = (e: Event) => {
           class="relative h-8 sm:h-9 w-8 sm:w-9 p-0 hidden sm:flex"
           aria-haspopup="dialog"
           :aria-label="t('actions.openPalette')"
+          :title="t('help.palette')"
         >
           <Icon icon="lucide:bookmark" class="w-4 h-4" />
           <span
@@ -106,7 +79,8 @@ const handleSearch = (e: Event) => {
           variant="outline"
           @click="emit('openChangelog')"
           class="h-8 sm:h-9 w-8 sm:w-9 p-0 hidden sm:flex"
-          aria-label="What's New"
+          :aria-label="t('changelog.title')"
+          :title="t('help.changes')"
         >
           <Icon icon="lucide:sparkles" class="w-4 h-4" />
         </Button>
@@ -120,7 +94,7 @@ const handleSearch = (e: Event) => {
             :aria-expanded="mobileMenuOpen"
             @click="mobileMenuOpen = !mobileMenuOpen"
             class="h-8 w-8 p-0"
-            :aria-label="'Menu'"
+            :aria-label="t('actions.menu')"
           >
             <Icon icon="lucide:more-vertical" class="w-4 h-4" />
           </Button>

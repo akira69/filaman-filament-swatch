@@ -2,7 +2,7 @@
   "app": {
     "title": "FilaMan Swatch",
     "hostedTitle": "FilaMan Swatch",
-    "subtitle": "Explorez vos filaments et votre catalogue de couleurs",
+    "subtitle": "Explorez vos filaments et votre bibliothèque de couleurs",
     "tagline": "Parcourez les couleurs, trouvez les matériaux et conservez vos favoris.",
     "hostedConfigError": "Impossible de charger FilaMan Swatch. Vérifiez la configuration et réessayez.",
     "retry": "Réessayer"
@@ -10,12 +10,20 @@
   "actions": {
     "clearSearch": "Effacer la recherche",
     "resetFilters": "Réinitialiser les filtres",
-    "browseCatalog": "Parcourir le catalogue de couleurs",
+    "browseCatalog": "Parcourir la bibliothèque de couleurs",
     "close": "Fermer",
     "reset": "Réinitialiser",
     "viewBoard": "Grille",
     "viewCarousel": "Carrousel",
-    "openPalette": "Ouvrir la palette"
+    "openPalette": "Ouvrir la palette",
+    "menu": "Menu",
+    "clearPalette": "Vider la palette",
+    "pin": "Ajouter à la palette",
+    "unpin": "Retirer de la palette",
+    "copy": "Copier le code HEX",
+    "copied": "Copié",
+    "sponsor": "Soutenir",
+    "clearFilters": "Effacer les filtres"
   },
   "search": {
     "label": "Rechercher"
@@ -33,14 +41,24 @@
     "colorType": "Type de couleur",
     "all": "Tous",
     "singleColor": "Couleur unique",
-    "multiColor": "Multicolore"
+    "multiColor": "Multicolore",
+    "sort": "Trier",
+    "sortAsc": "Croissant",
+    "sortDesc": "Décroissant",
+    "sortNameAsc": "Nom",
+    "sortVendorAsc": "Fabricant",
+    "sortMaterialAsc": "Matériau",
+    "sortSourceAsc": "Source",
+    "sortHueAsc": "Teinte",
+    "sortLuminanceAsc": "Luminosité",
+    "sortLightnessAsc": "Clarté"
   },
   "status": {
     "loading": "Chargement…",
     "error": "Impossible de charger les données.",
     "empty": {
       "inventory": "Aucun filament dans l’inventaire.",
-      "catalog": "Le catalogue de couleurs est vide."
+      "catalog": "La bibliothèque de couleurs est vide."
     },
     "noMatches": {
       "inventory": "Aucun filament ne correspond à la recherche ou aux filtres.",
@@ -48,13 +66,15 @@
     },
     "denied": {
       "inventory": "Vous n’avez pas accès à l’inventaire.",
-      "catalog": "Vous n’avez pas accès au catalogue de couleurs."
+      "catalog": "Vous n’avez pas accès à la bibliothèque de couleurs."
     }
   },
   "info": {
     "palette": "Palette",
     "paletteEmpty": "Aucune couleur épinglée",
-    "paletteHint": "Épinglez une couleur pour la retrouver ici."
+    "paletteHint": "Épinglez une couleur pour la retrouver ici.",
+    "count": "{count} résultats",
+    "legend": "Guide des couleurs"
   },
   "detail": {
     "harmonyReference": "Couleur de référence",
@@ -71,12 +91,34 @@
     "split": "Complémentaire adjacente",
     "multicolorPattern": "Multicolore : {pattern}",
     "color": "Couleur",
-    "pattern": { "striped": "Rayé", "gradient": "Dégradé" },
-    "fullSpoolRemaining": "{weight} g restants par bobine"
+    "pattern": {
+      "striped": "Rayé",
+      "gradient": "Dégradé"
+    },
+    "fullSpoolRemaining": "{weight} g restants par bobine",
+    "details": "Détails",
+    "spoolId": "ID de bobine",
+    "remainingWeight": "Poids restant",
+    "weight": "Poids du filament",
+    "spoolWeight": "Poids de la bobine vide",
+    "price": "Prix",
+    "density": "Densité",
+    "diameter": "Diamètre",
+    "extruderTemp": "Température de la buse",
+    "bedTemp": "Température du plateau",
+    "articleNumber": "Référence produit",
+    "comment": "Commentaire",
+    "similarColors": "Couleurs similaires",
+    "complementaryColors": "Couleurs complémentaires",
+    "spools": "Bobines",
+    "archived": "Archivée",
+    "remaining": "restant",
+    "used": "utilisé",
+    "currentColor": "Couleur actuelle"
   },
   "pluginInfo": {
     "title": "À propos de FilaMan Swatch",
-    "description": "Parcourez l’inventaire et le catalogue de couleurs FilaMan, comparez les harmonies et épinglez des palettes. Les liens des filaments et des bobines s’ouvrent dans FilaMan.",
+    "description": "Parcourez l’inventaire et la bibliothèque de couleurs FilaMan, comparez les harmonies et épinglez des palettes. Les liens des filaments et des bobines s’ouvrent dans FilaMan.",
     "preview": "Version de prévisualisation · {date}",
     "edition": "Édition FilaMan par akira69",
     "original": "Conception originale par Disane87",
@@ -87,12 +129,68 @@
   "discovery": {
     "mode": "Mode de découverte",
     "inventory": "Inventaire",
-    "catalog": "Catalogue de couleurs",
+    "catalog": "Bibliothèque de couleurs",
     "unknown": "Quantité restante inconnue",
     "connected": "Connecté à FilaMan",
     "disconnected": "FilaMan indisponible",
     "opacity": "Opacité",
     "edit": "Ouvrir dans FilaMan",
-    "usage": "{count} affectations de couleur"
+    "usage": "{count} affectations de couleur",
+    "colorSearch": "Recherche de couleurs",
+    "colorSearchHint": "Trouvez une teinte. Explorez une gamme.",
+    "searchColors": "Rechercher des couleurs",
+    "colorSearchPlaceholder": "Nom de couleur ou code hex…",
+    "addColor": "Ajouter une couleur",
+    "controlsUnavailable": "Les filtres de couleurs FilaMan ou l’éditeur natif n’ont pas pu être chargés.",
+    "unspecified": "Non renseigné"
+  },
+  "card": {
+    "vendor": "Fabricant",
+    "material": "Matériau",
+    "spool": "Bobine",
+    "weight": "Poids restant"
+  },
+  "changelog": {
+    "title": "Nouveautés",
+    "released": "Publié le {date}",
+    "gotIt": "Compris !",
+    "viewOnGithub": "Voir sur GitHub"
+  },
+  "seo": {
+    "title": "FilaMan Swatch",
+    "description": "Explorez les filaments et les couleurs de votre inventaire FilaMan."
+  },
+  "guide": {
+    "title": "Guide Filaman Swatch",
+    "description": "Explorez les couleurs, comparez les filaments et créez une palette.",
+    "browseTitle": "Inventaire et bibliothèque de couleurs",
+    "browse": "L’inventaire affiche vos filaments FilaMan et leurs bobines. La bibliothèque de couleurs affiche toutes les couleurs enregistrées dans la bibliothèque FilaMan, y compris celles sans filament associé.",
+    "filterTitle": "Rechercher, filtrer et trier",
+    "filter": "Utilisez les flèches de tri et les icônes de filtre près des en-têtes. Recherche de couleurs ouvre un panneau avec recherche textuelle, préréglages et roue FilaMan. Les résultats sont immédiats ; fermer le panneau conserve les filtres. Effacer les filtres efface les filtres et la recherche.",
+    "viewsTitle": "Grille et carrousel",
+    "views": "La grille affiche plusieurs cartes. Le carrousel permet de les parcourir horizontalement. Les deux boutons au-dessus des résultats changent la vue.",
+    "detailsTitle": "Détails et liens FilaMan",
+    "details": "Sélectionnez une carte pour ses détails. Ouvrir dans FilaMan affiche le filament ou la couleur ; les liens de bobines ouvrent la bobine associée. Dans la bibliothèque, Ajouter une couleur ouvre l’éditeur natif FilaMan sans quitter Swatch.",
+    "harmoniesTitle": "Harmonies de couleurs",
+    "harmonies": "Choisissez des couleurs similaires, complémentaires, analogues, triadiques ou complémentaires adjacentes. Pour un filament multicolore, sélectionnez une couleur ou la moyenne comme référence. Inclure la transparence modifie l’aperçu. Les correspondances comparent les couleurs enregistrées ; le résultat imprimé peut varier.",
+    "paletteTitle": "Épinglage",
+    "palette": "L’épingle ajoute un filament ou une couleur de la bibliothèque à votre palette pour les comparer et les retrouver. Cliquez à nouveau pour le retirer. Le bouton signet ouvre la palette ; Vider la palette retire toutes les épingles. Elles sont conservées pour votre compte FilaMan dans la session de cet onglet, même après un rechargement. Elles ne modifient pas l’inventaire et ne réservent aucune bobine.",
+    "similar": "Des couleurs proches donnent un résultat discret et assorti. Utilisez-les pour coordonner des pièces ou varier doucement les nuances.",
+    "complementary": "Les couleurs opposées sur le cercle créent un contraste fort. Choisissez l’une comme couleur principale et l’autre comme accent.",
+    "analogous": "Les teintes voisines sur le cercle donnent un ensemble calme et cohérent. Elles apportent de la variété tout en restant assorties.",
+    "triadic": "Trois teintes régulièrement espacées sur le cercle donnent une combinaison vive et équilibrée. Laissez-en une dominer et utilisez les deux autres en petites touches.",
+    "split-complementary": "Associez votre référence aux deux teintes voisines de sa couleur opposée. Vous gardez du contraste avec plus de variété qu’une seule couleur complémentaire."
+  },
+  "help": {
+    "guide": "Comprendre les commandes et l’utilisation de Swatch",
+    "filters": "Choisir les filaments ou les couleurs à afficher",
+    "palette": "Voir les filaments et couleurs épinglés pour les comparer",
+    "changes": "Voir les changements de cette version de Swatch",
+    "pin": "Ajouter à la palette pour comparer, sans modifier l’inventaire",
+    "unpin": "Retirer de la palette sans modifier l’inventaire",
+    "board": "Afficher les résultats en grille",
+    "carousel": "Parcourir les résultats horizontalement",
+    "ascending": "Trier par ordre croissant",
+    "descending": "Trier par ordre décroissant"
   }
 }

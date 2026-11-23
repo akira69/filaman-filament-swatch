@@ -37,7 +37,7 @@
               :aria-label="t('actions.unpin')"
               @click="$emit('removePin', item.id)"
             >
-              <Icon icon="lucide:x" class="w-3.5 h-3.5" />
+              <Icon icon="lucide:trash-2" class="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>

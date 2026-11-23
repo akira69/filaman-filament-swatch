@@ -1,62 +1,7 @@
 <template>
   <div class="board-wrapper">
-    <div class="board-header">
-      <div class="board-title">{{ title }}</div>
-      <div class="board-actions">
-        <!-- Sort Controls -->
-        <Select v-model="filters.sortField" class="w-28 sm:w-36">
-          <SelectTrigger variant="ghost" class="h-9 sm:h-10">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">{{ sortLabels.name }}</SelectItem>
-            <SelectItem v-if="filaments[0]?.kind !== 'catalog'" value="vendor">{{ sortLabels.vendor }}</SelectItem>
-            <SelectItem v-if="filaments[0]?.kind !== 'catalog'" value="material">{{ sortLabels.material }}</SelectItem>
-            <SelectItem value="source">{{ sortLabels.source }}</SelectItem>
-            <SelectItem value="hue">{{ sortLabels.hue }}</SelectItem>
-            <SelectItem value="luminance">{{ sortLabels.luminance }}</SelectItem>
-            <SelectItem value="lightness">{{ sortLabels.lightness }}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Toggle variant="ghost" size="sm" :pressed="filters.sortDir === 'asc'" @click="filters.sortDir = 'asc'" class="h-9 w-9 sm:h-10 sm:w-10">
-          <Icon icon="lucide:arrow-up" class="w-4 h-4" />
-        </Toggle>
-        <Toggle variant="ghost" size="sm" :pressed="filters.sortDir === 'desc'" @click="filters.sortDir = 'desc'" class="h-9 w-9 sm:h-10 sm:w-10">
-          <Icon icon="lucide:arrow-down" class="w-4 h-4" />
-        </Toggle>
-        
-        <!-- View Toggle -->
-        <div class="flex gap-1">
-          <Button
-            :variant="viewMode === 'carousel' ? 'default' : 'ghost'"
-            data-view="carousel"
-            :aria-pressed="viewMode === 'carousel'"
-            :aria-label="labels.viewCarousel"
-            :title="labels.viewCarousel"
-            size="sm"
-            @click="$emit('changeView', 'carousel')"
-            class="h-9 w-9 sm:h-10 sm:w-10 p-0"
-          >
-            <Icon icon="lucide:gallery-horizontal" class="w-4 h-4" />
-          </Button>
-          <Button
-            :variant="viewMode === 'board' ? 'default' : 'ghost'"
-            data-view="board"
-            :aria-pressed="viewMode === 'board'"
-            :aria-label="labels.viewBoard"
-            :title="labels.viewBoard"
-            size="sm"
-            @click="$emit('changeView', 'board')"
-            class="h-9 w-9 sm:h-10 sm:w-10 p-0"
-          >
-            <Icon icon="lucide:layout-grid" class="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-
     <div class="board-body">
-      <div class="minimap" aria-label="Color minimap" @click.stop>
+      <div class="minimap" :aria-label="labels.legend" @click.stop>
         <button
           v-for="(filament, index) in filaments"
           :key="filament.id"
@@ -107,7 +52,8 @@
                   class="pin-btn size-7 shrink-0"
                   :aria-pressed="isPinned(filament.id)"
                   @click.stop="$emit('togglePin', filament)"
-                  :title="isPinned(filament.id) ? labels.unpin : labels.pin"
+                  :aria-label="isPinned(filament.id) ? labels.unpin : labels.pin"
+                  :title="t(isPinned(filament.id) ? 'help.unpin' : 'help.pin')"
                 >
                   <Icon :icon="isPinned(filament.id) ? 'lucide:pin-off' : 'lucide:pin'" class="w-4 h-4" />
                 </button>
@@ -122,6 +68,8 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 import VendorLogoBadge from "./VendorLogoBadge.vue";
 import { computed, nextTick, ref, watch, onMounted, onUnmounted } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
@@ -129,46 +77,21 @@ import { Icon } from '@iconify/vue';
 import { Button } from "@/components/ui/button";
 import ColorRgbReadout from './ColorRgbReadout.vue';
 import { getSwatchStyle } from '@/lib/swatchUtils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Toggle } from "@/components/ui/toggle";
+
 
 const props = defineProps<{
   filaments: FilamentCardType[];
   pinnedIds: Set<string> | string[];
   labels: {
     pin: string;
-    viewBoard: string;
-    viewCarousel: string;
     unpin: string;
     legend: string;
   };
-  sortLabels: {
-    name: string;
-    vendor: string;
-    material: string;
-    source: string;
-    hue: string;
-    luminance: string;
-    lightness: string;
-  };
-  filters: {
-    sortField: string;
-    sortDir: string;
-  };
-  viewMode: string;
-  title?: string;
 }>();
 
 const emit = defineEmits<{
   (e: "togglePin", filament: FilamentCardType): void;
   (e: "selectFilament", filament: FilamentCardType): void;
-  (e: "changeView", view: "carousel" | "board"): void;
 }>();
 
 const gridRef = ref<HTMLElement | null>(null);
@@ -351,36 +274,6 @@ const minimapStyle = swatchStyle;
   .board-wrapper {
     gap:0;
   }
-}
-
-.board-header {
-  padding:12px 16px;
-  border-bottom:1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.board-title {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-@media (min-width: 640px) {
-  .board-title {
-    font-size: 15px;
-  }
-}
-
-.board-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
 }
 
 .legend {

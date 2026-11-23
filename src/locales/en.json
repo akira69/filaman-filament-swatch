@@ -4,7 +4,7 @@
     "retry": "Retry",
     "title": "FilaMan Swatch",
     "hostedTitle": "FilaMan Swatch",
-    "subtitle": "Explore your filaments and color catalog",
+    "subtitle": "Explore your filaments and color library",
     "tagline": "Swipe through colors, find materials, and remember perfect matches.",
     "footer": {
       "tagline": "Visual filament color browser",
@@ -17,7 +17,7 @@
   "actions": {
     "clearSearch": "Clear search",
     "resetFilters": "Reset filters",
-    "browseCatalog": "Browse color catalog",
+    "browseCatalog": "Browse color library",
     "close": "Close",
     "refresh": "Refresh",
     "copy": "Copy hex",
@@ -26,15 +26,17 @@
     "cancel": "Cancel",
     "reset": "Reset",
     "editSpoolmanUrl": "Edit URL",
-    "pin": "Pin",
-    "unpin": "Unpin",
+    "pin": "Add to palette",
+    "unpin": "Remove from palette",
     "viewCarousel": "Carousel",
     "viewBoard": "Board",
     "clearPalette": "Clear palette",
     "openPalette": "Open palette",
     "showFilters": "Show filters",
     "hideFilters": "Hide filters",
-    "sponsor": "Sponsor"
+    "sponsor": "Sponsor",
+    "menu": "Menu",
+    "clearFilters": "Clear filters"
   },
   "search": {
     "label": "Search"
@@ -74,7 +76,7 @@
     "error": "Failed to load data.",
     "empty": {
       "inventory": "No filaments in inventory.",
-      "catalog": "The color catalog is empty."
+      "catalog": "The color library is empty."
     },
     "noMatches": {
       "inventory": "No filaments match your search or filters.",
@@ -82,7 +84,7 @@
     },
     "denied": {
       "inventory": "You don’t have permission to view inventory.",
-      "catalog": "You don’t have permission to view the color catalog."
+      "catalog": "You don’t have permission to view the color library."
     }
   },
   "info": {
@@ -129,7 +131,10 @@
     "noHarmonyMatches": "No matching colors.",
     "useHarmonyReference": "Use {hex} for color harmonies",
     "multicolorPattern": "Multicolor: {pattern}",
-    "pattern": { "striped": "Striped", "gradient": "Gradient" },
+    "pattern": {
+      "striped": "Striped",
+      "gradient": "Gradient"
+    },
     "fullSpoolRemaining": "{weight} g remaining each",
     "includeTransparency": "Include transparency",
     "color": "Color",
@@ -178,7 +183,7 @@
   },
   "pluginInfo": {
     "title": "About FilaMan Swatch",
-    "description": "Browse FilaMan inventory and its color catalog, compare color harmonies, and pin palettes. Filament and spool links open in FilaMan.",
+    "description": "Browse FilaMan inventory and its color library, compare color harmonies, and pin palettes. Filament and spool links open in FilaMan.",
     "preview": "Preview build · {date}",
     "edition": "FilaMan edition by akira69",
     "original": "Original design by Disane87",
@@ -459,12 +464,52 @@
   "discovery": {
     "mode": "Discovery mode",
     "inventory": "Inventory",
-    "catalog": "Color catalog",
+    "catalog": "Color library",
     "unknown": "Unknown remaining amount",
     "connected": "Connected to FilaMan",
     "disconnected": "FilaMan unavailable",
     "opacity": "Opacity",
     "edit": "Open in FilaMan",
-    "usage": "{count} color assignments"
+    "usage": "{count} color assignments",
+    "colorSearch": "Color search",
+    "colorSearchHint": "Find a shade. Explore a range.",
+    "searchColors": "Search colors",
+    "colorSearchPlaceholder": "Color name or hex…",
+    "addColor": "Add color",
+    "controlsUnavailable": "FilaMan color controls or the native editor could not be loaded.",
+    "unspecified": "Not specified"
+  },
+  "guide": {
+    "title": "Filaman Swatch Guide",
+    "description": "Browse colors, compare filaments, and collect a palette.",
+    "browseTitle": "Inventory and color library",
+    "browse": "Inventory shows your FilaMan filaments and linked spools. Color library shows all colors registered in FilaMan’s Color Library, including colors with no filament assigned.",
+    "filterTitle": "Search, filter, and sort",
+    "filter": "Use the sort carets and filter icons beside the result headers. Color search opens a sidebar with text search, color presets, and FilaMan’s wheel. Results update immediately; closing the sidebar keeps your filters. Clear filters resets the filters and search.",
+    "viewsTitle": "Board and carousel",
+    "views": "Board shows a grid of cards. Carousel lets you browse cards horizontally. Use the grid and carousel buttons above the results to switch views.",
+    "detailsTitle": "Details and FilaMan links",
+    "details": "Select a card to see its details. Open in FilaMan opens the corresponding filament or color record; spool links open the linked spool. In Color library, Add color opens FilaMan’s native color editor without leaving Swatch.",
+    "harmoniesTitle": "Color harmonies",
+    "harmonies": "Choose similar, complementary, analogous, triadic, or split complementary colors. On multicolor filaments, select a color stop or the average as the reference. Include transparency changes the color preview. Matches compare stored colors, so printed results can differ.",
+    "paletteTitle": "Pinning",
+    "palette": "The pin adds a filament or library color to your palette for comparison and quick access. Click it again to remove the item. Open the bookmark button to view the palette; Clear palette removes all pins. Pins stay in this browser tab’s session for your FilaMan account and survive a page reload. They do not change inventory or reserve a spool.",
+    "similar": "Nearby colors give a subtle, coordinated look. Use them for matching parts or a gentle change between shades.",
+    "complementary": "Colors opposite each other on the wheel create strong contrast. Use one as the main color and the other as an accent.",
+    "analogous": "Neighboring hues on the wheel feel related and calm. Try them for a palette with variety that still looks coordinated.",
+    "triadic": "Three hues spaced evenly around the wheel make a lively, balanced combination. Let one dominate and use the other two as smaller accents.",
+    "split-complementary": "Pair your reference with the two hues beside its opposite. This keeps contrast while giving you more variety than a single complementary color."
+  },
+  "help": {
+    "guide": "Explain the controls and how to use Swatch",
+    "filters": "Choose which filaments or colors to show",
+    "palette": "View the filaments and colors you pinned for comparison",
+    "changes": "See what changed in this Swatch version",
+    "pin": "Add to your palette for comparison; inventory stays unchanged",
+    "unpin": "Remove from your palette; inventory stays unchanged",
+    "board": "Show matching items in a grid",
+    "carousel": "Browse matching items horizontally",
+    "ascending": "Sort in ascending order",
+    "descending": "Sort in descending order"
   }
 }

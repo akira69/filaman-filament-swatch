@@ -3,6 +3,7 @@ import {confirmHostIdentity, verifyHostIdentity} from '../filaman/context';
 import {readDiscoveryState,saveDiscoveryState} from '../filaman/discovery-state';
 import type {Router} from 'vue-router';
 import { NativeApiError, loadInventory, loadCatalog } from '../api/filaman';
+import { nativeFilters, readColumnFilters, matchesDiscoveryColumns } from '../filaman/color-search';
 import { getColorMetrics } from '../lib/colorUtils';
 import type { DiscoveryItem, DiscoveryMode, InventoryItem } from '../types/discovery';
 
@@ -14,7 +15,7 @@ export type FilamentCard = DiscoveryItem & Partial<Omit<InventoryItem, keyof Dis
 export type InventoryScope = 'filaments'|'all_spools'|'on_hand_spools'|'everything';
 export const defaultDiscoveryFacets = () => ({
   vendor: 'all', material: 'all', source: 'filaman', inventoryScope: 'filaments' as InventoryScope,
-  color: 'all', colorType: 'all', location: 'all',
+  color: 'all', colorType: 'all', location: 'all', columnFilters: '',
 });
 const defaults = () => ({search: '', sortField: 'name', sortDir: 'asc', ...defaultDiscoveryFacets()});
 export type DiscoveryFilters=ReturnType<typeof defaults>;
@@ -24,12 +25,12 @@ export const useFilaments=()=>instance ??= createFilamentsComposable();
 function createFilamentsComposable() {
   const params=new URLSearchParams(window.location.search);
   const saved=readDiscoveryState();
-  const explicitFilters=['q','v','m','c','l','i','sort','dir','ct'].some(key=>params.has(key));
+  const explicitFilters=['q','v','m','c','l','i','sort','dir','ct','cf'].some(key=>params.has(key));
   const explicit=params.has('mode')||explicitFilters;
   const mode=ref<DiscoveryMode>(explicit ? (params.get('mode')==='catalog'?'catalog':'inventory') : saved.mode ?? 'inventory');
   const filters=reactive(defaults());
   const states={inventory:defaults(),catalog:defaults()};
-  const keys={search:'q',vendor:'v',material:'m',color:'c',location:'l',inventoryScope:'i',sortField:'sort',sortDir:'dir',colorType:'ct'};
+  const keys={search:'q',vendor:'v',material:'m',color:'c',location:'l',inventoryScope:'i',sortField:'sort',sortDir:'dir',colorType:'ct',columnFilters:'cf'};
   for(const choice of ['inventory','catalog'] as const)for(const key of Object.keys(defaults()))if(typeof saved.filters?.[choice]?.[key]==='string')(states[choice] as any)[key]=saved.filters[choice][key];
   Object.assign(filters,states[mode.value]);
   if(explicitFilters){Object.assign(filters,defaults());for(const [key,param] of Object.entries(keys))if(params.has(param))(filters as any)[key]=params.get(param);}
@@ -167,21 +168,23 @@ function createFilamentsComposable() {
       return items.map(item => ({item, value:getColorMetrics(item.colorHex)[field]}))
         .sort((a,b) => direction*(a.value-b.value)).map(entry => entry.item);
     }
-    return [...items].sort((a,b)=>direction*nameCollator.compare(String((a as any)[field]??''),String((b as any)[field]??'')));
+    if(field==='scope'||field==='colorType')return [...items].sort((a,b)=>direction*((field==='scope'?a.spoolCount??0:a.colors.length)-(field==='scope'?b.spoolCount??0:b.colors.length)));
+    return [...items].sort((a,b)=>direction*nameCollator.compare(String(field==='location'?a.locations?.join(', ')??'':(a as any)[field]??''),String(field==='location'?b.locations?.join(', ')??'':(b as any)[field]??'')));
   });
   const filtered=computed(()=>{
     const search = filters.search.toLowerCase();
+    const module=nativeFilters.value;
+    if(filters.columnFilters&&!module)return [];
+    const columns=module?readColumnFilters(filters.columnFilters,mode.value,module):{};
     return sorted.value.filter(item=>{
+    if(!matchesDiscoveryColumns(item,columns,module,filters))return false;
     if(filters.color!=='all' && item.colorHex.toLowerCase()!==filters.color.toLowerCase())return false;
     if(filters.colorType!=='all' && (filters.colorType==='multi') !== (item.colors.length>1))return false;
     if(item.kind==='inventory') {
       if(filters.vendor!=='all' && item.vendor?.toLowerCase()!==filters.vendor.toLowerCase())return false;
       if(filters.material!=='all' && item.material.toLowerCase()!==filters.material.toLowerCase())return false;
-      if((filters.location!=='all' || ['all_spools','on_hand_spools'].includes(filters.inventoryScope)) &&
-        !item.spools?.some(spool=>(filters.inventoryScope!=='on_hand_spools' || spool.onHand) &&
-          (filters.location==='all' || spool.location?.toLowerCase()===filters.location.toLowerCase())))return false;
     }
-      return !search || [item.name,item.colorName,item.colorHex,item.vendor,item.material].some(value=>value?.toLowerCase().includes(search));
+      return !search || [item.name,item.colorName,item.colorHex,...(item.multiColorHexes??[]),...item.colors.map(c=>c.name),item.vendor,item.material].some(value=>value?.toLowerCase().includes(search));
     });
   });
   const options=(key:'vendor'|'material')=>computed(()=>[...new Set(allFilaments.value.flatMap(i=>i.kind==='inventory' && i[key]?[i[key]!]:[]))].sort());

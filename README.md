@@ -6,12 +6,13 @@ FilaMan Swatch is a visual filament browser built into FilaMan. Browse the color
 
 ## Features
 
-- **Inventory and Color Catalog.** Browse your FilaMan filaments or explore the FilaMan color catalog independently of your stock. Switch between a grid for an overview and a carousel for one swatch at a time.
-- **Search and filters.** Search by name, manufacturer, material, or hex code. In Inventory, narrow the results by manufacturer, material, spool location, single or multicolor filament, and on-hand stock. The Swatch URL preserves the active search and filters.
+- **Inventory and Color library.** Browse your FilaMan filaments or all colors in the FilaMan color library, including colors not assigned to filaments. Switch between a grid for an overview and a carousel for one swatch at a time.
+- **Search and filters.** Use column filters and sorting, or open the color-search sidebar for text, hex, hue, harmony, and opacity controls. In Inventory, narrow the results by manufacturer, material, spool location, single or multicolor filament, and on-hand stock. The Swatch URL preserves the active search and filters.
 - **Spool details.** See each spool's location and remaining weight when available, then open the spool in FilaMan. Manufacturer logos and reel fill previews appear where available.
 - **Color matching.** Read hex and RGB values, see transparency and striped or gradient patterns, and use the interactive Color Harmonies wheel to compare related colors. Swatch uses FilaMan's shared wheel on supported hosts.
-- **Pinned palettes.** Pin filaments and catalog colors as you browse, then revisit them together in the palette drawer. Pins are saved for your browser session.
+- **Pinned palettes.** Pin filaments and library colors as you browse, then revisit them together in the palette drawer. Pins are saved for your browser session.
 - **FilaMan appearance and language.** The layout adapts to desktop and mobile. Swatch follows FilaMan's theme, language, and currency, with English, German, and French translations.
+- **Native color editor and guide.** Add colors with FilaMan’s existing dialog without leaving Swatch. Open the book button for control explanations and a short color-harmony lesson.
 
 ## Screenshots
 
@@ -25,7 +26,7 @@ All screenshots use sample inventory in FilaMan's dark theme.
 
 ![Inventory carousel with large swatches, remaining spool weights, and a row of color shortcuts](docs/screenshots/inventory-carousel.webp)
 
-### Color catalog
+### Color library
 
 ![Color catalog grid with named swatches, including a translucent color shown over a checkerboard](docs/screenshots/color-catalog.webp)
 
@@ -35,9 +36,9 @@ All screenshots use sample inventory in FilaMan's dark theme.
 
 ## Installation
 
-**FilaMan Swatch 1.1.2 requires FilaMan 2.0.6 or later.** FilaMan v2.0.5 includes integration hosting from PR204 but rejects the Swatch ZIP during SVG validation.
+**FilaMan Swatch 1.2.0 requires FilaMan 2.4.0 or later.** Add color opens the host’s native Color Library dialog, including its improved RGB/color-wheel picker when available.
 
-1. Download `filament-swatch-1.1.2.zip` from the [1.1.2 release](https://github.com/akira69/filaman-filament-swatch/releases/tag/filaman-v1.1.2).
+1. Download `filament-swatch-1.2.0.zip` from the [1.2.0 release](https://github.com/akira69/filaman-filament-swatch/releases/tag/filaman-v1.2.0).
 2. In FilaMan, open **Admin → Plugins** and upload the ZIP.
 3. Open **FilaMan Swatch** from the sidebar.
 
@@ -89,7 +90,7 @@ python -m unittest discover -s tests
 Release tag must match bundled notes:
 
 ```bash
-python scripts/package-filaman-plugin.py filaman-v1.1.2
+python scripts/package-filaman-plugin.py filaman-v1.2.0
 ```
 
 ## Upstream Updates

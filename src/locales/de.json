@@ -4,7 +4,7 @@
     "retry": "Erneut versuchen",
     "title": "FilaMan Swatch",
     "hostedTitle": "FilaMan Swatch",
-    "subtitle": "Filamente und Farbkatalog entdecken",
+    "subtitle": "Filamente und Farbbibliothek entdecken",
     "tagline": "Wische durch Farben, finde Materialien und merke dir perfekte Matches.",
     "footer": {
       "tagline": "Visueller Filament-Farbbrowser",
@@ -17,7 +17,7 @@
   "actions": {
     "clearSearch": "Suche löschen",
     "resetFilters": "Filter zurücksetzen",
-    "browseCatalog": "Farbkatalog durchsuchen",
+    "browseCatalog": "Farbbibliothek durchsuchen",
     "close": "Schließen",
     "refresh": "Neu laden",
     "copy": "Hex kopieren",
@@ -26,15 +26,17 @@
     "cancel": "Abbrechen",
     "reset": "Zuruecksetzen",
     "editSpoolmanUrl": "URL bearbeiten",
-    "pin": "Anheften",
-    "unpin": "Loesen",
+    "pin": "Zur Palette hinzufügen",
+    "unpin": "Aus Palette entfernen",
     "viewCarousel": "Karussell",
     "viewBoard": "Board",
     "clearPalette": "Palette leeren",
     "openPalette": "Palette oeffnen",
     "showFilters": "Filter anzeigen",
     "hideFilters": "Filter ausblenden",
-    "sponsor": "Sponsor"
+    "sponsor": "Sponsor",
+    "menu": "Menü",
+    "clearFilters": "Filter leeren"
   },
   "search": {
     "label": "Suchen"
@@ -74,7 +76,7 @@
     "error": "Fehler beim Laden der Daten.",
     "empty": {
       "inventory": "Keine Filamente im Bestand.",
-      "catalog": "Der Farbkatalog ist leer."
+      "catalog": "Die Farbbibliothek ist leer."
     },
     "noMatches": {
       "inventory": "Keine Filamente entsprechen der Suche oder den Filtern.",
@@ -82,7 +84,7 @@
     },
     "denied": {
       "inventory": "Du hast keine Berechtigung, den Bestand anzusehen.",
-      "catalog": "Du hast keine Berechtigung, den Farbkatalog anzusehen."
+      "catalog": "Du hast keine Berechtigung, die Farbbibliothek anzusehen."
     }
   },
   "info": {
@@ -129,7 +131,10 @@
     "noHarmonyMatches": "Keine passenden Farben.",
     "useHarmonyReference": "{hex} für die Farbharmonie verwenden",
     "multicolorPattern": "Mehrfarbig: {pattern}",
-    "pattern": { "striped": "Gestreift", "gradient": "Verlauf" },
+    "pattern": {
+      "striped": "Gestreift",
+      "gradient": "Verlauf"
+    },
     "fullSpoolRemaining": "Jeweils {weight} g übrig",
     "includeTransparency": "Transparenz einbeziehen",
     "color": "Farbe",
@@ -178,7 +183,7 @@
   },
   "pluginInfo": {
     "title": "Über FilaMan Swatch",
-    "description": "Durchsuche den FilaMan-Bestand und den Farbkatalog, vergleiche Farbharmonien und hefte Paletten an. Filament- und Spulenlinks öffnen FilaMan.",
+    "description": "Durchsuche den FilaMan-Bestand und die Farbbibliothek, vergleiche Farbharmonien und hefte Paletten an. Filament- und Spulenlinks öffnen FilaMan.",
     "preview": "Vorschauversion · {date}",
     "edition": "FilaMan-Edition von akira69",
     "original": "Ursprüngliches Design von Disane87",
@@ -458,12 +463,52 @@
   "discovery": {
     "mode": "Entdeckungsmodus",
     "inventory": "Bestand",
-    "catalog": "Farbkatalog",
+    "catalog": "Farbbibliothek",
     "unknown": "Restmenge unbekannt",
     "connected": "Mit FilaMan verbunden",
     "disconnected": "FilaMan nicht erreichbar",
     "opacity": "Deckkraft",
     "edit": "In FilaMan öffnen",
-    "usage": "{count} Farbzuordnungen"
+    "usage": "{count} Farbzuordnungen",
+    "colorSearch": "Farbsuche",
+    "colorSearchHint": "Farbton finden. Farbbereich erkunden.",
+    "searchColors": "Farben suchen",
+    "colorSearchPlaceholder": "Farbname oder Hex…",
+    "addColor": "Farbe hinzufügen",
+    "controlsUnavailable": "Die FilaMan-Farbsteuerung oder der native Editor konnte nicht geladen werden.",
+    "unspecified": "Nicht angegeben"
+  },
+  "guide": {
+    "title": "Filaman Swatch Anleitung",
+    "description": "Farben entdecken, Filamente vergleichen und eine Palette zusammenstellen.",
+    "browseTitle": "Inventar und Farbbibliothek",
+    "browse": "Das Inventar zeigt deine FilaMan-Filamente und zugehörigen Spulen. Die Farbbibliothek zeigt alle Farben aus der FilaMan-Farbbibliothek, auch Farben ohne zugeordnetes Filament.",
+    "filterTitle": "Suchen, filtern und sortieren",
+    "filter": "Nutze die Sortierpfeile und Filtersymbole neben den Ergebnisüberschriften. Farbsuche öffnet eine Seitenleiste mit Textsuche, Farbvorgaben und dem FilaMan-Farbrad. Ergebnisse aktualisieren sich sofort; beim Schließen bleiben die Filter erhalten. Filter leeren setzt Filter und Suche zurück.",
+    "viewsTitle": "Raster und Karussell",
+    "views": "Das Raster zeigt mehrere Karten nebeneinander. Im Karussell blätterst du horizontal durch die Karten. Mit den beiden Ansichtsschaltflächen über den Ergebnissen wechselst du die Darstellung.",
+    "detailsTitle": "Details und FilaMan-Links",
+    "details": "Wähle eine Karte für ihre Details. In FilaMan öffnen zeigt den entsprechenden Filament- oder Farbeintrag; Spulenlinks öffnen die verknüpfte Spule. In der Farbbibliothek öffnet Farbe hinzufügen den nativen FilaMan-Farbeditor, ohne Swatch zu verlassen.",
+    "harmoniesTitle": "Farbharmonien",
+    "harmonies": "Wähle ähnliche, komplementäre, analoge, triadische oder geteilte Komplementärfarben. Bei mehrfarbigen Filamenten kannst du eine einzelne Farbe oder den Durchschnitt als Referenz wählen. Transparenz einbeziehen ändert die Farbvorschau. Verglichen werden gespeicherte Farben; das Druckergebnis kann abweichen.",
+    "paletteTitle": "Anheften",
+    "palette": "Die Stecknadel fügt ein Filament oder eine Bibliotheksfarbe deiner Palette zum Vergleichen und schnellen Wiederfinden hinzu. Erneutes Anklicken entfernt den Eintrag. Über das Lesezeichen öffnest du die Palette; Palette leeren entfernt alle Markierungen. Sie bleiben für dein FilaMan-Konto während dieser Browser-Tab-Sitzung erhalten, auch nach dem Neuladen. Der Bestand bleibt unverändert; keine Spule wird reserviert.",
+    "similar": "Nahe beieinanderliegende Farben wirken dezent und abgestimmt. Nutze sie für passende Bauteile oder sanfte Übergänge zwischen Farbtönen.",
+    "complementary": "Gegenüberliegende Farben im Farbkreis erzeugen starken Kontrast. Nutze eine als Hauptfarbe und die andere als Akzent.",
+    "analogous": "Benachbarte Farbtöne im Farbkreis wirken verwandt und ruhig. So erhältst du eine abwechslungsreiche, dennoch stimmige Palette.",
+    "triadic": "Drei gleichmäßig im Farbkreis verteilte Farbtöne ergeben eine lebendige, ausgewogene Kombination. Lass eine Farbe dominieren und nutze die beiden anderen als kleine Akzente.",
+    "split-complementary": "Kombiniere deine Referenzfarbe mit den beiden Nachbarn ihrer Gegenfarbe. Das bewahrt den Kontrast und bietet mehr Abwechslung als eine einzelne Komplementärfarbe."
+  },
+  "help": {
+    "guide": "Bedienelemente und Verwendung von Swatch erklären",
+    "filters": "Angezeigte Filamente oder Farben auswählen",
+    "palette": "Angeheftete Filamente und Farben zum Vergleichen anzeigen",
+    "changes": "Änderungen dieser Swatch-Version anzeigen",
+    "pin": "Zum Vergleichen zur Palette hinzufügen; der Bestand bleibt unverändert",
+    "unpin": "Aus der Palette entfernen; der Bestand bleibt unverändert",
+    "board": "Passende Einträge als Raster anzeigen",
+    "carousel": "Passende Einträge horizontal durchblättern",
+    "ascending": "Aufsteigend sortieren",
+    "descending": "Absteigend sortieren"
   }
 }

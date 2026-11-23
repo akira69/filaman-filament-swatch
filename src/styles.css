@@ -338,7 +338,7 @@ body {
   }
 }
 
-.palette-drawer.open .palette-panel {
+.palette-panel[data-state="open"] {
   transform: translate3d(0, 0, 0);
 }
 

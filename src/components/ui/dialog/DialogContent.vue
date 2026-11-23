@@ -10,32 +10,34 @@ import {
   useForwardPropsEmits,
 } from "reka-ui"
 import { cn } from "@/lib/utils"
+import { useI18n } from "vue-i18n"
+const { t } = useI18n();
 import DialogOverlay from "./DialogOverlay.vue"
 
 defineOptions({
   inheritAttrs: false,
 })
 
-const props = withDefaults(defineProps<DialogContentProps & { class?: HTMLAttributes["class"], showCloseButton?: boolean, placement?: "center" | "side" }>(), {
+const props = withDefaults(defineProps<DialogContentProps & { class?: HTMLAttributes["class"], showCloseButton?: boolean, inline?: boolean, placement?: "center" | "side" }>(), {
   showCloseButton: true,
 })
 const emits = defineEmits<DialogContentEmits>()
 
-const delegatedProps = reactiveOmit(props, "class", "showCloseButton", "placement")
+const delegatedProps = reactiveOmit(props, "class", "showCloseButton", "inline", "placement")
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
 </script>
 
 <template>
-  <DialogPortal>
-    <DialogOverlay class="bg-black/50" />
+  <DialogPortal :disabled="props.inline">
+    <DialogOverlay v-if="!props.inline" class="bg-black/50" />
     <DialogContent
       data-slot="dialog-content"
-      aria-modal="true"
+      :aria-modal="!props.inline"
       v-bind="{ ...$attrs, ...forwarded }"
       :class="
         cn(
-          props.placement === 'side' ? 'fixed inset-y-0 right-0 z-50' : 'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          props.inline ? 'relative min-h-0' : props.placement === 'side' ? 'fixed inset-y-0 right-0 z-50' : 'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
           props.class,
         )"
     >
@@ -47,7 +49,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         class="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       >
         <X />
-        <span class="sr-only">Close</span>
+        <span class="sr-only">{{ t('actions.close') }}</span>
       </DialogClose>
     </DialogContent>
   </DialogPortal>

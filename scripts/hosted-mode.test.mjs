@@ -17,6 +17,8 @@ async function open(options={}){
  page.on('request',async request=>{
   const u=new URL(request.url());requests.push(u.href);const respond=(value,status=200)=>request.respond({status,contentType:'application/json',body:JSON.stringify(value)});
   if(u.origin!==origin){if(process.env.CAPTURE_SWATCH && /(?:iconify\.design|googleapis\.com|gstatic\.com)$/.test(u.hostname))return request.continue();return respond([]);}
+  if(options.failNativeFilters && u.pathname===base+'filaman-native/color-search.js')return respond({},404);
+  if(options.nativeEditor && u.pathname==='/filaments/colors/')return request.respond({contentType:'text/html',body:`<button id="btn-new">New</button><dialog id="modal-container"><form id="modal-form" data-dirty="false"><input id="color-name"><button type="button">Cancel</button></form></dialog><script>document.querySelector('#btn-new').onclick=()=>document.querySelector('dialog').showModal();document.querySelector('button[type=button]').onclick=()=>document.querySelector('dialog').close();</script>`});
   if(u.pathname==='/shell')return request.respond({contentType:'text/html',body:`<html lang="en" data-theme="brand"><head><style>${themes}</style></head><body style="margin:0">${options.mobileHost?'<button id="sidebar-toggle" style="position:fixed;left:7px;top:13px;width:40px;height:40px;z-index:50">Menu</button>':''}<iframe style="width:100%;height:100vh;border:0" src="${base}app/swatch?filaman_hosted=1&filaman_hosted_config=${base}hosted-config&mode=catalog"></iframe></body></html>`});
   if(u.pathname===base+'hosted-config')return respond(options.badConfig?{}:{contract_version:2,mode:'hosted',app_key:'filaman',api_base_path:'/api/v1',app_base_path:base.slice(0,-1)},options.configStatus||200);
   if(u.pathname==='/plugin-fonts.css')return request.respond({contentType:'text/css',body:''});
@@ -58,6 +60,8 @@ async function open(options={}){
     if(options.detailMetrics)Object.assign(item,{raw_material_weight_g:1000,price:8,density_g_cm3:1.06,diameter_mm:1.75});
     if(options.gradient)Object.assign(item,{multi_color_style:'gradient',colors:['#FF0000AA','#BB00B8AA','#006A3FAA','#0000FFAA'].map((hex_code,index)=>({position:index+1,color_id:index+1,color:{hex_code}}))});
    }
+   if(options.splitSpools && u.pathname==='/api/v1/spools')return respond({items:[{id:100,filament_id:17,status_id:2,location_id:1},{id:101,filament_id:17,status_id:1,location_id:null}],page:1,page_size:200,total:2});
+   if(options.countSorting && u.pathname==='/api/v1/spools')return respond({items:[...Array.from({length:2},(_,i)=>({id:100+i,filament_id:17,status_id:1,location_id:null})),...Array.from({length:10},(_,i)=>({id:200+i,filament_id:18,status_id:1,location_id:null}))],page:1,page_size:200,total:12});
    if(options.spoolGroups && u.pathname==='/api/v1/spools'){
     const spool=(id,weight,percent,status_id=1,location_id=null)=>({id,filament_id:17,status_id,location_id,
      metrics:{remaining_percent:percent,effective_remaining_weight_g:weight}});
@@ -78,48 +82,55 @@ async function open(options={}){
  return {page,requests,errors,close:()=>context.close()};
 }
 async function click(page,label){await page.waitForFunction(label=>[...document.querySelectorAll('button')].some(e=>e.textContent.trim()===label),{timeout:5000},label);assert.ok(await page.evaluate(label=>{const e=[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===label);e?.click();return !!e;},label),`missing button ${label}`);}
+async function typeSearch(scope,text,replace=false){
+ await scope.waitForSelector('[data-color-search]:not(:disabled)');
+ await scope.click('[data-color-search]');await scope.waitForSelector('#color-search-input',{visible:true});
+ if(replace)await scope.$eval('#color-search-input',(input,value)=>{input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));},text);
+ else await scope.type('#color-search-input',text);
+ await scope.click('.swatch-color-sidebar header button');await scope.waitForSelector('.swatch-color-sidebar',{hidden:true});
+}
 test('About and What’s New link the FilaMan fork and credit the original project',async()=>{
  const {page,close}=await open();try{
   await page.emulateTimezone('America/Chicago');
   await page.click('button[aria-label="About FilaMan Swatch"]');
-  await page.waitForSelector('[role=dialog]');
-  const links=await page.$$eval('[role=dialog] a',nodes=>nodes.map(a=>[a.textContent.trim(),a.href]));
+  await page.waitForSelector('[data-slot="dialog-content"]');
+  const links=await page.$$eval('[data-slot="dialog-content"] a',nodes=>nodes.map(a=>[a.textContent.trim(),a.href]));
   assert.deepEqual(links,[
    ['akira69/filaman-filament-swatch','https://github.com/akira69/filaman-filament-swatch'],
    ['Disane87/spoolman-filament-swatch','https://github.com/Disane87/spoolman-filament-swatch'],
    ['MIT','https://github.com/Disane87/spoolman-filament-swatch/blob/935d3496df98faaec18e38aa4eba18c43d246c2f/LICENSE'],
    ['Report an issue','https://github.com/akira69/filaman-filament-swatch/issues'],
   ]);
-  assert.match(await page.$eval('[role=dialog]',e=>e.textContent),/Original design by Disane87/);
+  assert.match(await page.$eval('[data-slot="dialog-content"]',e=>e.textContent),/Original design by Disane87/);
   await page.keyboard.press('Escape');
-  await page.waitForSelector('[role=dialog]',{hidden:true});
+  await page.waitForSelector('[data-slot="dialog-content"]',{hidden:true});
   await page.click('button[aria-label="What\'s New"]');
-  await page.waitForSelector('[role=dialog]');
-  const whatsNew=await page.$eval('[role=dialog]',e=>e.textContent);
+  await page.waitForSelector('[data-slot="dialog-content"]');
+  const whatsNew=await page.$eval('[data-slot="dialog-content"]',e=>e.textContent);
   const published=whatsNew.includes(`Released ${releaseDate}`);
   if(!published)assert.ok(whatsNew.includes(`Preview build · ${releaseDate}`));
   const project='https://github.com/akira69/filaman-filament-swatch';
-  assert.equal(await page.$eval('[role=dialog] a',a=>a.href),published?`${project}/releases/tag/filaman-v${releaseNotes.version}`:project);
+  assert.equal(await page.$eval('[data-slot="dialog-content"] a',a=>a.href),published?`${project}/releases/tag/filaman-v${releaseNotes.version}`:project);
   await page.keyboard.press('Escape');
-  await page.waitForSelector('[role=dialog]',{hidden:true});
+  await page.waitForSelector('[data-slot="dialog-content"]',{hidden:true});
   await page.setViewport({width:320,height:680});
   await page.click('button[aria-label="Menu"]');
   await click(page,'About FilaMan Swatch');
-  assert.ok(await page.$eval('[role=dialog]',e=>e.scrollWidth<=e.clientWidth));
+  assert.ok(await page.$eval('[data-slot="dialog-content"]',e=>e.scrollWidth<=e.clientWidth));
  }finally{await close();}
 });
-test('native inventory, search, filter modal, catalog and navigation',async()=>{
+test('native inventory, search, header filters, catalog and navigation',async()=>{
  const {page,requests,errors,close}=await open();try{
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
  if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/inventory.png',fullPage:true});
- await page.type('nav input[type=text]','Blue');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
- await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Blue');
- await page.$eval('nav input[type=text]',e=>{e.value='';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ await typeSearch(page,'Blue');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+ await page.reload({waitUntil:'networkidle0'});assert.equal((new URL(page.url()).searchParams.get('q')??''),'Blue');
+ await typeSearch(page,'',true);
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
- await page.click('button[title="Filters"]');await page.waitForSelector('input[name=material][value=PETG]');await page.click('input[name=material][value=PETG]');await click(page,'Apply filters');
+ await page.waitForSelector('.col-material .fm-header-filter-trigger');await page.click('.col-material .fm-header-filter-trigger');await page.waitForSelector('[data-value="PETG"]');await page.click('[data-value="PETG"]');await page.click('.fm-header-filter-panel.open .fm-btn-primary');
  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
- await page.click('button[title="Filters"]');await click(page,'Reset');await click(page,'Apply filters');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
- await click(page,'Color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));
+ await page.click('[data-clear-filters]');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+ await click(page,'Color library');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));
  if(process.env.CAPTURE_SWATCH)await page.screenshot({path:process.env.CAPTURE_SWATCH+'/catalog.png',fullPage:true});
  assert.equal(await page.$('.card-sub'),null);assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
  await page.reload({waitUntil:'networkidle0'});assert.equal(await page.$$eval('.card-name',x=>x.length),3);
@@ -135,7 +146,7 @@ for(const language of ['en','de','fr'])test(`${language}: profile wins over laun
  }finally{await close();}
 });
 test('inventory forbidden still permits catalog discovery',async()=>{
- const {page,close}=await open({denyInventory:true});try{assert.match(await page.$eval('#discovery-panel',e=>e.innerText),/permission to view inventory/);await click(page,'Browse color catalog');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));}finally{await close();}
+ const {page,close}=await open({denyInventory:true});try{assert.match(await page.$eval('#discovery-panel',e=>e.innerText),/permission to view inventory/);await click(page,'Browse color library');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));}finally{await close();}
 });
 test('native logo and linked spool use shared reel without losing alpha zero',async()=>{
  const {page,errors,close}=await open();try{
@@ -175,11 +186,11 @@ test('invalid config fails closed without inventory requests',async()=>{
 
 test('router history restores destination filters and catalog survives reload',async()=>{
  const {page,close}=await open();try{
- await click(page,'Color catalog');await page.type('nav input[type=text]','Transparent');
- await click(page,'Inventory');await page.type('nav input[type=text]','Blue');
- await page.goBack();await page.waitForFunction(()=>document.querySelector('nav input[type=text]').value==='Transparent');
- await page.goBack();await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'');
- await click(page,'Color catalog');await page.reload({waitUntil:'networkidle0'});assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.ok(await page.evaluate(()=>document.body.innerText.includes('Transparent')));
+ await click(page,'Color library');await typeSearch(page,'Transparent');
+ await click(page,'Inventory');await typeSearch(page,'Blue');
+ await page.goBack();await page.waitForFunction(()=>new URL(location.href).searchParams.get('q')==='Transparent');
+ await page.goBack();await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);assert.equal((new URL(page.url()).searchParams.get('q')??''),'');
+ await click(page,'Color library');await page.reload({waitUntil:'networkidle0'});assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');assert.ok(await page.evaluate(()=>document.body.innerText.includes('Transparent')));
  }finally{await close();}
 });
 test('revoked inventory clears open details and cached projections',async()=>{
@@ -197,17 +208,17 @@ test('catalog details expose assignment usage and native management, with no inv
 test('parent language/theme and bfcache return keep discovery and synchronize currency',async()=>{
  const options={parent:true};const {page,close}=await open(options);try{
  const frame=page.frames().find(f=>f.url().includes('/plugins/'));assert.ok(frame);await frame.waitForSelector('.card-name');
- await frame.type('nav input[type=text]','Transparent');const before=frame.url();
+ await typeSearch(frame,'Transparent');const before=frame.url();
  await page.evaluate(()=>{document.documentElement.dataset.theme='light';document.documentElement.lang='fr';});
- await frame.waitForFunction(()=>document.documentElement.lang==='fr'&&document.documentElement.dataset.theme==='light');assert.equal(frame.url(),before);assert.equal(await frame.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ await frame.waitForFunction(()=>document.documentElement.lang==='fr'&&document.documentElement.dataset.theme==='light');assert.equal(frame.url(),before);assert.equal((new URL(frame.url()).searchParams.get('q')??''),'Transparent');
  await frame.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));await page.evaluate(()=>document.documentElement.dataset.theme='dark');await frame.waitForFunction(()=>document.documentElement.dataset.theme==='dark');
- await page.reload({waitUntil:'networkidle0'});const restored=page.frames().find(f=>f.url().includes('/plugins/'));await restored.waitForSelector('.card-name');assert.equal(await restored.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ await page.reload({waitUntil:'networkidle0'});const restored=page.frames().find(f=>f.url().includes('/plugins/'));await restored.waitForSelector('.card-name');assert.equal((new URL(restored.url()).searchParams.get('q')??''),'Transparent');
  }finally{await close();}
 });
 test('semantic dialog backgrounds are valid in each host theme',async()=>{
  for(const theme of ['brand','light','dark']){const {page,close}=await open();try{
- await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await page.click('button[aria-label="What\'s New"]');await page.waitForSelector('[role=dialog]');
- const color=await page.$eval('[role=dialog]',e=>getComputedStyle(e).backgroundColor);assert.notEqual(color,'rgba(0, 0, 0, 0)');assert.notEqual(color,'transparent');
+ await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);await page.click('button[aria-label="What\'s New"]');await page.waitForSelector('[data-slot="dialog-content"]');
+ const color=await page.$eval('[data-slot="dialog-content"]',e=>getComputedStyle(e).backgroundColor);assert.notEqual(color,'rgba(0, 0, 0, 0)');assert.notEqual(color,'transparent');
  }finally{await close();}}
 });
 test('expired native bootstrap returns to top-level FilaMan login',async()=>{
@@ -218,7 +229,7 @@ test('obsolete project URLs return to discovery and preserve launch parameters',
  await page.waitForFunction(()=>location.pathname.endsWith('/app/swatch'),{timeout:5000});
  assert.doesNotMatch(await page.$eval('nav',e=>e.innerText),/Projects/);
  assert.equal(new URL(page.url()).searchParams.get('mode'),'catalog');
- assert.equal(await page.$eval('nav input[type=text]',e=>e.value),'Transparent');
+ assert.equal((new URL(page.url()).searchParams.get('q')??''),'Transparent');
  assert.equal(await page.$eval('.card-name',e=>e.textContent.trim()),'Transparent');
  assert.deepEqual(errors,[]);
  }finally{await close();}
@@ -267,7 +278,7 @@ test('opaque shaded swatches render identically over every theme surface',async(
 test('discovery mode controls use compact native typography and bundled icons',async()=>{
  const {page,requests,close}=await open();try{
  assert.equal(await page.$eval('.discovery-modes',e=>e.getAttribute('role')),'tablist');
- const controls=await page.$$eval('.discovery-modes button',buttons=>buttons.map(e=>{const s=getComputedStyle(e),icon=e.querySelector('svg');return {name:e.textContent.trim(),family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,icon:!!icon,iconWidth:icon?.getBoundingClientRect().width,hidden:icon?.getAttribute('aria-hidden')};}));
+ const controls=await page.$$eval('.discovery-modes button',buttons=>buttons.map(e=>{const s=getComputedStyle(e),icon=e.querySelector('svg, .color-library-icon');return {name:e.textContent.trim(),family:s.fontFamily,size:s.fontSize,weight:s.fontWeight,icon:!!icon,iconWidth:icon?.getBoundingClientRect().width,hidden:icon?.getAttribute('aria-hidden')};}));
  assert.equal(controls.length,2);for(const c of controls){assert.match(c.family,/Space Grotesk/);assert.equal(c.size,'14px');assert.equal(c.weight,'600');assert.ok(c.icon);assert.ok(c.iconWidth>=18);assert.equal(c.hidden,'true');}
  assert.ok(requests.includes(origin+'/plugin-fonts.css'));assert.ok(!requests.some(u=>u.includes('fonts.googleapis.com')));
  await page.focus('.discovery-modes button:first-child');await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>document.body.innerText.includes('Transparent'));assert.equal(await page.$eval('.discovery-modes button:last-child',e=>e.getAttribute('aria-selected')),'true');await page.keyboard.press('Home');await page.waitForFunction(()=>document.querySelector('[id="board-card-filament:17"]'));assert.equal(await page.$eval('.discovery-modes button:first-child',e=>e.getAttribute('aria-selected')),'true');
@@ -280,10 +291,10 @@ test('a full 1392-color catalog leaves cards and detail content scrollable',asyn
  const cardCount=()=>page.$$eval('.board-card',cards=>cards.length);
  assert.ok(await cardCount()<65,'the initial catalog window should be small');
  assert.equal(await page.$('[id="board-card-color:11391"]'),null);
- await page.type('nav input[type=text]','Catalog 1391');
+ await typeSearch(page,'Catalog 1391');
  await page.waitForFunction(()=>document.querySelectorAll('.board-card').length===1 &&
   document.querySelector('.card-name')?.textContent==='Catalog 1391');
- await page.$eval('nav input[type=text]',e=>{e.value='';e.dispatchEvent(new Event('input',{bubbles:true}));});
+ await typeSearch(page,'',true);
  await page.waitForFunction(()=>document.querySelectorAll('.minimap-dot').length===1392);
  const lastName=await page.$eval('.minimap-dot:last-child',e=>e.title);
  const lastId=`board-card-color:${10000+Number(lastName.slice('Catalog '.length))}`;
@@ -316,11 +327,11 @@ test('a full 1392-color catalog leaves cards and detail content scrollable',asyn
  await page.keyboard.press('Enter');
  await page.waitForSelector('.detail-panel',{timeout:5000});
  assert.equal(await page.$eval('.detail-title',e=>e.textContent),lastName);
- await page.$eval('.detail-body',e=>{e.scrollTop=e.scrollHeight;});assert.ok(await page.$eval('.detail-body',e=>e.scrollTop>0));
+ await page.waitForFunction(()=>{const body=document.querySelector('.detail-body');body.scrollTop=body.scrollHeight;return body.scrollTop>0;});
  await page.setViewport({width:390,height:844});assert.ok(await page.$eval('body',e=>e.scrollWidth<=innerWidth));assert.ok(await page.$eval('.detail-body',e=>e.clientHeight>100));
  await page.$eval('.detail-header button',e=>e.click());
  await page.waitForSelector('.detail-panel',{hidden:true});
- await page.$eval('button[title="Carousel"]',e=>e.click());
+ await page.$eval('button[aria-label="Carousel"]',e=>e.click());
  await page.waitForSelector('.carousel-track');
  const reads=await page.$eval('.carousel-track',track=>{
   const property=Object.getOwnPropertyDescriptor(HTMLElement.prototype,'offsetLeft');
@@ -488,7 +499,7 @@ test('keyboard opens card details and carousel pin shares the RGB row',async()=>
  await page.waitForFunction(()=>document.activeElement?.closest('.detail-panel'),{timeout:5000});
  await page.keyboard.press('Escape');
  await page.waitForSelector('.detail-panel',{hidden:true,timeout:5000});
- await page.click('button[title="Carousel"]');await page.waitForSelector('.card-container .card-name');
+ await page.click('button[aria-label="Carousel"]');await page.waitForSelector('.card-container .card-name');
  assert.deepEqual(await page.$eval('.card-container',card=>[...card.querySelectorAll('.card-actions button')].map(e=>e.offsetHeight)),[28,28]);
  assert.ok(await page.$eval('.card-container',card=>{
   const rgb=card.querySelector('.card-rgb').getBoundingClientRect();
@@ -524,16 +535,16 @@ test('embedded mobile toolbar stays clear of the FilaMan hamburger',async()=>{
 test('a mounted account change discards old query and pins before restoring the new owner',async()=>{
  const options={parent:true};const {page,close}=await open(options);try{
  let frame=page.frames().find(f=>f.url().includes('/plugins/'));await frame.waitForSelector('.card-name');
- await frame.type('nav input[type=text]','Transparent');
+ await typeSearch(frame,'Transparent');
  await frame.waitForFunction(()=>document.querySelectorAll('.board-card').length===1);
  await frame.click('.pin-btn');
  await frame.evaluate(()=>{
   sessionStorage.setItem('filaman-swatch:discovery:2',JSON.stringify({mode:'inventory',filters:{inventory:{search:'Blue'}},pins:[]}));
  });
  options.userId=2;options.currencyFailed=true;await frame.evaluate(()=>window.dispatchEvent(new Event('focus')));
- await page.waitForFunction(()=>{const f=document.querySelector('iframe');return f?.contentDocument?.querySelector('nav input')?.value==='Blue';},{timeout:5000});
+ await page.waitForFunction(()=>{const f=document.querySelector('iframe');return f?.contentWindow && new URL(f.contentWindow.location.href).searchParams.get('q')==='Blue';},{timeout:5000});
  frame=page.frames().find(f=>f.url().includes('/plugins/'));
- assert.equal(await frame.$eval('nav input[type=text]',e=>e.value),'Blue');
+ assert.equal((new URL(frame.url()).searchParams.get('q')??''),'Blue');
  assert.notEqual(new URL(frame.url()).searchParams.get('q'),'Transparent');
  assert.deepEqual(await frame.evaluate(()=>JSON.parse(sessionStorage.getItem('filaman-swatch:discovery:2')).pins),[]);
  assert.equal(await frame.$('.detail-panel'),null);
@@ -542,10 +553,10 @@ test('a mounted account change discards old query and pins before restoring the 
 
 test('resetting native filters restores a valid inventory scope',async()=>{
  const {page,close}=await open();try{
- await page.click('button[title="Filters"]');await page.waitForSelector('select');
- await page.select('select','on_hand_spools');await click(page,'Reset');
- assert.equal(await page.$eval('select',e=>e.value),'filaments');
- await click(page,'Apply filters');assert.equal(new URL(page.url()).searchParams.has('i'),false);
+ await page.waitForSelector('.col-scope .fm-header-filter-trigger');await page.click('.col-scope .fm-header-filter-trigger');
+ await page.click('[data-value="on_hand_spools"]');await page.click('.fm-header-filter-panel.open .fm-btn-primary');
+ assert.equal(new URL(page.url()).searchParams.has('cf'),true);
+ await page.click('[data-clear-filters]');assert.equal(new URL(page.url()).searchParams.has('i'),false);assert.equal(new URL(page.url()).searchParams.has('cf'),false);
  }finally{await close();}
 });
 
@@ -554,7 +565,7 @@ for(const failProfileAfterDenial of [false,true])test(`focus removes revoked inv
   await page.$eval('[id="board-card-filament:17"] .pin-btn',button=>button.click());
   await page.waitForSelector('.palette-panel .chip-name');
   await page.$eval('.palette-header button',button=>button.click());
-  await click(page,'Color catalog');
+  await click(page,'Color library');
   await page.waitForSelector('[id="board-card-color:17"]');
   Object.assign(options,{denyInventory:true,failProfileAfterDenial});
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
@@ -568,7 +579,7 @@ for(const denyCatalog of [false,true])test(`a session change during catalog pagi
  const options={};const {page,close}=await open(options);try{
   options.switchDuringCatalog=true;
   options.denyCatalog=denyCatalog;
-  await click(page,'Color catalog');
+  await click(page,'Color library');
   await page.waitForFunction(()=>sessionStorage.getItem('filaman-swatch:discovery:2')!==null,{timeout:5000});
   assert.equal(await page.$eval('#discovery-tab-inventory',e=>e.getAttribute('aria-selected')),'true');
  }finally{await close();}
@@ -579,7 +590,7 @@ test('a saved inventory pin can open its details after reloading in catalog',asy
   await page.$eval('[id="board-card-filament:17"] .pin-btn',e=>e.click());
   await page.waitForSelector('.palette-panel .chip-name');
   await page.$eval('.palette-header button',e=>e.click());
-  await click(page,'Color catalog');
+  await click(page,'Color library');
   await page.reload({waitUntil:'networkidle0'});
   await page.waitForSelector('.palette-chip',{timeout:5000});
   await page.$eval('.chip-target',e=>e.click());
@@ -613,7 +624,7 @@ for(const closeDrawer of [false,true])test(`a pending pin cannot override the la
     await page.$$eval('.board-card .pin-btn', nodes => nodes.slice(0,2).forEach(node=>node.click()));
     await page.waitForFunction(()=>document.querySelectorAll('.chip-target').length===2);
     await page.$eval('.palette-header button', node=>node.click());
-    await click(page,'Color catalog');
+    await click(page,'Color library');
     await page.waitForSelector('[id="board-card-color:17"]');
     await page.$eval('button[aria-label="Open palette"]', node=>node.click());
     options.inventoryGate = new Promise(resolve=>{release=resolve});
@@ -668,10 +679,10 @@ test('mobile cards fill their tracks and results own the view controls', async (
    assert.ok(layout.columns===1?Math.abs(layout.first-layout.width)<1:Math.abs(layout.right)<1);
    assert.ok(await page.$eval('body',element=>element.scrollWidth<=innerWidth));
   }
-  assert.equal(await page.$$eval('button[title="Carousel"]',buttons=>buttons.length),1);
-  await page.focus('button[title="Carousel"]');
+  assert.equal(await page.$$eval('button[aria-label="Carousel"]',buttons=>buttons.length),1);
+  await page.focus('button[aria-label="Carousel"]');
   await page.keyboard.press('Enter');
-  await page.waitForFunction(()=>document.activeElement?.matches('button[title="Carousel"][aria-pressed=true]'));
+  await page.waitForFunction(()=>document.activeElement?.matches('button[aria-label="Carousel"][aria-pressed=true]'));
  } finally { await close(); }
 });
 
@@ -693,7 +704,10 @@ test('discovery dialogs contain focus, close on Escape, and restore focus', asyn
    await page.waitForSelector(panel,{hidden:true});
    await page.waitForFunction(trigger=>document.activeElement?.matches(trigger),{timeout:5000},trigger);
   };
-  await verifyDialog('button[title="Filters"]','.filter-dialog');
+  await page.setViewport({width:390,height:844});
+  await page.waitForSelector('[data-color-search]:not(:disabled)');
+  await verifyDialog('[data-color-search]','.swatch-color-sidebar');
+  await page.setViewport({width:1400,height:900});
   await verifyDialog('.board-card:first-child .card-name','.detail-panel');
   await verifyDialog('button[aria-label="Open palette"]','.palette-panel');
  } finally { await close(); }
@@ -705,9 +719,9 @@ test('catalog search can be cleared from empty results', async () => {
   assert.match(await page.$eval('#discovery-panel',element=>element.innerText),/No colors match/);
   await click(page,'Clear search');
   await page.waitForSelector('.board-card');
-  assert.equal(await page.$eval('nav input[type=text]',input=>input.value),'');
+  assert.equal(await page.$eval('#color-search-input',input=>input.value),'');
   assert.equal(new URL(page.url()).searchParams.has('q'),false);
-  assert.ok(await page.evaluate(()=>document.activeElement?.matches('nav input')));
+  assert.ok(await page.evaluate(()=>document.activeElement?.matches('#color-search-input')));
  } finally { await close(); }
 });
 
@@ -729,11 +743,11 @@ test('filter action uses readable contrast in all three FilaMan themes', async (
  const {page,close}=await open({parent:true});
  try {
   const frame=page.frames().find(frame=>frame.url().includes('/plugins/'));
-  await frame.click('button[title="Filters"]');
+  await frame.waitForSelector('[data-color-search]:not(:disabled)');
   for (const theme of ['brand','light','dark']) {
    await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;},theme);
    await frame.waitForFunction(theme=>document.documentElement.dataset.theme===theme,{},theme);
-   const contrast=await frame.$eval('.apply-filters',button=>{
+   const contrast=await frame.$eval('[data-color-search]',button=>{
     const canvas=document.createElement('canvas').getContext('2d');
     const luminance=value=>{
      canvas.clearRect(0,0,1,1);
@@ -751,4 +765,241 @@ test('filter action uses readable contrast in all three FilaMan themes', async (
    assert.ok(contrast>=4.5,`${theme}: ${contrast.toFixed(2)}:1`);
   }
  } finally { await close(); }
+});
+
+for (const language of ['en','de','fr']) test(`${language}: guide and controls render in the FilaMan language`,async()=>{
+ const names={en:{guide:'Filaman Swatch Guide',pinning:'Pinning',palette:'Pinned palette',clear:'Clear palette',details:'Details',changes:"What's New"},de:{guide:'Filaman Swatch Anleitung',pinning:'Anheften',palette:'Gepinnte Palette',clear:'Palette leeren',details:'Details',changes:"Was gibt's Neues"},fr:{guide:'Guide Filaman Swatch',pinning:'Épinglage',palette:'Palette',clear:'Vider la palette',details:'Détails',changes:'Nouveautés'}}[language];
+ const {page,errors,close}=await open({language});try{
+  await page.waitForSelector('.pin-btn');
+  assert.ok(await page.$eval('.pin-btn',e=>e.title.length>20));
+  await page.click('.pin-btn');
+  await page.waitForSelector('.palette-panel');
+  assert.equal(await page.$eval('.palette-title h2',e=>e.textContent.trim()),names.palette);
+  await click(page,names.clear);
+  await page.waitForSelector('[data-slot="dialog-content"]',{hidden:true});
+  await page.waitForFunction(()=>getComputedStyle(document.body).pointerEvents !== 'none');
+  await page.waitForSelector('nav button[data-guide]');
+  assert.equal(await page.$eval('nav button[data-guide]',e=>e.textContent.trim()),'');
+  assert.equal(await page.$('nav button[title="Filters"]'),null);
+  assert.ok(await page.$('[data-color-search]'));
+  assert.equal(await page.$eval('nav button[data-guide]',e=>e.getAttribute('aria-label')),names.guide);
+  assert.ok(await page.$('nav button[data-guide] svg.lucide-book-open'));
+  await page.focus('nav button[data-guide]');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('[data-slot="dialog-content"] [data-guide-section="harmonies"]');
+  assert.ok(await page.$eval('[data-slot="dialog-content"]',e=>!e.textContent.includes('guide.')));
+  assert.equal(await page.$eval('[data-slot="dialog-content"] h2',e=>e.textContent.trim()),names.guide);
+  assert.equal(await page.$$eval('[data-slot="dialog-content"] h4',headings=>headings.length),0);
+  assert.ok(await page.$$eval('.guide-section h3',headings=>headings.every(heading=>getComputedStyle(heading).textAlign==='left' && !/^\d/.test(heading.textContent.trim()))));
+  assert.ok(await page.$$eval('[data-color-lesson] dt',titles=>titles.every(title=>!!title.lastElementChild?.querySelector('svg'))));
+  assert.equal(await page.$$eval('[data-color-lesson] dt svg',icons=>new Set(icons.map(icon=>Math.round(icon.getBoundingClientRect().right))).size),1);
+  assert.ok(await page.$eval('[data-slot="dialog-content"]',e=>e.getBoundingClientRect().width>=800),'desktop guide should use the available width');
+  assert.ok(await page.$eval('.guide-body',e=>e.scrollHeight>e.clientHeight && e.clientHeight>100));
+  assert.equal(await page.$$eval('.guide-section',sections=>sections.slice(0,-1).filter(section=>parseFloat(getComputedStyle(section).borderBottomWidth)>0).length),5);
+  assert.ok(await page.$$eval('[data-color-lesson]',rows=>rows.every(row=>{const title=row.querySelector('dt'),copy=row.querySelector('dd');const content=row.closest('section').querySelector('p').getBoundingClientRect();return title.getBoundingClientRect().right<copy.getBoundingClientRect().left && Math.abs(copy.getBoundingClientRect().left-content.left)<1 && getComputedStyle(title).textAlign==='right';})),'color-mode titles should be right aligned in the left column, beside their descriptions');
+  assert.ok(await page.$eval('[data-guide-section=palette] h3',(e,title)=>e.textContent.trim().endsWith(title),names.pinning));
+  assert.equal(await page.$('.guide-footer p'),null);
+  assert.equal(await page.$$eval('[data-slot="dialog-content"] [data-color-lesson]',items=>items.length),5);
+  assert.ok(await page.$$eval('[data-slot="dialog-content"] [data-color-lesson] dd',items=>items.every(item=>item.textContent.length>30)));
+  for(const icon of ['circle-dot','arrow-left-right','blend','triangle','split'])assert.ok(await page.$(`[data-color-lesson] dt svg.lucide-${icon}[aria-hidden=true]`));
+  assert.ok(await page.$('[data-guide-section=browse] .color-library-icon[aria-hidden=true]'));
+  assert.ok(await page.$('#discovery-tab-catalog .color-library-icon[aria-hidden=true]'));
+  assert.ok(await page.$('nav .app-brand .color-library-icon[aria-hidden=true]'));
+  for(const icon of ['boxes','search','arrow-up','arrow-down','layout-grid','gallery-horizontal','pin','pin-off','bookmark','trash-2'])assert.ok(await page.$(`[data-guide-section] li svg.lucide-${icon}[aria-hidden=true]`));
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[data-slot="dialog-content"]',{hidden:true});
+  assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-guide')),true);
+  await page.click('button[aria-label="'+names.changes+'"]');
+  await page.waitForSelector('[data-slot="dialog-content"]');
+  assert.ok(!(await page.$eval('[data-slot="dialog-content"]',e=>e.textContent)).includes('changelog.'));
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('[data-slot="dialog-content"]',{hidden:true});
+  await page.setViewport({width:390,height:844});
+  await page.focus('nav button[data-guide]');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('[data-slot="dialog-content"] [data-guide-section="palette"]');
+  assert.ok(await page.$eval('[data-slot="dialog-content"]',e=>e.getBoundingClientRect().width<=innerWidth));
+  assert.ok(await page.$eval('.guide-footer button',e=>{const rect=e.getBoundingClientRect();return rect.top>=0 && rect.bottom<=innerHeight;}),'Close must remain visible without scrolling');
+  await page.waitForFunction(()=>document.querySelector('[data-slot="dialog-content"]')?.getAnimations({subtree:true}).every(animation=>animation.playState!=='running'));
+  if(process.env.CAPTURE_GUIDE)await page.screenshot({path:`${process.env.CAPTURE_GUIDE}/guide-${language}.png`});
+  assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+
+test('host language remains selected after focus refresh and updates an open guide',async()=>{
+ const options={parent:true};const {page,close}=await open(options);try{
+  const frame=page.frames().find(f=>f.url().includes('/plugins/'));
+  await frame.waitForSelector('nav button[data-guide]');
+  await typeSearch(frame,'Transparent');
+  await frame.click('nav button[data-guide]');
+  await frame.waitForSelector('[data-slot="dialog-content"] [data-guide-section=harmonies]');
+  for(const [language,title] of [['de','Filaman Swatch Anleitung'],['fr','Guide Filaman Swatch'],['en','Filaman Swatch Guide']]){
+   await page.evaluate(language=>document.documentElement.lang=language,language);
+   await frame.waitForFunction(language=>document.documentElement.lang===language,{},language);
+   await frame.evaluate(()=>window.dispatchEvent(new Event('focus')));
+   await page.waitForNetworkIdle();
+   assert.equal(await frame.$eval('html',e=>e.lang),language);
+   assert.equal(await frame.$eval('[data-slot="dialog-content"] h2',e=>e.textContent.trim()),title);
+   assert.equal((new URL(frame.url()).searchParams.get('q')??''),'Transparent');
+  }
+ }finally{await close();}
+});
+
+for (const width of [390,1400]) test(`pin opens a visible, usable palette at ${width}px`, async()=>{
+ const {page,close}=await open();try{
+  await page.setViewport({width,height:844});
+  await page.waitForSelector('.board-card .pin-btn');
+  await page.click('.board-card .pin-btn');
+  await page.waitForSelector('.palette-panel .chip-name');
+  await page.waitForFunction(()=>{const r=document.querySelector('.palette-panel')?.getBoundingClientRect();return r && r.left>=0 && r.right<=innerWidth+1;},{timeout:2000});
+  const bounds=await page.$eval('.palette-panel',panel=>{
+   const r=panel.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width,viewport:innerWidth};
+  });
+  assert.ok(bounds.left>=0 && bounds.right<=bounds.viewport+1,JSON.stringify(bounds));
+  await page.click('.palette-header button');
+  await page.waitForSelector('.palette-panel',{hidden:true});
+  assert.equal(await page.$eval('.board-card .pin-btn',button=>button.getAttribute('aria-pressed')),'true');
+ }finally{await close();}
+});
+
+
+test('native color sidebar narrows cards, filters all stops, restores state, and clears zero results',async()=>{
+ const {page,errors,close}=await open();try{
+  await page.waitForSelector('[data-color-search]:not(:disabled)');
+  const before=await page.$eval('#discovery-panel',e=>e.getBoundingClientRect().width);
+  await page.click('[data-color-search]');await page.waitForSelector('.swatch-color-sidebar');
+  assert.ok(await page.$eval('#discovery-panel',(e,before)=>e.getBoundingClientRect().width<before-300,before));
+  assert.equal(await page.$eval('.swatch-color-sidebar',e=>e.getAttribute('aria-modal')),'false');
+  assert.equal(await page.$eval('#color-search-input',e=>document.activeElement===e),true);
+  await page.click('.swatch-color-panel [data-color-preset="green"]');
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===0);
+  assert.ok(await page.$('[data-clear-filters]:not(:disabled)'));
+  await page.click('[data-clear-filters]');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+  await page.click('.swatch-color-panel [data-color-preset="red"]');
+  await page.click('.swatch-color-panel input[type=checkbox]');
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+  assert.match(await page.$eval('.card-name',e=>e.textContent),/Red pair/);
+  await page.focus('.swatch-color-panel input[type=checkbox]');await page.keyboard.press('Escape');await page.waitForSelector('.swatch-color-sidebar',{hidden:true});
+  assert.equal(await page.$eval('[data-color-search]',e=>document.activeElement===e),true);
+  assert.ok(new URL(page.url()).searchParams.has('cf'));
+  await page.reload({waitUntil:'networkidle0'});await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+  assert.match(await page.$eval('.card-name',e=>e.textContent),/Red pair/);
+  await click(page,'Color library');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+  await page.click('[data-color-search]');await page.type('#color-search-input','Transparent');
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+  await page.click('[data-clear-filters]');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+  assert.deepEqual(errors,[]);
+ }finally{await close();}
+});
+
+
+test('header selections replace legacy facet URLs and show restored choices',async()=>{
+ const {page,close}=await open({query:'&m=PLA'});try{
+  await page.waitForSelector('.col-material .fm-header-filter-trigger');await page.click('.col-material .fm-header-filter-trigger');
+  assert.equal(await page.$eval('[data-value="PLA"]',e=>e.checked),true);
+  await page.click('.fm-header-filter-panel.open .fm-header-filter-selection-actions button:nth-child(2)');await page.click('[data-value="PETG"]');await page.click('.fm-header-filter-panel.open .fm-btn-primary');
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===1);
+  assert.match(await page.$eval('.card-name',e=>e.textContent),/Unknown/);
+  assert.equal(new URL(page.url()).searchParams.has('m'),false);
+ }finally{await close();}
+});
+test('inventory scope sorts spool counts numerically',async()=>{
+ const {page,close}=await open({countSorting:true});try{
+  await page.waitForSelector('.col-scope .fm-header-sort-trigger');
+  await page.click('.col-scope .fm-header-sort-trigger');
+  assert.deepEqual(await page.$$eval('.card-name',names=>names.map(e=>e.textContent.trim())),['Blue','Red pair','Unknown']);
+  await page.click('.col-scope .fm-header-sort-trigger');
+  assert.deepEqual(await page.$$eval('.card-name',names=>names.map(e=>e.textContent.trim())),['Unknown','Red pair','Blue']);
+ }finally{await close();}
+});
+
+
+test('filter controls share one desktop row; results and Add color belong to tabs',async()=>{
+ const {page,close}=await open();try{
+  await page.waitForSelector('[data-color-search]:not(:disabled)');
+  assert.equal(await page.$('nav input'),null);
+  assert.equal(await page.$('[data-clear-filters]'),null);
+  for(const mode of ['inventory','catalog']){
+   await page.click(`#discovery-tab-${mode}`);
+   const layout=await page.evaluate(()=>{
+    const box=selector=>document.querySelector(selector).getBoundingClientRect().toJSON();
+    return {views:box('.discovery-view-modes'),headers:box('.discovery-header-scroll'),count:box('.results-count'),tabs:box('.discovery-mode-row'),color:box('[data-color-search]')};
+   });
+   assert.ok(await page.$eval('.discovery-controls',e=>e.getBoundingClientRect().height<=49),'stacking controls must not grow the row');
+   assert.ok(await page.$eval('.col-name',cell=>{const label=document.createRange();label.selectNodeContents(cell.firstChild);return cell.querySelector('.fm-header-filter-wrap').getBoundingClientRect().top>=label.getBoundingClientRect().bottom;}),'buttons belong below the label');
+   const cy=rect=>rect.y+rect.height/2;
+   assert.ok(Math.abs(cy(layout.views)-cy(layout.color))<2);
+   assert.ok(Math.abs(cy(layout.headers)-cy(layout.color))<2);
+   assert.ok(layout.views.right<=layout.headers.left);
+   assert.ok(layout.headers.right<=layout.color.left+1);
+   assert.ok(Math.abs(layout.count.right-layout.tabs.right)<1);
+   assert.ok(Math.abs(cy(layout.count)-cy(layout.tabs))<2);
+   assert.ok(await page.$eval('[data-color-search]',e=>Math.abs(e.getBoundingClientRect().right-e.parentElement.getBoundingClientRect().right)<1));
+   if(mode==='catalog')assert.ok(await page.$eval('[data-add-color]',e=>{const row=e.closest('.discovery-mode-row');return !!row&&e.getBoundingClientRect().right<=row.querySelector('.results-count').getBoundingClientRect().left;}));
+  }
+  await typeSearch(page,'Transparent');await page.waitForSelector('[data-clear-filters]');
+  assert.equal(await page.$eval('[data-clear-filters] svg path',e=>e.getAttribute('d')),'M3 4h18l-7 8v2M10 18v-6L3 4m13 12 5 5m0-5-5 5');
+  await page.click('[data-clear-filters]');await page.waitForSelector('[data-clear-filters]',{hidden:true});
+  assert.equal(await page.$eval('[data-color-search]',e=>document.activeElement===e),true);
+ }finally{await close();}
+});
+
+
+for(const [language,labels] of Object.entries({en:['Contains','Apply','Green'],de:['Enthält','Übernehmen','Grün'],fr:['Contient','Appliquer','Vert']}))test(`${language}: native filter menus and wheel use the host language`,async()=>{
+ const {page,close}=await open({language});try{
+  await page.waitForSelector('.col-name .fm-header-filter-trigger');await page.click('.col-name .fm-header-filter-trigger');
+  assert.equal(await page.$eval('.fm-header-filter-panel.open option:checked',e=>e.textContent.trim()),labels[0]);
+  assert.equal(await page.$eval('.fm-header-filter-panel.open .fm-btn-primary',e=>e.textContent.trim()),labels[1]);
+  await page.keyboard.press('Escape');await page.click('[data-color-search]');
+  assert.equal(await page.$eval('.swatch-color-panel [data-color-preset="green"]',e=>e.textContent.trim()),labels[2]);
+ }finally{await close();}
+});
+for(const direction of ['legacy-location','legacy-scope'])test(`${direction}: stock and location filters cannot match different spools`,async()=>{
+ const {page,close}=await open({splitSpools:true,query:direction==='legacy-location'?'&l=Shelf':'&i=on_hand_spools'});try{
+  const key=direction==='legacy-location'?'scope':'location',value=direction==='legacy-location'?'on_hand_spools':'Shelf';
+  await page.waitForSelector(`.col-${key} .fm-header-filter-trigger`);await page.click(`.col-${key} .fm-header-filter-trigger`);
+  await page.click(`.fm-header-filter-panel.open [data-value="${value}"]`);await page.click('.fm-header-filter-panel.open .fm-btn-primary');
+  assert.equal(await page.$('[id="board-card-filament:17"]'),null);
+ }finally{await close();}
+});
+test('saved column filters can be cleared when the native module is unavailable',async()=>{
+ const cf={name:{type:'text',operator:'contains',value:'Blue'}};
+ const {page,close}=await open({failNativeFilters:true,query:'&cf='+encodeURIComponent(JSON.stringify(cf))});try{
+  await page.waitForSelector('[role=alert]');
+  assert.ok(await page.$('[data-clear-filters]'),'stored filters must keep their Clear action');
+  await page.click('[data-clear-filters]');await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);
+  assert.equal(new URL(page.url()).searchParams.has('cf'),false);
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'discovery-panel');
+ }finally{await close();}
+});
+
+test('background refresh preserves an unapplied filter and focus',async()=>{
+ const {page,close}=await open();try{
+  await page.waitForSelector('.col-material .fm-header-filter-trigger');await page.click('.col-material .fm-header-filter-trigger');
+  const choice='.fm-header-filter-panel.open [data-value="PLA"]';await page.click(choice);
+  const refreshed=page.waitForResponse(response=>new URL(response.url()).pathname==='/api/v1/filaments');
+  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await refreshed;await page.waitForNetworkIdle();
+  assert.equal(await page.$eval(choice,e=>e.checked),true);
+  assert.equal(await page.$eval(choice,e=>document.activeElement===e),true);
+  await page.click('.fm-header-filter-panel.open .fm-btn-primary');assert.ok(new URL(page.url()).searchParams.get('cf')?.includes('PLA'));
+ }finally{await close();}
+});
+test('Add color preserves recovery after native controls fail',async()=>{
+ const options={failNativeFilters:true,nativeEditor:true,query:'&mode=catalog'};
+ const {page,close}=await open(options);try{
+  await page.waitForSelector('[role=alert]');await page.click('[data-add-color]');
+  const handle=await page.waitForSelector('.native-color-editor-frame:not([hidden])');const editor=await handle.contentFrame();await editor.click('button[type=button]');
+  await page.waitForSelector('.native-color-editor-frame',{hidden:true});assert.ok(await page.$('[role=alert]'));
+  options.failNativeFilters=false;await page.click('[role=alert] button');await page.waitForSelector('[data-color-search]:not(:disabled)');
+ }finally{await close();}
+});
+
+test('clearing legacy filters also resets native column menus',async()=>{
+ const {page,close}=await open({query:'&m=PETG'});try{
+  await page.waitForSelector('.col-material .fm-header-filter-trigger');await page.click('.col-material .fm-header-filter-trigger');
+  assert.equal(await page.$eval('.fm-header-filter-panel.open [data-value="PETG"]',e=>e.checked),true);
+  await page.keyboard.press('Escape');await page.click('[data-clear-filters]');
+  await page.waitForFunction(()=>document.querySelectorAll('.card-name').length===3);await page.click('.col-material .fm-header-filter-trigger');
+  assert.equal(await page.$eval('.fm-header-filter-panel.open [data-value="PETG"]',e=>e.checked),false);
+ }finally{await close();}
 });

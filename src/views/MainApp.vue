@@ -4,17 +4,15 @@
       <!-- Top Navigation Bar -->
       <AppNavbar
         :pinned-count="pinnedItems.length"
-        :search-query="filters.search"
         @open-palette="paletteOpen = true"
         @open-changelog="pluginInfo?.open('changes')"
         @open-about="pluginInfo?.open('about')"
-        @openFilterModal="filterModalOpen = true"
-        @search="filters.search = $event"
+        @open-guide="trigger => { guideTrigger = trigger; guideOpen = true; }"
       />
 
       <!-- Router Outlet -->
       <div
-        class="router-content flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-1 sm:py-1.5"
+        class="router-content flex flex-col flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-1 sm:py-1.5"
       >
         <RouterView class="flex-1 min-h-0" />
       </div>
@@ -32,6 +30,7 @@
     />
 
     <PluginInfoDialog ref="pluginInfo" />
+    <GuideDialog :is-open="guideOpen" :trigger="guideTrigger" @close="guideOpen = false" />
 
     <!-- Detail Panel -->
     <FilamentDetailPanel
@@ -55,6 +54,7 @@ import { useFilaments } from "../composables/useFilaments";
 import AppNavbar from "../components/AppNavbar.vue";
 import PaletteDrawer from "../components/PaletteDrawer.vue";
 import PluginInfoDialog from "../components/PluginInfoDialog.vue";
+import GuideDialog from "../components/GuideDialog.vue";
 import { FilamentDetailPanel } from "@/components/filament-detail";
 import type { FilamentCard } from "../composables/useFilaments";
 const { t, locale } = useI18n();
@@ -71,7 +71,8 @@ const paletteOpen = ref(false);
 const selectedFilament = ref<FilamentCard | null>(null);
 watch([allFilaments,mode],()=>{if(selectedFilament.value)selectedFilament.value=allFilaments.value.find(item=>item.id===selectedFilament.value?.id)??null;});
 const pluginInfo = ref<InstanceType<typeof PluginInfoDialog> | null>(null);
-const filterModalOpen = ref(false);
+const guideOpen = ref(false);
+const guideTrigger = ref<HTMLElement>();
 
 // RGB is now always displayed (no toggle needed)
 
@@ -98,7 +99,6 @@ provide('pinnedIds', pinnedIds);
 provide('selectedFilament', selectedFilament);
 provide('togglePin', togglePin);
 provide('selectFilament', selectFilament);
-provide('filterModalOpen', filterModalOpen);
 
 // Detail panel labels
 const detailLabels = computed(() => ({
@@ -144,7 +144,7 @@ watch(
   (items, prev) => {
     if (!items.length) {
       paletteOpen.value = false;
-    } else if ((prev?.length ?? 0) === 0 && !selectedFilament.value && !filterModalOpen.value) {
+    } else if ((prev?.length ?? 0) === 0 && !selectedFilament.value) {
       paletteOpen.value = true;
     }
   },

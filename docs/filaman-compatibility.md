@@ -23,8 +23,18 @@ Swatch loads them when a detail view opens and uses its existing wheel on hosts
 without these assets. Set `SHARED_HARMONY_DIR` to a built FilaMan static directory
 to run the shared-wheel browser test with `npm test`.
 
-No FilaMan database migrations, native editing, SpoolmanAPI plugin, external
-catalog service or analytics is required by this edition.
+No FilaMan database migrations, SpoolmanAPI plugin, external catalog service
+or analytics is required by this edition.
+
+## FilaMan Swatch 1.2.0 requirement
+
+This release requires FilaMan 2.4.0 or later. Add color opens the existing
+`/filaments/colors/` editor inside a same-origin iframe, retaining the host’s
+validation and save behavior. The integration uses the native `btn-new`,
+`modal-container`, `modal-form`, and `color-name` elements and waits for form
+binding before opening. It does not duplicate native editor fields or POST logic.
+Both the existing dialog and the improved RGB/wheel dialog from the Color Library
+work were exercised through real saves, refresh, reload, Cancel, and Escape.
 
 ## FilaMan Swatch 1.1.1 requirement
 

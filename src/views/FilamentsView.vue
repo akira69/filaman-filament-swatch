@@ -1,24 +1,18 @@
 <template>
-  <div class="flex flex-1 flex-col gap-3 sm:gap-6 min-h-0">
+  <div class="flex flex-1 flex-col gap-3 min-h-0">
+    <div class="discovery-mode-row">
     <div class="discovery-modes" role="tablist" :aria-label="t('discovery.mode')">
       <Button v-for="choice in ['inventory','catalog'] as const" :key="choice" class="mode-button" size="sm" variant="ghost" role="tab" :id="`discovery-tab-${choice}`" aria-controls="discovery-panel" :aria-selected="mode === choice" :tabindex="mode === choice ? 0 : -1" @keydown="onModeKeydown" @click="setDiscoveryMode(choice)">
-        <component :is="choice === 'inventory' ? Boxes : Palette" :size="18" class="size-[18px]" aria-hidden="true" />
+        <component :is="choice === 'inventory' ? Boxes : ColorLibraryIcon" :size="18" class="size-[18px]" aria-hidden="true" />
         {{ t(`discovery.${choice}`) }}
       </Button>
     </div>
-    <!-- Filter Modal (opened via navbar) -->
-    <FilterModal
-      :is-open="filterModalOpen ?? false"
-      :initial-filters="filters"
-      :mode="mode"
-      :vendor-options="vendorOptions"
-      :material-options="materialOptions"
-      :location-options="locationOptions"
-      @close="closeFilterModal"
-      @apply="applyFilters"
-    />
-
-    <section id="discovery-panel" role="tabpanel" :aria-labelledby="`discovery-tab-${mode}`" tabindex="0" class="flex flex-1 flex-col gap-3 sm:gap-6 min-h-0">
+    <div class="discovery-tab-actions"><div ref="addColorHost"/><span class="results-count" role="status">{{countLabel}}</span></div>
+    </div>
+    <DiscoveryControls :mode="mode" :filters="filters" :items="allFilaments" :view-mode="viewMode ?? 'board'" :open="colorOpen" :color-host="colorHost" :add-color-host="addColorHost" :active="!!filters.search || hasFacets"
+      @toggle-color="colorOpen = !colorOpen" @change-view="changeView" @clear="clearFilters" @catalog-changed="loadMode('catalog')"/>
+    <div class="discovery-workspace flex min-h-0 flex-1 gap-4">
+    <section id="discovery-panel" role="tabpanel" :aria-labelledby="`discovery-tab-${mode}`" tabindex="0" class="flex min-w-0 flex-1 flex-col gap-3 sm:gap-6 min-h-0">
       <div v-if="loading && allFilaments.length === 0" class="text-sm text-[rgb(var(--text-muted))]">
         {{ t("status.loading") }}
       </div>
@@ -45,14 +39,9 @@
         <FilamentCarousel
           v-if="viewMode === 'carousel'"
           :items="filtered"
-          :count-label="countLabel"
           :labels="cardLabels"
-          :filters="filters"
-          :sort-labels="sortLabels"
-          :view-mode="viewMode"
           @togglePin="togglePin"
           @selectFilament="selectFilament"
-          @changeView="changeView"
           :pinned-ids="pinnedIds ?? new Set<string>()"
         />
 
@@ -61,26 +50,26 @@
           :filaments="filtered"
           :pinned-ids="pinnedIds ?? new Set<string>()"
           :labels="boardLabels"
-          :filters="filters"
-          :sort-labels="sortLabels"
-          :view-mode="viewMode"
-          @changeView="changeView"
-          :title="countLabel"
           @togglePin="togglePin"
           @selectFilament="selectFilament"
         />
       </div>
     </section>
+    <ColorSearchSidebar :open="colorOpen" :filters="filters" :mode="mode" :count="countLabel" :active="!!filters.search || hasFacets" @close="closeColorSearch" @clear="clearFilters" @host="colorHost = $event"/>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, nextTick } from "vue";
-import { Boxes, Palette } from "lucide-vue-next";
+import ColorLibraryIcon from "@/components/ColorLibraryIcon.vue";
+import { computed, inject, nextTick, ref } from "vue";
+import { Boxes } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "vue-i18n";
 import { defaultDiscoveryFacets, useFilaments } from "../composables/useFilaments";
-import FilterModal from "../components/FilterModal.vue";
+import DiscoveryControls from "../components/DiscoveryControls.vue";
+import ColorSearchSidebar from "../components/ColorSearchSidebar.vue";
+import { nativeFilters, readColumnFilters } from '@/filaman/color-search';
 import FilamentCarousel from "../components/FilamentCarousel.vue";
 import FilamentBoard from "../components/FilamentBoard.vue";
 import type { FilamentCard } from "../composables/useFilaments";
@@ -88,12 +77,9 @@ import type { Ref } from "vue";
 
 const { t } = useI18n();
 const {
-  mode, setDiscoveryMode, refresh,
+  mode, setDiscoveryMode, refresh, loadMode,
   filtered,
   filters,
-  vendorOptions,
-  materialOptions,
-  locationOptions,
   loading,
   error,
   errorStatus,
@@ -103,7 +89,17 @@ const {
 // Inject shared state from MainApp
 const viewMode = inject<Ref<"carousel" | "board">>("viewMode");
 const pinnedIds = inject<Ref<Set<string>>>("pinnedIds");
-const filterModalOpen = inject<Ref<boolean>>("filterModalOpen");
+const colorOpen=ref(false);
+const addColorHost=ref<HTMLElement|null>(null);
+const colorHost=ref<HTMLElement|null>(null);
+function closeColorSearch(){if(!colorOpen.value)return;colorOpen.value=false;void nextTick(()=>document.querySelector<HTMLButtonElement>('[data-color-search]')?.focus());}
+function clearFilters(){
+ filters.search='';Object.assign(filters,defaultDiscoveryFacets());
+ void nextTick(()=>{
+  const target=document.querySelector<HTMLElement>(colorOpen.value?'#color-search-input':'[data-color-search]');
+  (target&&!target.matches(':disabled')?target:document.getElementById('discovery-panel'))?.focus();
+ });
+}
 
 const togglePin = inject<(filament: { id: string }) => void>("togglePin");
 const selectFilament = inject<(filament: FilamentCard) => void>("selectFilament");
@@ -111,14 +107,15 @@ const selectFilament = inject<(filament: FilamentCard) => void>("selectFilament"
 const permissionDenied = computed(() => errorStatus.value === 403);
 const hasFacets = computed(() => {
   const defaults = defaultDiscoveryFacets();
-  return filters.color !== defaults.color || filters.colorType !== defaults.colorType ||
+  return (nativeFilters.value?Object.keys(readColumnFilters(filters.columnFilters,mode.value,nativeFilters.value)).length>0:!!filters.columnFilters.trim()) || filters.color !== defaults.color || filters.colorType !== defaults.colorType ||
     (mode.value === 'inventory' && (filters.vendor !== defaults.vendor || filters.material !== defaults.material ||
       filters.location !== defaults.location || filters.inventoryScope !== defaults.inventoryScope));
 });
 
 function clearSearch() {
   filters.search = '';
-  document.querySelector<HTMLInputElement>('nav input')?.focus();
+  colorOpen.value=true;
+  void nextTick(()=>document.querySelector<HTMLInputElement>('#color-search-input')?.focus());
 }
 
 function resetFacets() {
@@ -136,7 +133,7 @@ async function changeView(next: 'board' | 'carousel') {
   if (!viewMode || viewMode.value === next) return;
   viewMode.value = next;
   await nextTick();
-  document.querySelector<HTMLButtonElement>(`#discovery-panel [data-view="${next}"]`)?.focus();
+  document.querySelector<HTMLButtonElement>(`.discovery-controls [data-view="${next}"]`)?.focus();
 }
 
 const onModeKeydown=(event:KeyboardEvent)=>{
@@ -146,29 +143,11 @@ const onModeKeydown=(event:KeyboardEvent)=>{
   void setDiscoveryMode(next);document.getElementById(`discovery-tab-${next}`)?.focus();
 };
 
-const closeFilterModal = () => { if (filterModalOpen) filterModalOpen.value = false; };
-
-// Handle filter apply
-const applyFilters = (newFilters: Pick<typeof filters,'vendor'|'material'|'location'|'source'|'colorType'|'inventoryScope'>) => {
-  filters.inventoryScope = newFilters.inventoryScope;
-  filters.vendor = newFilters.vendor;
-  filters.material = newFilters.material;
-  filters.location = newFilters.location;
-  filters.source = newFilters.source;
-  filters.colorType = newFilters.colorType;
-};
-
 const countLabel = computed(() =>
   t("info.count", { count: filtered.value.length }),
 );
 
-const viewLabels = computed(() => ({
-  viewBoard: t("actions.viewBoard"),
-  viewCarousel: t("actions.viewCarousel"),
-}));
-
 const cardLabels = computed(() => ({
-  ...viewLabels.value,
   vendor: t("card.vendor"),
   material: t("card.material"),
   spool: t("card.spool"),
@@ -180,26 +159,19 @@ const cardLabels = computed(() => ({
 }));
 
 const boardLabels = computed(() => ({
-  ...viewLabels.value,
   pin: t("actions.pin"),
   unpin: t("actions.unpin"),
   legend: t("info.legend"),
 }));
 
-const sortLabels = computed(() => ({
-  name: t('filters.sortNameAsc'),
-  vendor: t('filters.sortVendorAsc'),
-  material: t('filters.sortMaterialAsc'),
-  source: t('filters.sortSourceAsc'),
-  hue: t('filters.sortHueAsc'),
-  luminance: t('filters.sortLuminanceAsc'),
-  lightness: t('filters.sortLightnessAsc'),
-}));
 </script>
 
 <style scoped>
 .result-state {display:grid;justify-items:start;gap:12px;padding:12px 4px;font-size:14px;color:var(--muted-foreground);}
-.discovery-modes {display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--border);}
+.discovery-mode-row {display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--border);flex:none;}
+.discovery-modes {display:flex;align-items:center;gap:16px;min-width:0;}
+.discovery-tab-actions {display:flex;align-items:center;gap:12px;margin-left:auto;flex:none;}
+.results-count {text-align:right;font-size:12px;color:var(--muted-foreground);white-space:nowrap;}
 .mode-button {min-height:40px;padding:8px 4px;border-radius:0;border-bottom:2px solid transparent;font-family:var(--font-sans);font-size:14px;font-weight:600;gap:8px;color:var(--muted-foreground);}
 .mode-button[aria-selected="true"] {border-bottom-color:var(--primary);color:var(--primary);}
 .mode-button:hover {background:var(--muted);color:var(--foreground);}

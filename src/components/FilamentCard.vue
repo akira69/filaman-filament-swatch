@@ -49,7 +49,8 @@
             class="pin-btn grid size-7 place-items-center"
             :aria-pressed="pinned"
             @click.stop="$emit('togglePin', filament)"
-            :title="pinned ? labels.unpin : labels.pin"
+            :aria-label="pinned ? labels.unpin : labels.pin"
+            :title="t(pinned ? 'help.unpin' : 'help.pin')"
           >
             <component :is="pinned ? PinOff : Pin" class="size-4" aria-hidden="true" />
           </button>
@@ -60,6 +61,8 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 import { computed, ref } from "vue";
 import type { FilamentCard as FilamentCardType } from "../composables/useFilaments";
 import { Button } from "@/components/ui/button";

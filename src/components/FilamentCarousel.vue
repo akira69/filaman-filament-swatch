@@ -1,60 +1,6 @@
 <template>
   <div class="carousel-shell relative">
-    <div class="mb-3 sm:mb-4 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-      <div class="text-xs sm:text-sm text-[rgb(var(--text-muted))]">
-        {{ countLabel }}
-      </div>
-      <div class="flex flex-wrap items-center gap-1">
-        <!-- Sort Controls -->
-        <Select v-model="filters.sortField" class="w-28 sm:w-36">
-          <SelectTrigger variant="ghost" class="h-9 sm:h-10">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">{{ sortLabels.name }}</SelectItem>
-            <SelectItem v-if="items[0]?.kind !== 'catalog'" value="vendor">{{ sortLabels.vendor }}</SelectItem>
-            <SelectItem v-if="items[0]?.kind !== 'catalog'" value="material">{{ sortLabels.material }}</SelectItem>
-            <SelectItem value="source">{{ sortLabels.source }}</SelectItem>
-            <SelectItem value="hue">{{ sortLabels.hue }}</SelectItem>
-            <SelectItem value="luminance">{{ sortLabels.luminance }}</SelectItem>
-            <SelectItem value="lightness">{{ sortLabels.lightness }}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Toggle variant="ghost" size="sm" :pressed="filters.sortDir === 'asc'" @click="filters.sortDir = 'asc'" class="h-9 w-9 sm:h-10 sm:w-10">
-          <Icon icon="lucide:arrow-up" class="w-4 h-4" />
-        </Toggle>
-        <Toggle variant="ghost" size="sm" :pressed="filters.sortDir === 'desc'" @click="filters.sortDir = 'desc'" class="h-9 w-9 sm:h-10 sm:w-10">
-          <Icon icon="lucide:arrow-down" class="w-4 h-4" />
-        </Toggle>
-        
-        <!-- View Toggle -->
-        <div class="flex gap-1">
-          <Button
-            :variant="viewMode === 'carousel' ? 'default' : 'ghost'"
-            data-view="carousel"
-            :aria-pressed="viewMode === 'carousel'"
-            :aria-label="labels.viewCarousel"
-            :title="labels.viewCarousel"
-            size="sm"
-            @click="$emit('changeView', 'carousel')"
-            class="h-9 w-9 sm:h-10 sm:w-10 p-0"
-          >
-            <Icon icon="lucide:gallery-horizontal" class="w-4 h-4" />
-          </Button>
-          <Button
-            :variant="viewMode === 'board' ? 'default' : 'ghost'"
-            data-view="board"
-            :aria-pressed="viewMode === 'board'"
-            :aria-label="labels.viewBoard"
-            :title="labels.viewBoard"
-            size="sm"
-            @click="$emit('changeView', 'board')"
-            class="h-9 w-9 sm:h-10 sm:w-10 p-0"
-          >
-            <Icon icon="lucide:layout-grid" class="w-4 h-4" />
-          </Button>
-        </div>
-
+    <div class="mb-2 flex justify-end">
         <!-- Navigation -->
         <div class="flex gap-1">
           <Button size="sm" variant="ghost" @click="goPrev" class="h-9 w-9 sm:h-10 sm:w-10 p-0">
@@ -64,7 +10,6 @@
             <Icon icon="lucide:chevron-right" class="w-5 h-5" />
           </Button>
         </div>
-      </div>
     </div>
 
     <div class="mb-3 sm:mb-4 flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -113,18 +58,10 @@ import type { FilamentCard as FilamentCardType } from "../composables/useFilamen
 import FilamentCard from "./FilamentCard.vue";
 import { Button } from "@/components/ui/button";
 import { Icon } from '@iconify/vue';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Toggle } from "@/components/ui/toggle";
+
 
 const props = defineProps<{
   items: FilamentCardType[];
-  countLabel: string;
   labels: {
     vendor: string;
     material: string;
@@ -133,31 +70,14 @@ const props = defineProps<{
     copy: string;
     copied: string;
     pin:string;
-    viewBoard: string;
-    viewCarousel: string;
     unpin:string;
   };
-  sortLabels: {
-    name: string;
-    vendor: string;
-    material: string;
-    source: string;
-    hue: string;
-    luminance: string;
-    lightness: string;
-  };
-  filters: {
-    sortField: string;
-    sortDir: string;
-  };
-  viewMode: string;
   pinnedIds?: Set<string>;
 }>();
 
 defineEmits<{
   (e: "togglePin", filament: FilamentCardType): void;
   (e: "selectFilament", filament: FilamentCardType): void;
-  (e: "changeView", view: "carousel" | "board"): void;
 }>();
 
 const track = ref<HTMLDivElement | null>(null);

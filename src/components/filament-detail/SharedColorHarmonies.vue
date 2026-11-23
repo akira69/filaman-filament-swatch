@@ -117,6 +117,7 @@ onBeforeUnmount(() => wheel?.destroy());
           </button>
           <Button v-if="togglePin" size="icon-sm" variant="ghost" class="harmony-pin"
             :aria-label="t(pinnedIds?.has(item.id) ? 'actions.unpin' : 'actions.pin')"
+            :title="t(pinnedIds?.has(item.id) ? 'help.unpin' : 'help.pin')"
             :aria-pressed="pinnedIds?.has(item.id) ?? false" @click="togglePin(item)">
             <PinOff v-if="pinnedIds?.has(item.id)" :size="16" aria-hidden="true" />
             <Pin v-else :size="16" aria-hidden="true" />
